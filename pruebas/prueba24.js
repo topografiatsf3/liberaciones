@@ -95,7 +95,8 @@ const cabe = p => p.evaluate(() => { const w = document.querySelector('.twrap'),
   const ancho = await p.$eval('#chart rect.pista', r => r.getBoundingClientRect().width);
   ok(ancho >= 280, `R2: la franja mide ${Math.round(ancho)} px (antes 133)`);
   ok(await p.$eval('#chart text.lab2', t => getComputedStyle(t).fontSize === '13px'), 'R2: nombre en 13 px arriba de la franja');
-  ok(/Se ven las últimas 5 capas de cada tipo/.test(await p.textContent('#pUlt')), 'R2: avisa «Se ven las últimas 5 capas de cada tipo · Ver todas»');
+  ok(/Últimas 5 capas de cada tipo/.test(await p.textContent('#pUlt')), 'R2: avisa «Últimas 5 capas de cada tipo · Ver todas»');
+  ok(await p.$eval('#pUlt .pult', e => e.getBoundingClientRect().height <= 34), 'C2: el aviso de las últimas 5 capas cabe en una línea');
   await p.screenshot({ path: path.join(OUT, '3-perfil-celular.png') });
   await p.click('#pVerTodas'); await p.waitForTimeout(400);
   const vis2 = await capasPorTipo();
@@ -109,7 +110,19 @@ const cabe = p => p.evaluate(() => { const w = document.querySelector('.twrap'),
   const av = await p.textContent('#pAvisos');
   ok(/2 registros sin progresiva/.test(av) && /1 fuera del rango 0\+000 a 0\+400/.test(av) && /1 de tipos que no se dibujan/.test(av), 'R3: el administrador ve el recuadro: ' + av.replace(/\s+/g, ' ').trim());
   ok(!/sin progresiva/.test(await p.textContent('#pNota')), 'R3: la nota ya no repite esos avisos');
+  // Ronda 3: en celular el recuadro y la leyenda van plegados en una línea, las vistas en una sola fila y el gráfico se ve sin desplazarse
+  ok(await p.$eval('#pAvisos details.pav-d', d => !d.open && d.querySelector('summary').getBoundingClientRect().height <= 48) && /4 datos para corregir/.test(await p.textContent('#pAvisos summary')), 'C2: el recuadro de avisos va plegado en una línea («4 datos para corregir»)');
+  ok(await p.$eval('.ley-d', d => !d.open && d.querySelectorAll('.ley-mini i').length === 6), 'C2: la leyenda va plegada con sus 6 muestras de color');
+  ok(await p.$$eval('.chart-h .tabs button', bs => new Set(bs.map(b => Math.round(b.getBoundingClientRect().top))).size === 1), 'C2: las vistas del panel van en una sola fila');
+  await p.evaluate(() => scrollTo(0, 0)); await p.waitForTimeout(200);
+  ok(await p.$eval('#chart .ojo', o => o.getBoundingClientRect().top < innerHeight - 70), 'C2: la primera capa del gráfico se ve sin desplazarse');
+  await p.click('.ley-d > summary'); await p.waitForTimeout(200);
+  ok(await p.$eval('.ley-d', d => d.open && /Falta liberar/.test(d.textContent)), 'C2: al tocar «Leyenda» se abre completa');
+  // Ronda 3: «Falta liberar» ya no usa el rojo de «Observado»
+  ok(await p.evaluate(() => { const s = getComputedStyle(document.documentElement), ob = s.getPropertyValue('--g-ob').trim().toLowerCase(), h = document.querySelector('#chart rect.hueco');
+    return h && h.getAttribute('stroke').toLowerCase() !== ob && s.getPropertyValue('--falta-borde').trim().toLowerCase() !== ob && s.getPropertyValue('--falta-b').trim().toLowerCase() !== '#f0c4b8'; }), 'C1: «Falta liberar» tiene su propio color, distinto del rojo de «Observado»');
   await p.screenshot({ path: path.join(OUT, '4-avisos.png') });
+  await p.click('#pAvisos summary'); await p.waitForTimeout(200);
   await p.click('#pAvisos [data-prob="sinPk"]'); await p.waitForSelector('.dlg.on .pfila');
   ok((await p.$$eval('.dlg.on .pfila', x => x.map(e => e.dataset.id))).sort().join() === 'sp1,sp2', 'R3: «Ver» lista los 2 sin progresiva');
   await p.click('.dlg.on .pfila[data-id="sp1"]'); await p.waitForSelector('#sheet.on');

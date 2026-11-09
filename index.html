@@ -37,7 +37,8 @@
   --solapa:#7a4400; --solapa-bg:#fbecd0;
   /* Colores del gráfico (tramos por estado y tramas) */
   --g-pt:#8a99a6; --g-ep:#e0a030; --g-ec:#2e9a5c; --g-ob:#d4553a;
-  --falta-a:#fdf3f0; --falta-b:#f0c4b8; --falta-borde:#d4553a; --falta-txt:#8c2a16;
+  /* «Falta liberar» va en arena tenue y neutra: el rojo queda solo para Observado */
+  --falta-a:#fbf8f3; --falta-b:#e5dccf; --falta-borde:#9c8a70; --falta-txt:#5e4b35;
   --nolib-a:#c4ceca; --nolib-b:#aebab5; --nolib-txt:#56655f;
   --plano:#fbfcfc; --pista:#f1f4f3; --rejilla:#e3e9e7;
   --eje:#d9e5e1; --eje-sel:#c3d6d0; --sinreg:#5b7fa6; --fuera-a:#fff4dd; --fuera-b:#e0a43a; --fuera-borde:#c17f12;
@@ -432,13 +433,30 @@ h1.view-title{font-weight:700;font-size:22px;line-height:1.2;letter-spacing:-.01
 .mtab tr.mfuera{opacity:.6}
 .mtab .mn{overflow-wrap:anywhere;margin-top:2px}
 .mtab .st{font-size:11px;padding:2px 8px;margin-left:4px}
-@media (max-width:560px){.chart-h .tabs:has(> :nth-child(4)){display:grid;grid-template-columns:1fr 1fr}}
 @media (max-width:560px){.mtab .hm{display:none}.mtab td,.mtab th{padding:7px 5px}}
 #chart .nolib-t{font:700 10.5px var(--f-body);fill:var(--nolib-txt);letter-spacing:.02em;pointer-events:none}
 .legend i.hatch{background:repeating-linear-gradient(45deg,var(--surface-2) 0 3px,var(--line) 3px 5px);border:1px solid var(--line)}
 .mini.eje{display:inline-flex;align-items:center;cursor:pointer;font-size:12.5px;min-height:42px}
 .mini.eje.tiene{background:var(--accent-soft);color:var(--accent-strong);border-color:var(--accent)}
-@media (max-width:560px){.chart-h .tabs{width:100%}.chart-h .tabs button{flex:1}}
+/* Panel en celular: vistas en una sola fila (se desliza si no cabe), leyenda y avisos plegados en una línea */
+@media (max-width:759px){
+  .chart-h .tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;width:100%}
+  .chart-h .tabs button{flex:1 0 auto;padding:0 12px}
+}
+.ley-d{margin:6px 0 2px}
+.ley-d>summary,.pav-d>summary{list-style:none;display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ley-d>summary::-webkit-details-marker,.pav-d>summary::-webkit-details-marker{display:none}
+.ley-d>summary::after,.pav-d>summary::after{content:"";flex:none;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:-4px 2px 0 auto;transition:transform .2s}
+.ley-d[open]>summary::after,.pav-d[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+.ley-d>summary{font-size:13px;font-weight:600;color:var(--muted)}
+.ley-mini{display:inline-flex;gap:4px}
+.ley-mini i{display:inline-block;width:14px;height:8px;border-radius:2px}
+.ley-mini i.falta-i{background:repeating-linear-gradient(45deg,var(--falta-a) 0 3px,var(--falta-b) 3px 5px);border:1px dashed var(--falta-borde)}
+.ley-mini i.nolib{background:var(--nolib-a);border:1px solid var(--nolib-b)}
+.ley-d .legend{margin:0 0 6px}
+.pinfo.pav-d{display:block;padding:0 12px}
+.pav-d[open]{padding-bottom:8px}
+.pav-d ul{margin:0 0 4px}
 #chart .sum{font:700 11.5px var(--f-body);fill:var(--muted)}
 #chart .tick{font:500 10.5px var(--f-mono);fill:var(--muted)}
 #chart .grid{stroke:var(--rejilla);stroke-width:1}
@@ -1250,7 +1268,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 19;
+const VERSION_APP = 20;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2704,12 +2722,15 @@ function pintarAvisos(sub, recs) {
   const pr = problemasFrente(sub, recs), k = claveProb(pr), hay = pr.sinPk.length + pr.fuera.length + pr.ocultos.length > 0;
   const oculto = (ls.get("lib.avisosOcultos", {}) || {})[sub.id] === k;
   if (!puedeAjustes() || !hay || oculto) { box.innerHTML = ""; return false; }
-  const n = (x, u, v) => x === 1 ? u : v;
-  box.innerHTML = `<div class="pinfo aviso pavisos"><b>Datos para corregir en ${esc(sub.nombre)}</b><ul>
+  const n = (x, u, v) => x === 1 ? u : v, tot = pr.sinPk.length + pr.fuera.length + pr.ocultos.length;
+  // En celular el recuadro va plegado en una sola línea para que el gráfico se vea sin desplazarse
+  const cel = innerWidth < 760;
+  box.innerHTML = `${cel ? `<details class="pinfo aviso pavisos pav-d"${S.panel._avAbierto ? " open" : ""}><summary><b>${tot} ${n(tot, "dato", "datos")} para corregir</b></summary>` : `<div class="pinfo aviso pavisos"><b>Datos para corregir en ${esc(sub.nombre)}</b>`}<ul>
     ${pr.sinPk.length ? `<li><span>${pr.sinPk.length} ${n(pr.sinPk.length, "registro", "registros")} sin progresiva</span><button type="button" class="linkbtn" data-prob="sinPk">Ver</button></li>` : ""}
     ${pr.fuera.length ? `<li><span>${pr.fuera.length} fuera del rango ${esc(fmtPk(pr.fr0))} a ${esc(fmtPk(pr.fr1))}</span><button type="button" class="linkbtn" data-prob="fuera">Ver</button></li>` : ""}
     ${pr.ocultos.length ? `<li><span>${pr.ocultos.length} de tipos que no se dibujan</span><button type="button" class="linkbtn" data-prob="tipos">Ajustes → Tipos</button></li>` : ""}
-    </ul><button type="button" class="btn-txt" data-prob="ocultar">Ocultar</button></div>`;
+    </ul><button type="button" class="btn-txt" data-prob="ocultar">Ocultar</button>${cel ? "</details>" : "</div>"}`;
+  box.querySelector(".pav-d")?.addEventListener("toggle", e => { S.panel._avAbierto = e.target.open; });
   box.onclick = e => {
     const b = e.target.closest("[data-prob]"); if (!b) return; const q = b.dataset.prob;
     if (q === "ocultar") { const m = ls.get("lib.avisosOcultos", {}) || {}; m[sub.id] = k; ls.set("lib.avisosOcultos", m); actualizarPanel(); return; }
@@ -2904,6 +2925,8 @@ function pintarPanel() {
   if (P.vista === "modelo") { pintarModelo(); return; }
   const planta = P.vista === "planta";
   const movilP = innerWidth < 760;
+  // Leyenda: completa en computadora; en celular plegada en una línea con solo las muestras de color
+  const leyenda = `<div class="legend"><span><i class="falta-i"></i>Falta liberar</span><span><i class="nolib"></i>No se libera</span>${["PT", "EP", "EC", "OB"].map(k => `<span><i style="background:${fondoLey(k)}"></i>${ESTADOS[k]}</span>`).join("")}</div>`;
   const grupos = S.listas.estructuras.filter(e => e.activo !== false).map(e => `<optgroup label="${esc(e.nombre)}">${(e.subs || []).filter(s => s.activo !== false).map(s => `<option value="${esc(s.id)}" ${s.id === P.subId ? "selected" : ""}>${esc(s.nombre)}</option>`).join("")}</optgroup>`).join("");
   const pc = enPC();
   // Frente siempre a la vista; el resto de filtros en acordeón (computadora) o en una hoja que se abre (celular y tableta)
@@ -2917,8 +2940,8 @@ function pintarPanel() {
       ${planta ? `<div class="pl-ctl"><select id="pTipoPl" aria-label="Tipo a mostrar en planta"></select><select id="pCapaPl" aria-label="Capa a mostrar en planta"></select></div>` : ""}
     </div>
     <div class="fchips" id="pActivos" hidden></div>
-    <h2 class="chart-t" id="pTit"></h2>
-    <div class="legend"><span><i class="falta-i"></i>Falta liberar</span><span><i class="nolib"></i>No se libera</span>${["PT", "EP", "EC", "OB"].map(k => `<span><i style="background:${fondoLey(k)}"></i>${ESTADOS[k]}</span>`).join("")}</div>
+    <h2 class="chart-t${planta ? "" : " solo-pc"}" id="pTit"></h2>
+    ${movilP ? `<details class="ley-d"${P._leyAbierta ? " open" : ""}><summary>Leyenda<span class="ley-mini" aria-hidden="true"><i class="falta-i"></i><i class="nolib"></i>${["PT", "EP", "EC", "OB"].map(k => `<i style="background:${fondoLey(k)}"></i>`).join("")}</span></summary>${leyenda}</details>` : leyenda}
     <div id="pAvisos"></div><div id="pUlt"></div>
     <div id="chart"></div>
     <div class="pinfo" id="pInfo" hidden></div>
@@ -2935,6 +2958,7 @@ function pintarPanel() {
     : `${frente}${movilP ? "" : '<div class="stats" id="pStats"></div>'}${grafico}${abajo}`}`;
   $("#pSub").addEventListener("change", e => { P.subId = e.target.value; P.capa = ""; P.pkDesde = ""; P.pkHasta = ""; ls.set("lib.panelSub", P.subId); suscribirPanel(estDeSub(P.subId).id); pintarPanel(); });
   $(".chart-h .tabs").addEventListener("click", e => { const b = e.target.closest("[data-vista]"); if (b) { P.vista = b.dataset.vista; ls.set("lib.panelVista", P.vista); pintarPanel(); } });
+  $(".ley-d")?.addEventListener("toggle", e => { P._leyAbierta = e.target.open; });
   $("#pLista").addEventListener("click", e => { const it = e.target.closest("[data-id]"); if (it) abrirFichaId(it.dataset.id); });
   $("#pActivos").addEventListener("click", e => { const c = e.target.closest("[data-quitar]"); if (c) quitarFiltro(c.dataset.quitar); });
   $("#pFilBtn")?.addEventListener("click", abrirHojaFiltros);
@@ -3158,7 +3182,7 @@ function actualizarPanel() {
     $("#pTit").textContent = sub.nombre;
     const visibles = bandas.filter(esVisible);
     const ocultasUlt = ultimasPorDefecto() ? bandas.filter(b => !b.oculta && !ultimas5().has(b.key)).length : 0;
-    $("#pUlt").innerHTML = ocultasUlt ? `<p class="pult">Se ven las últimas 5 capas de cada tipo · <button type="button" class="linkbtn" id="pVerTodas">Ver todas (${bandas.filter(b => !b.oculta).length})</button></p>` : "";
+    $("#pUlt").innerHTML = ocultasUlt ? `<p class="pult">Últimas 5 capas de cada tipo · <button type="button" class="linkbtn" id="pVerTodas">Ver todas (${bandas.filter(b => !b.oculta).length})</button></p>` : "";
     $("#pVerTodas")?.addEventListener("click", () => accionCapas("todas"));
     if (P.vista === "lista") dibujarLista(sub, recs, visibles, bandas.length); else dibujarPerfil(sub, recs, visibles, bandas.length);
     const claves = new Set(visibles.map(b => b.key));

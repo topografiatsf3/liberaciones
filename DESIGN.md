@@ -36,7 +36,7 @@ Variables en `:root`. No se usan colores sueltos en el CSS ni en el JS: siempre 
 | `--ec` | `#1f7a45` | Estado Entregado a Calidad |
 | `--ob` | `#b8321a` | Estado Observado y acciones peligrosas |
 | `--re` | `#7a2d6b` | Estado Rechazado |
-| `--falta` | trama diagonal `#fdf3f0` / `#f0c4b8` | «Falta liberar» en el gráfico |
+| `--falta` | trama diagonal arena `#fbf8f3` / `#e5dccf`, borde punteado `#9c8a70` | «Falta liberar» en el gráfico. Nunca en rojo: el rojo es solo de «Observado» |
 | `--nolib` | trama cruzada `#c4ceca` / `#aebab5` | «No se libera» en el gráfico |
 
 Reglas:
@@ -104,7 +104,7 @@ Columna izquierda de 260 px. Secciones: Frente (siempre visible), Filtros, Progr
 Un solo renglón «Filtros · Capas 113 de 113» debajo del selector de frente, plegado por defecto. Al tocarlo se abre una hoja desde abajo con el mismo acordeón de la computadora y un botón «Aplicar» fijo abajo. Lo activo se muestra como chips removibles encima del gráfico.
 
 ### Gráfico
-Se conserva: tramas para «falta liberar» y «no se libera», barras de color por estado, eje de progresivas en monoespaciada. Fondo del gráfico `--surface`, líneas de referencia `--line`. Leyenda en 12 px, en una sola fila con desplazamiento horizontal en celular.
+Se conserva: tramas para «falta liberar» y «no se libera», barras de color por estado, eje de progresivas en monoespaciada. Fondo del gráfico `--surface`, líneas de referencia `--line`. Leyenda en 12 px. En celular la parte de arriba del Panel se mantiene corta para que el gráfico se vea sin desplazarse: las vistas (Qué falta, Perfil, Planta, Modelo 2D) en una sola fila, la leyenda plegada en una línea («Leyenda» con sus muestras de color) y el recuadro «Datos para corregir» plegado en una línea con el total.
 
 ### Íconos
 Trazo de 2 px, 20 px en el menú y 18 px en botones, color del texto que acompañan. Un solo juego (el actual, estilo línea). Nunca emojis en la interfaz.
