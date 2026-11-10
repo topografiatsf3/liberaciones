@@ -166,6 +166,17 @@ h1.view-title{font-weight:700;font-size:22px;line-height:1.2;letter-spacing:-.01
 .upbtn:active{transform:scale(.97)}
 .upbtn:hover{border-color:var(--accent);background:var(--accent-soft)}
 .upbtn svg{width:20px;height:20px;flex:none;color:var(--accent)}
+/* Entregar a Calidad: XML de la superficie de cada liberación */
+.xml-ent{margin-top:12px}
+.xml-ent .upbtn{flex:none;width:100%}
+.xml-l{list-style:none;margin:10px 0 0;padding:0;max-height:220px;overflow:auto;border-top:1px solid var(--line)}
+.xml-l li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.xml-l small{flex-basis:100%;color:var(--muted);font-size:12px;word-break:break-all}
+.xml-ok{color:var(--ec);font-weight:600;word-break:break-word}
+.xml-falta{color:var(--ob);font-weight:600}
+.xml-err:empty{display:none}
+.xml-err{margin-top:8px;color:var(--ob);font-size:13px}
+.xml-err p{margin:0 0 4px}
 /* iPhone: los campos de fecha no respetan el ancho y el texto sale centrado y cortado */
 @supports (-webkit-touch-callout:none){
   input[type=date],input[type=datetime-local],input[type=time]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;text-align:left}
@@ -517,6 +528,7 @@ h1,h2,h3{text-wrap:balance}
 @media (max-width:720px){.tools .bsel{flex:1 1 calc(50% - 4px);max-width:none;font-size:14.5px}}
 .search:hover{border-color:var(--line-strong)}
 .wsp-btn{min-height:44px;color:var(--ec);border-color:color-mix(in srgb,var(--ec) 40%,var(--line))}.wsp-btn svg{flex:none}
+.sup-btn{min-height:44px;gap:6px}.sup-btn svg{flex:none;color:var(--accent)}
 .wsp-per{margin:0 0 10px}.wsp-txt{min-height:220px;font-size:14px;line-height:1.45;white-space:pre-wrap}
 .search:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;margin-bottom:12px}
@@ -1314,7 +1326,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 22;
+const VERSION_APP = 23;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2300,6 +2312,21 @@ function solapados(subId, tipoId, capa, a, b, propio) {
 
 /* ---------- Resumen del día para WhatsApp (Mis registros) ---------- */
 const ICON_WSP = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 20.5l1.3-4.1A8.5 8.5 0 1 1 8 19.6z"/><path d="M9 9.5c.4 2 1.9 3.6 4 4.3l1.2-1.1 2 .9-.4 1.7c-3.9.2-7.6-3.4-7.6-7.4l1.7-.4.9 2z"/></svg>';
+const ICON_SUP = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/></svg>';
+// Acceso directo de jefe y administrador: Panel → Modelo 2D, donde se ven las superficies XML de las liberaciones.
+// Con un registro, abre su frente y su capa con su superficie marcada.
+function irSuperficies(r) {
+  const P = S.panel, x = r && (r.xmlEntrega || []).find(s => s.supId);
+  if (x && x.subId) {
+    P.subId = x.subId; ls.set("lib.panelSub", x.subId);
+    P.mGrupo = x.grupo || ""; P.mInicial = x.subId; guardarCapaSub(x.subId, P.mGrupo);
+    P.mSel = x.supId; P.mVB = null; P.mZoom = 1;
+    const a = MOD.res[x.subId]?.[x.supId], est = MOD.secc[x.subId]?.est || [];
+    P.mSta = a && a[4] != null ? est.find(s => s >= a[4] - 0.05 && s <= a[5] + 0.05) ?? null : null;
+  }
+  P.vista = "modelo"; ls.set("lib.panelVista", "modelo");
+  ir("panel");
+}
 const diaDe = v => { const d = toDate(v); return d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}` : ""; };
 const diaCorto = iso => { const [y, m, d] = iso.split("-").map(Number); const t = new Date(y, m - 1, d).toLocaleDateString("es-PE", { weekday: "short" }).replace(".", ""); return `${t.charAt(0).toUpperCase() + t.slice(1)} ${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}`; };
 function textoResumen(regs) {
@@ -2517,7 +2544,7 @@ function pintarLista(cual) {
   <h1 class="view-title">${cual === "mis" ? "Mis registros" : pap ? "Papelera" : "Registros"}</h1>
   <p class="lead">${cual === "mis" ? "Lo que registraste. Puedes editar lo que está pendiente u observado, y mandar a la papelera lo que aún no tiene código." : pap ? `Lo borrado no sale en las listas ni en el panel. ${puedeAjustes() ? "Restaura o borra para siempre." : "Puedes restaurar lo que no tiene código."}` : porFecha ? `${datos.length} ${datos.length === 1 ? "registro" : "registros"} · ${esc(textoFecha(fl))}.` : hist ? `${BUS.todos ? `${datos.length.toLocaleString("es-PE")} de ${base.length.toLocaleString("es-PE")} registros de todo el historial.` : "Cargando todo el historial…"}` : `${activos.length ? datos.length + " de los" : "Los"} últimos ${base.length} registros de todos. Para ver más antiguos filtra por fechas.${poder() ? " Busca en todo el histórico con Ctrl+K." : ""}`}</p>
   ${cual === "todos" && poder() ? `<div class="tabs" role="group" aria-label="Registros o papelera"><button type="button" data-pap="0" aria-pressed="${!pap}">Registros</button><button type="button" data-pap="1" aria-pressed="${pap}">Papelera${S.papelera ? ` <span class="cnt">${S.papelera.length}</span>` : ""}</button></div>` : ""}
-  <div class="tools"><input class="search" id="q" type="search" placeholder="Buscar N°, PK, tipo, frente…" value="${esc(fl.q)}" aria-label="Buscar">${cual === "mis" ? `<button type="button" class="mini wsp-btn" id="rWsp">${ICON_WSP}Resumen WhatsApp</button>` : ""}${pap && puedeAjustes() && datos.length ? '<button type="button" class="mini warn-mini" id="rVaciar">Vaciar papelera</button>' : ""}${!pap && vis.length ? `<button type="button" class="mini" id="rExp" title="Exporta a CSV lo que se ve con estos filtros">Exportar ${hayFiltro || sts.length ? "lo filtrado" : "lista"} (${vis.length})</button>` : ""}</div>
+  <div class="tools"><input class="search" id="q" type="search" placeholder="Buscar N°, PK, tipo, frente…" value="${esc(fl.q)}" aria-label="Buscar">${cual === "mis" ? `<button type="button" class="mini wsp-btn" id="rWsp">${ICON_WSP}Resumen WhatsApp</button>` : ""}${pap && puedeAjustes() && datos.length ? '<button type="button" class="mini warn-mini" id="rVaciar">Vaciar papelera</button>' : ""}${!pap && vis.length ? `<button type="button" class="mini" id="rExp" title="Exporta a CSV lo que se ve con estos filtros">Exportar ${hayFiltro || sts.length ? "lo filtrado" : "lista"} (${vis.length})</button>` : ""}${cual === "todos" && !pap && puedeAjustes() ? `<button type="button" class="mini sup-btn" id="rSup" title="Abre Panel → Modelo 2D, donde se ven las superficies XML de las liberaciones">${ICON_SUP}Superficies (XML)</button>` : ""}</div>
   ${pap ? "" : pcFil ? `<div class="rfil" id="rFil">${controlesReg(fl, cual, false)}${hayFiltro ? '<button type="button" class="btn-txt" id="rfX">Limpiar filtros</button>' : ""}</div>`
     : `<button type="button" class="fil-btn" id="rFilBtn" style="margin:0 0 8px;border-top:0;padding-top:0"><span class="fil-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg></span><b>${activos.length ? `${activos.length} ${activos.length === 1 ? "filtro" : "filtros"}` : "Filtrar por fecha, tipo, frente…"}</b>${CHEV}</button>${activos.length ? `<div class="fchips" id="rChips" style="margin-top:0">${activos.map(([k, t]) => `<button type="button" class="chip on" data-quitar="${k}" aria-label="Quitar filtro ${esc(t)}">${esc(t)}<span class="x" aria-hidden="true">✕</span></button>`).join("")}</div>` : ""}`}
   ${cargandoFecha ? '<p class="rf-nota">Buscando los registros de esas fechas…</p>' : porFecha && S.todosFechaLleno ? '<p class="rf-nota">Hay muchos registros en esas fechas; se muestran los 3000 más recientes. Acorta el rango para verlos todos.</p>' : ""}
@@ -2534,6 +2561,7 @@ function pintarLista(cual) {
   $("#rWsp")?.addEventListener("click", () => abrirResumenWsp(vis, activos.length > 0 || !!fl.st || qs.length > 0));
   buscadorDiferido($("#q"), v => { fl.q = v; }, () => pintarLista(cual), () => S.view === cual);
   $("#rExp")?.addEventListener("click", () => exportarSel(vis, hayFiltro || sts.length ? "filtrado" : "lista"));
+  $("#rSup")?.addEventListener("click", () => irSuperficies());
   $("#rHist")?.addEventListener("click", () => { fl.hist = true; pintarLista(cual); });
   $("#rHistX")?.addEventListener("click", () => { fl.hist = false; pintarLista(cual); });
   // Estado: un clic elige uno; con Ctrl o Mayús se suman varios
@@ -2688,6 +2716,7 @@ function abrirFicha(r) {
       ${fila("Fecha liberación", esc(fmtFecha(r.fechaLiberacion, false)))}
       ${fila("Entrega a Calidad", esc(fmtFecha(r.fechaEntrega, false)))}
       ${r.carpeta ? fila("Carpeta OneDrive", verCarpeta(r.carpeta)) : r.estado === "EC" && esGab() && !r.borrado ? fila("Carpeta OneDrive", `<span class="muted">Falta</span>`) : ""}
+      ${(r.xmlEntrega || []).length ? fila("Superficie (XML)", r.xmlEntrega.map(x => `<div><span class="mono">${esc(x.superficie)}</span><span class="muted small"> · ${esc(x.archivo)}</span></div>`).join("") + (puedeAjustes() && r.xmlEntrega.some(x => x.supId) ? '<button type="button" class="linkbtn" id="fVerSup">Ver en el modelo</button>' : "")) : ""}
       ${fila("Observaciones", esc(r.observaciones))}
       ${r.actividad === "ASP" && r.procesado ? fila("Procesado", esc(`${r.procesadoNombre || r.procesadoPor || ""} · ${fmtFecha(r.procesadoEn)}`)) : ""}
       ${r.visto ? fila("Enterado por", esc(`${r.vistoNombre || r.vistoPor || ""} · ${fmtFecha(r.vistoEn)}`)) : ""}
@@ -2725,6 +2754,7 @@ function abrirFicha(r) {
   $("#fAceptar")?.addEventListener("click", () => aceptarUno(r));
   $("#fObservar")?.addEventListener("click", () => observar(r));
   $("#fEntregar")?.addEventListener("click", () => entregar([r.id]));
+  $("#fVerSup")?.addEventListener("click", () => irSuperficies(r));
   $("#fCarpeta")?.addEventListener("click", () => ponerCarpeta([r]));
   sh.querySelector("[data-copiar-carpeta]")?.addEventListener("click", () => { const t = r.carpeta; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Carpeta copiada")).catch(() => toast(t)); });
   $("#fRechazar")?.addEventListener("click", () => rechazar(r));
@@ -4189,8 +4219,9 @@ async function guardarSuperficies(lst, subId, msg) {
       b.set(doc(db, "superficiesRes", subId), { r }, { merge: true });
       await b.commit();
     }
-    toast(msg || (lst.length === 1 ? "Superficie guardada" : `${lst.length} superficies guardadas`));
-  } catch (e) { toast("No se guardó: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"); }
+    if (msg !== false) toast(msg || (lst.length === 1 ? "Superficie guardada" : `${lst.length} superficies guardadas`));
+    return true;
+  } catch (e) { toast("No se guardó: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"); return false; }
 }
 async function quitarSuperficie(x) {
   if (!await confirmar("Quitar superficie", `Se quita <b>${esc(x.nombre)}</b> del modelo. El registro de la liberación no cambia.`, "Quitar", true)) return false;
@@ -4860,9 +4891,11 @@ async function cambiarEstado(ids, datos, a, nota, okTxt) {
   const todos = ids.map(id => S.bandeja.todos().find(r => r.id === id) || S.todos.find(r => r.id === id) || S.mis.find(r => r.id === id) || S._ficha?.id === id && S._ficha || S.panelDatos.find(r => r.id === id)).filter(Boolean);
   const regs = todos.filter(r => !DESDE[a] || DESDE[a].includes(r.estado)), salt = todos.length - regs.length;
   if (!regs.length) { toast(salt ? (salt === 1 ? "Ese registro ya cambió de estado; no se tocó." : "Esos registros ya cambiaron de estado; no se tocaron.") : "No se encontró el registro.", "bad"); return 0; }
+  // «datos» puede ser una función: cada registro lleva lo suyo (por ejemplo, el XML de su superficie al entregar)
   const p = lotes(regs, (b, r) => {
-    b.update(doc(db, "liberaciones", r.id), { ...datos, estado: a, editadoEn: serverTimestamp(), editadoPor: S.email });
-    resumenEn(b, r.id, { ...r, ...datos, estado: a });
+    const dat = typeof datos === "function" ? datos(r) : datos;
+    b.update(doc(db, "liberaciones", r.id), { ...dat, estado: a, editadoEn: serverTimestamp(), editadoPor: S.email });
+    resumenEn(b, r.id, { ...r, ...dat, estado: a });
     b.set(doc(collection(db, "historial")), { liberacionId: r.id, accion: "estado", de: r.estado, a, usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: nota || "" });
   });
   const ok = await escribir(p, (okTxt ? okTxt(regs.length) : "Guardado") + (salt ? ` · ${salt} ${salt === 1 ? "se saltó" : "se saltaron"} (ya cambiaron de estado)` : ""), "No se pudo guardar: ");
@@ -5071,16 +5104,86 @@ function ponerCarpeta(regs) {
     return escribir(p, regs.length === 1 ? "Carpeta guardada" : `Carpeta guardada en ${regs.length} registros`, "No se guardó la carpeta: ").then(ok => { if (!ok) return false; regs.forEach(r => { r.carpeta = c; }); if (S._ficha && regs.some(r => r.id === S._ficha.id)) abrirFicha(S._ficha); });
   }, "Guardar");
 }
+/* ---------- XML obligatorio al entregar a Calidad ----------
+   Gabinete sube el XML de Civil 3D con la superficie de cada liberación. La superficie tiene que llevar en el nombre
+   el mismo código SKT-TOP de la liberación; si no, no se acepta. Se guarda en el Modelo 2D de su frente
+   (Panel → Modelo 2D) con el tipo y la capa de la liberación, y el registro guarda qué XML se entregó. */
+const codigosDe = r => [...new Set([r.numero, ...(r.protocolos || []).map(x => x.numero)].filter(Boolean).map(c => codigoDe(c) || c))];
+async function xmlParaEntrega(files, regs, xmls) {
+  const errs = [], ej = codigosDe(regs[0])[0] || fmtNumero(123);
+  for (const f of files) {
+    let d; try { d = leerXml(await f.text()); } catch (e) { errs.push(`${f.name}: ${e.message}.`); continue; }
+    const sups = xTodos(d, "Surface").filter(s => xUno(s, "Definition"));
+    if (!sups.length) { errs.push(`${f.name}: no trae ninguna superficie (TIN). Exporta desde Civil 3D la superficie de la liberación.`); continue; }
+    for (const s of sups) {
+      const nombre = (s.getAttribute("name") || "Superficie").trim(), cod = codigoDe(nombre);
+      if (!cod) { errs.push(`«${nombre}» (${f.name}) no tiene código en el nombre. En Civil 3D ponle el código de la liberación, por ejemplo ${ej}.`); continue; }
+      const r = regs.find(x => codigosDe(x).includes(cod));
+      if (!r) { errs.push(`«${nombre}» es ${cod} y no es el mismo código de ${regs.length === 1 ? "la liberación que entregas (" + codigosDe(regs[0]).join(", ") + ")" : "ninguna de las liberaciones que entregas"}. No se sube.`); continue; }
+      const subId = r.subestructuraId || "";
+      let sup = null;
+      if (subId) {
+        await cargarModelo(subId);
+        try { sup = supDesdeTin(s, subId, MOD.secc[subId] || null); } catch (e) { errs.push(`${f.name}: ${e.message}`); continue; }
+      }
+      const lst = xmls.get(r.id) || [], it = { nombre, codigo: cod, archivo: f.name, sup }, i = lst.findIndex(x => x.nombre === nombre);
+      if (i >= 0) lst[i] = it; else lst.push(it);
+      xmls.set(r.id, lst);
+    }
+  }
+  return errs;
+}
+// Superficies al Modelo 2D de su frente; devuelve false si no se pudieron guardar
+async function guardarSupEntrega(regs, xmls) {
+  const porSub = new Map();
+  regs.forEach(r => (xmls.get(r.id) || []).forEach(x => {
+    if (!x.sup) return;
+    const subId = r.subestructuraId, tipoId = r.tipoId || "", capa = normCapa(capaDe(r), subId, tipoId);
+    const s = { ...x.sup, codigo: x.codigo, tipoId, capa, archivo: x.archivo, liberacionId: r.id };
+    x.supId = s.id; x.grupo = grupoDe(tipoId, capa);
+    (porSub.get(subId) || porSub.set(subId, []).get(subId)).push(s);
+  }));
+  for (const [subId, lst] of porSub) {
+    // Versión correcta aunque no se haya abierto el modelo de ese frente
+    if (!MOD.res[subId]) { try { const d = await getDoc(doc(db, "superficiesRes", subId)); MOD.res[subId] = d.exists() ? d.data().r || {} : {}; } catch (e) { toast("No se pudo leer el modelo del frente: " + e.message, "bad"); return false; } }
+    if (!await guardarSuperficies(lst, subId, false)) return false;
+  }
+  return true;
+}
 function entregar(ids) {
   const n = ids.length, regs = regsDe(ids);
   const comun = regs.length && regs.every(r => r.carpeta && r.carpeta === regs[0].carpeta) ? regs[0].carpeta : "";
-  dialogo(n === 1 ? "Entregar a Calidad" : `Entregar ${n} a Calidad`, `<div class="grid"><div class="f"><label for="dFe">Fecha de entrega</label><input id="dFe" name="fecha" type="date" value="${hoyISO()}" required></div><div class="f"><label for="dCargo">N° de cargo <span class="opt">(opcional)</span></label><input id="dCargo" name="cargo" placeholder="Ej. 2025-11-06-01"></div></div>${campoCarpeta(comun)}`,
+  const xmls = new Map(), ej = (regs[0] && codigosDe(regs[0])[0]) || fmtNumero(123);
+  const d = dialogo(n === 1 ? "Entregar a Calidad" : `Entregar ${n} a Calidad`, `<div class="grid"><div class="f"><label for="dFe">Fecha de entrega</label><input id="dFe" name="fecha" type="date" value="${hoyISO()}" required></div><div class="f"><label for="dCargo">N° de cargo <span class="opt">(opcional)</span></label><input id="dCargo" name="cargo" placeholder="Ej. 2025-11-06-01"></div></div>${campoCarpeta(comun)}
+    <div class="f xml-ent"><span class="flabel">Superficie liberada (XML)</span>
+      <label class="upbtn"><input type="file" id="dXml" accept=".xml,text/xml,application/xml" multiple hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>Subir XML</label>
+      <div class="hint">Exporta de Civil 3D la superficie ${n === 1 ? "de la liberación" : "de cada liberación (puedes elegir varios XML a la vez)"} con su código en el nombre, por ejemplo <span class="mono">${esc(ej)}</span>. Si no tiene el mismo código, no se acepta.</div>
+      <ul class="xml-l" id="dXmlL"></ul><div class="xml-err" id="dXmlE" role="alert"></div></div>`,
     o => {
       if (!o.fecha) return false;
       const carpeta = (o.carpeta || "").trim();
       if (!carpetaValida(carpeta)) { toast("Falta la carpeta de OneDrive: pega su enlace (https://…) o su ruta.", "bad"); return false; }
+      const faltan = regs.filter(r => !(xmls.get(r.id) || []).length);
+      if (faltan.length) { toast(faltan.length === 1 ? `Falta el XML de la superficie ${codigosDe(faltan[0])[0] || ""}.` : `Faltan ${faltan.length} XML: ${faltan.slice(0, 3).map(r => codigosDe(r)[0]).join(", ")}${faltan.length > 3 ? "…" : ""}.`, "bad"); d.querySelector(".xml-ent .upbtn")?.focus(); return false; }
+      if (!navigator.onLine) { toast("Sin señal: para entregar con el XML se necesita conexión.", "bad"); return false; }
       recordarCarpeta(carpeta);
-      return cambiarEstado(ids, { fechaEntrega: Timestamp.fromDate(new Date(o.fecha + "T12:00:00")), numeroCargo: o.cargo, carpeta }, "EC", [o.cargo ? "Cargo " + o.cargo : "", "Carpeta: " + carpeta].filter(Boolean).join(" · "), k => `${k} ${k === 1 ? "entregada" : "entregadas"} a Calidad`).then(k => { if (!k) return false; S.bandeja.sel.clear(); S.bandeja.epHist = S.bandeja.epHist.filter(r => !ids.includes(r.id)); if (S.view === "bandeja") pintarBandeja(); cerrarFichaDe(ids); }); }, "Entregar");
+      const nota = [o.cargo ? "Cargo " + o.cargo : "", "Carpeta: " + carpeta].filter(Boolean).join(" · ");
+      return guardarSupEntrega(regs, xmls).then(ok => !ok ? false : cambiarEstado(ids, r => ({ fechaEntrega: Timestamp.fromDate(new Date(o.fecha + "T12:00:00")), numeroCargo: o.cargo, carpeta,
+        xmlEntrega: (xmls.get(r.id) || []).map(x => ({ archivo: x.archivo, superficie: x.nombre, codigo: x.codigo, supId: x.supId || "", subId: r.subestructuraId || "", grupo: x.grupo || "" })) }),
+        "EC", nota + " · XML: " + regs.map(r => (xmls.get(r.id) || []).map(x => x.archivo).join(", ")).filter(Boolean).join(" · "), k => `${k} ${k === 1 ? "entregada" : "entregadas"} a Calidad`).then(k => { if (!k) return false; S.bandeja.sel.clear(); S.bandeja.epHist = S.bandeja.epHist.filter(r => !ids.includes(r.id)); if (S.view === "bandeja") pintarBandeja(); cerrarFichaDe(ids); }));
+    }, "Entregar");
+  const ul = d.querySelector("#dXmlL"), er = d.querySelector("#dXmlE");
+  const pintarX = () => {
+    ul.innerHTML = regs.map(r => { const l = xmls.get(r.id) || []; return `<li><span class="mono">${esc(codigosDe(r).join(", ") || "Sin código")}</span>${l.length ? `<span class="xml-ok">✓ ${l.map(x => esc(x.nombre)).join(", ")}</span><small>${esc([...new Set(l.map(x => x.archivo))].join(", "))}</small>` : '<span class="xml-falta">Falta XML</span>'}</li>`; }).join("");
+  };
+  pintarX();
+  d.querySelector("#dXml").addEventListener("change", async e => {
+    const fl = await tomarArchivos(e.target); if (!fl.length) return;
+    er.innerHTML = '<p class="muted">Leyendo XML…</p>';
+    const errs = await xmlParaEntrega(fl, regs, xmls);
+    er.innerHTML = errs.map(t => `<p>${esc(t)}</p>`).join("");
+    pintarX();
+  });
 }
 // Devolver a pendientes se puede deshacer, así que no pide confirmación: el aviso trae «Deshacer»
 async function reabrir(r) {

@@ -1,5 +1,6 @@
 const { chromium, devices } = require('playwright'); const path = require('path'), fs = require('fs');
 const { tipo } = require('./filtros');
+const { supXml } = require('./xml');
 const OUT = path.join(__dirname, 'capturas', 'prueba5'); fs.mkdirSync(OUT, { recursive: true });
 const URL = 'http://127.0.0.1:8765/';
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
@@ -80,7 +81,11 @@ async function registrar(p, o) {
   await p.click('.dlg button[type=submit]'); await p.waitForTimeout(300);
   ok(!!(await p.$('.dlg.on #dCarpeta')), 'sin la carpeta de OneDrive no entrega');
   await p.fill('#dCarpeta', 'https://contoso-my.sharepoint.com/:f:/g/personal/cargo77');
-  await p.screenshot({ path: OUT + '/03-entregar.png' }); await p.click('.dlg button[type=submit]'); await p.waitForTimeout(400);
+  // Sin el XML de la superficie de cada una tampoco (versión 23)
+  await p.click('.dlg button[type=submit]'); await p.waitForTimeout(300);
+  ok(!!(await p.$('.dlg.on #dXml')) && /Faltan 2 XML/.test(await p.textContent('#toast')), 'sin el XML de las superficies no entrega');
+  await p.setInputFiles('.dlg.on #dXml', [supXml('SKT-TOP-02690'), supXml('SKT-TOP-02691')]); await p.waitForSelector('.dlg.on .xml-ok >> nth=1');
+  await p.screenshot({ path: OUT + '/03-entregar.png' }); await p.click('.dlg button[type=submit]'); await p.waitForTimeout(600);
   ok((await p.textContent('#toast')).includes('2 entregadas'), '2 entregadas a Calidad');
   ok((await p.evaluate(() => Object.values(window.__fakeStore()).filter(x => x.estado === 'EC' && x.carpeta === 'https://contoso-my.sharepoint.com/:f:/g/personal/cargo77').length)) === 2, 'las 2 guardan la carpeta de OneDrive');
   ok((await p.textContent('#blist')).includes('No hay liberaciones por entregar'), 'bandeja por entregar vacía');

@@ -51,6 +51,11 @@ service cloud.firestore {
       'pkInicio', 'pkFin', 'cota', 'area', 'descripcion', 'observaciones', 'linksCsv', 'linksFotos', 'archivos',
       'creadoPor', 'creadoEn', 'origen']); }
     function tocaPapelera() { return request.resource.data.diff(resource.data).affectedKeys().hasAny(['borrado']); }
+    // Entregar a Calidad exige el XML de la superficie (con el mismo código; la app lo revisa al subirlo)
+    function entregaConXml() {
+      return request.resource.data.get('estado', '') != 'EC' || resource.data.get('estado', '') == 'EC'
+        || (request.resource.data.get('xmlEntrega', []) is list && request.resource.data.get('xmlEntrega', []).size() > 0);
+    }
     // Código SKT-TOP único: una vez puesto, el número (y los protocolos con sus números) no cambia.
     // Un número nuevo solo vale si en la misma transacción el correlativo sube y el número termina en «último + 1»
     // (así nadie puede escribir a mano un código ya usado).
@@ -146,7 +151,7 @@ service cloud.firestore {
       // papelera si aún no tiene código. Jefe también puede depurar fotos (solo la lista de archivos)
       // marcar como procesados los levantamientos de aspas, marcar «Enterado» en los levantamientos y unir tipos o elementos repetidos.
       allow update: if isAdmin()
-        || (hasRol(['gabinete']) && sinTocarCampo() && numeroFijo() && (!tocaPapelera() || resource.data.get('numero', '') == ''))
+        || (hasRol(['gabinete']) && sinTocarCampo() && numeroFijo() && entregaConXml() && (!tocaPapelera() || resource.data.get('numero', '') == ''))
         || (isConf() && (request.resource.data.origen == 'excel' || soloPapelera() || soloArchivos() || soloProcesado() || soloVisto() || soloTipo()))
         || (writer()
           && resource.data.creadoPor == email()
@@ -159,7 +164,7 @@ service cloud.firestore {
           && request.resource.data.estado in ['PT', 'NA']
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
                'numero', 'protocolos', 'nombreLiberacion', 'generadoPor', 'fechaLiberacion', 'fechaEntrega',
-               'numeroCargo', 'carpeta', 'notaObservacion', 'notaRechazo', 'motivoEdicion', 'creadoPor', 'creadoEn', 'origen',
+               'numeroCargo', 'carpeta', 'xmlEntrega', 'notaObservacion', 'notaRechazo', 'motivoEdicion', 'creadoPor', 'creadoEn', 'origen',
                'borrado', 'borradoPor', 'borradoNombre', 'borradoEn',
                'procesado', 'procesadoPor', 'procesadoNombre', 'procesadoEn',
                'visto', 'vistoPor', 'vistoNombre', 'vistoEn']));

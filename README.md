@@ -71,6 +71,14 @@ Registros y Mis registros filtran por **fecha** (hoy, ayer, esta semana de lunes
 - La ficha muestra **«Abrir carpeta»** (o la ruta, con «Copiar»). Gabinete puede ponerla o cambiarla en registros en proceso o entregados («Poner carpeta OneDrive» / «Cambiar carpeta»); en los entregados antiguos sin carpeta la ficha dice «Falta».
 - La carpeta sale en el CSV exportado (columna «Carpeta OneDrive») y queda en el historial.
 
+## Entregar a Calidad: XML de la superficie (obligatorio)
+
+- Al **entregar a Calidad**, gabinete sube el **XML de Civil 3D** con la superficie de cada liberación («Subir XML» en el mismo diálogo). En grupo se eligen varios XML a la vez y cada uno se empareja por su código.
+- La superficie tiene que llevar en el nombre el **mismo código SKT-TOP** de la liberación (por ejemplo `2+220_2+260_STN F1_SKT-TOP-02686`). Si trae otro código, no tiene código o el archivo no es un LandXML, **no se acepta** y se dice por qué. Mientras falte el XML de alguna, no se entrega.
+- La superficie se guarda en el **Modelo 2D** de su frente con el tipo y la capa de la liberación, y la ficha muestra «Superficie (XML)» con el archivo entregado. El historial anota el XML.
+- Las reglas de Firebase también lo exigen: un cambio a «Entregado a Calidad» hecho por gabinete sin XML se rechaza.
+- **Jefe de área y administradores:** en Registros, el botón **«Superficies (XML)»** lleva a Panel → Modelo 2D, donde se ven las superficies de las liberaciones. En la ficha de un entregado, **«Ver en el modelo»** abre su frente y su capa con su superficie marcada.
+
 ## Aspas para vuelo de dron
 
 Los levantamientos de aspas registrados en campo llegan a la **Bandeja → Aspas** del administrador y del jefe de área (el jefe ve la Bandeja con Aspas y Levantamientos; gabinete no ve Aspas). Desde la ficha se descargan el CSV y las fotos, y se marcan como procesados uno por uno o varios juntos; también se pueden devolver a «Por procesar». El número del menú cuenta los que faltan procesar.
