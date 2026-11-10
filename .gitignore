@@ -1,0 +1,4 @@
+# Herramientas para correr las pruebas (Playwright); no se publican
+node_modules/
+# Informes de revisión (pueden traer detalles de seguridad); no se publican
+informes/

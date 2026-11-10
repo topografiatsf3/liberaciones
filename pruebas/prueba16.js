@@ -113,7 +113,7 @@ const lista = (p, k) => p.evaluate(k => (window.__fakeStore()['listas/' + k] || 
   ok(await p.$eval('[data-v="ajustes"]:not([hidden]) .badge', b => b.textContent) === '3', 'el menú Ajustes avisa 3 nombres nuevos por revisar');
   await p.click('[data-v="ajustes"]:not([hidden])'); await p.click('[data-tab="tipos"]'); await p.waitForSelector('#nvBox');
   ok(await p.$$eval('#nvBox .nv', r => r.length) === 3 && /Pedro Operario/.test(await p.textContent('#nvBox')), 'Ajustes → Tipos lista los agregados desde campo y quién los agregó');
-  ok(/se parece a «Relleno filtro/.test(await p.textContent('#nvBox [data-nt="' + t3.id + '"]')), 'y dice a qué se parece');
+  ok(/Unir con «Relleno filtro/.test(await p.textContent('#nvBox [data-nt="' + t3.id + '"] [data-k="unirP"]')), 'y ofrece unirlo con el parecido en un toque');
   await p.screenshot({ path: path.join(OUT, '4-ajustes.png'), fullPage: true });
   await p.click(`#nvBox [data-ne="${dr.id}"] [data-k="rev"]`); await p.waitForTimeout(400);
   ok((await lista(p, 'elementos')).find(e => e.id === dr.id).nuevo === false, '«Revisado» quita la marca');

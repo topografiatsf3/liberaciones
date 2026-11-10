@@ -51,13 +51,36 @@ service cloud.firestore {
       'pkInicio', 'pkFin', 'cota', 'area', 'descripcion', 'observaciones', 'linksCsv', 'linksFotos', 'archivos',
       'creadoPor', 'creadoEn', 'origen']); }
     function tocaPapelera() { return request.resource.data.diff(resource.data).affectedKeys().hasAny(['borrado']); }
+    // Código SKT-TOP único: una vez puesto, el número (y los protocolos con sus números) no cambia.
+    // Un número nuevo solo vale si en la misma transacción el correlativo sube y el número termina en «último + 1»
+    // (así nadie puede escribir a mano un código ya usado).
+    function contadorPath() { return /databases/$(database)/documents/contadores/skt; }
+    function codigoNuevo(n) {
+      return n is string && exists(contadorPath()) && existsAfter(contadorPath())
+        && getAfter(contadorPath()).data.ultimo > get(contadorPath()).data.ultimo
+        && n.matches('.*[^0-9]0*' + string(get(contadorPath()).data.ultimo + 1));
+    }
+    function numeroFijo() {
+      let antes = resource.data.get('numero', '');
+      let ahora = request.resource.data.get('numero', '');
+      return (ahora == antes && request.resource.data.get('protocolos', null) == resource.data.get('protocolos', null))
+        || (antes == '' && codigoNuevo(ahora));
+    }
     function member()  { return isOwner() || hasRol(['topografo', 'operario', 'gabinete', 'jefe', 'admin']); }
 
     // Cuentas con acceso (id = correo en minúsculas)
+    // El jefe de área administra cuentas, pero no la suya (no se sube de rol ni se desactiva)
+    // ni la de un administrador, y no puede crear administradores.
     match /usuarios/{correo} {
       allow read: if signedIn() && (email() == correo || member());
-      allow write: if isConf()
-        && (correo != 'brandonkluivertvillegasfranco@gmail.com' || isOwner());
+      allow create, update: if isConf()
+        && (correo != 'brandonkluivertvillegasfranco@gmail.com' || isOwner())
+        && (isAdmin() || (correo != email()
+              && request.resource.data.get('rol', '') != 'admin'
+              && (resource == null || resource.data.get('rol', '') != 'admin')));
+      allow delete: if isConf()
+        && correo != 'brandonkluivertvillegasfranco@gmail.com'
+        && (isAdmin() || (correo != email() && resource.data.get('rol', '') != 'admin'));
     }
 
     // Pedidos de acceso de cuentas nuevas
@@ -74,11 +97,29 @@ service cloud.firestore {
       allow write: if isConf() || (id in ['tipos', 'elementos'] && writer() && soloAgrega());
     }
     match /config/{id}     { allow read: if member(); allow write: if isConf(); }
-    match /contadores/{id} { allow read: if member(); allow write: if isGab() || isConf(); }
+    // El correlativo solo sube (nunca se baja para reutilizar códigos); bajarlo o borrarlo, solo el administrador
+    match /contadores/{id} {
+      allow read: if member();
+      allow create: if (isGab() || isConf()) && request.resource.data.ultimo is int;
+      allow update: if isAdmin() || ((isGab() || isConf())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ultimo', 'editadoPor', 'editadoEn'])
+        && request.resource.data.ultimo is int && request.resource.data.ultimo > resource.data.ultimo);
+      allow delete: if isAdmin();
+    }
     match /ejes/{id}       { allow read: if member(); allow write: if isGab() || isConf(); }
     match /capas/{id}      { allow read: if member(); allow write: if isConf(); }
-    // Resumen por frente para el panel (se actualiza junto con cada registro)
-    match /resumen/{id}    { allow read: if member(); allow write: if writer() || isConf(); }
+    // Resumen por frente para el panel (se actualiza junto con cada registro).
+    // Campo solo agrega o actualiza sus filas: no puede vaciarlo, borrarlo ni llenarlo de golpe.
+    match /resumen/{id} {
+      allow read: if member();
+      allow create: if isGab() || isConf() || (writer()
+        && request.resource.data.keys().hasOnly(['r']) && request.resource.data.r.size() <= 200);
+      allow update: if isGab() || isConf() || (writer()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['r'])
+        && request.resource.data.r.size() >= resource.data.r.size() - 1
+        && request.resource.data.r.size() <= resource.data.r.size() + 200);
+      allow delete: if isConf();
+    }
 
     // Modelo 2D de gabinete: secciones de diseño del frente y superficie de cada liberación
     match /secciones/{id}      { allow read: if isGab() || isConf(); allow write: if isGab() || isConf(); }
@@ -105,7 +146,7 @@ service cloud.firestore {
       // papelera si aún no tiene código. Jefe también puede depurar fotos (solo la lista de archivos)
       // marcar como procesados los levantamientos de aspas, marcar «Enterado» en los levantamientos y unir tipos o elementos repetidos.
       allow update: if isAdmin()
-        || (hasRol(['gabinete']) && sinTocarCampo() && (!tocaPapelera() || resource.data.get('numero', '') == ''))
+        || (hasRol(['gabinete']) && sinTocarCampo() && numeroFijo() && (!tocaPapelera() || resource.data.get('numero', '') == ''))
         || (isConf() && (request.resource.data.origen == 'excel' || soloPapelera() || soloArchivos() || soloProcesado() || soloVisto() || soloTipo()))
         || (writer()
           && resource.data.creadoPor == email()
@@ -117,8 +158,8 @@ service cloud.firestore {
           && resource.data.estado in ['PT', 'OB', 'NA']
           && request.resource.data.estado in ['PT', 'NA']
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-               'numero', 'nombreLiberacion', 'generadoPor', 'fechaLiberacion', 'fechaEntrega',
-               'numeroCargo', 'notaObservacion', 'notaRechazo', 'motivoEdicion', 'creadoPor', 'creadoEn', 'origen',
+               'numero', 'protocolos', 'nombreLiberacion', 'generadoPor', 'fechaLiberacion', 'fechaEntrega',
+               'numeroCargo', 'carpeta', 'notaObservacion', 'notaRechazo', 'motivoEdicion', 'creadoPor', 'creadoEn', 'origen',
                'borrado', 'borradoPor', 'borradoNombre', 'borradoEn',
                'procesado', 'procesadoPor', 'procesadoNombre', 'procesadoEn',
                'visto', 'vistoPor', 'vistoNombre', 'vistoEn']));
@@ -132,6 +173,7 @@ service cloud.firestore {
       allow read: if member();
       allow create: if writer()
         && request.resource.data.creadoPor == email()
+        && request.resource.data.tipo in ['csv', 'foto']
         && request.resource.data.datos is string
         && request.resource.data.datos.size() <= 1000000;
       allow update: if false;

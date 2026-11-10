@@ -16,7 +16,9 @@ async function preparar(ctx) {
 }
 const store = p => p.evaluate(() => window.__fakeStore());
 const escuchar = (p, n) => { p.on('pageerror', e => { errores.push(n + ': ' + e.message); console.log('PAGEERROR', n, e.message); }); p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts/.test(m.text())) { errores.push(n + ': ' + m.text()); console.log('CONSOLE', n, m.text()); } }); };
-const ahora = Date.now(), dia = 86400e3;
+const dia = 86400e3;
+// «Hace una hora», pero sin pasar al día anterior si la prueba corre justo después de medianoche
+const ahora = Math.max(Date.now(), new Date().setHours(0, 0, 0, 0) + 3 * 3600e3);
 const reg = (extra) => ({ actividad: 'LIB', estado: 'PT', numero: '', creadoPor: 'operario@gmail.com', origen: 'app', estructuraId: 'pp', subestructuraId: 'pp-oeste', elementoId: 'mt', tipoId: 'filtro1', capa: 'Capa 11', topografoId: 'GN', descripcion: 'Liberación de relleno filtro 1 capa 11', fechaCampo: { __ts: ahora - 3600e3 }, creadoEn: { __ts: ahora - 3600e3 }, archivos: [], ...extra });
 async function entrarComo(p, u) { await p.click('#btnSalir'); await p.waitForSelector('#gEntrar'); await p.evaluate(u => { window.__fakeLogin = u; }, u); await p.click('#gEntrar'); await p.waitForSelector('#nav button'); }
 const aceptarDlg = async p => { await p.waitForSelector('.dlg.on [type=submit]'); await p.waitForTimeout(250); await p.click('.dlg.on [type=submit]'); await p.waitForTimeout(300); };
@@ -75,7 +77,7 @@ const aceptarDlg = async p => { await p.waitForSelector('.dlg.on [type=submit]')
   await p.click('[data-v="ajustes"]:not([hidden])'); await p.click('[data-tab="exportar"]'); await p.waitForSelector('#xDia');
   await p.click('[data-r="semana"]'); const dl = p.waitForEvent('download'); await p.click('#xDia'); const f = await dl;
   const csv = fs.readFileSync(await f.path(), 'utf8');
-  ok(csv.split('\r\n')[0].includes('Rechazadas') && /Capa 11,1,40,0,0,1,1/.test(csv), 'avance diario: el rechazado va en su columna y no suma metros');
+  ok(csv.split('\r\n')[0].includes('Rechazadas') && /Capa 11,1,40,0,0,1,1/.test(csv), 'avance diario: el rechazado va en su columna y no suma metros' + (/Capa 11,1,40,0,0,1,1/.test(csv) ? '' : ' · CSV: ' + csv.split('\r\n').slice(0, 6).join(' | ')));
   // Correlativo: subir a 02692 (el próximo será 02693) y no dejar bajarlo
   await p.click('[data-tab="historico"]'); await p.waitForFunction(() => /siguiente/.test(document.querySelector('#cActual')?.textContent || ''));
   ok((await p.textContent('#cActual')).includes('SKT-TOP-02689'), 'correlativo: muestra el último usado (' + (await p.textContent('#cActual')) + ')');

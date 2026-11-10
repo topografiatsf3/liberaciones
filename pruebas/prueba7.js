@@ -23,10 +23,10 @@ async function preparar(ctx) {
     st['usuarios/operario@gmail.com'] = { nombre: 'Pedro Operario', rol: 'operario', topografoId: 'GN', activo: true };
     localStorage.setItem('__fakeDB', JSON.stringify(st)); localStorage.setItem('__fakeUser', JSON.stringify(u)); }, [d, ADMIN]);
   await p.reload(); await p.waitForSelector('#nav button');
-  await p.waitForFunction(() => Object.keys(window.__fakeStore()).some(k => k.startsWith('resumen/')), null, { timeout: 20000 });
-  const res = await p.evaluate(() => { const s = window.__fakeStore(); const r = Object.keys(s).filter(k => k.startsWith('resumen/')); return { docs: r.length, oeste: Object.keys(s['resumen/pp-oeste'].r).length, kb: Math.round(JSON.stringify(s['resumen/pp-oeste']).length / 1024) }; });
-  ok(res.docs >= 10 && res.oeste > 800, `el administrador prepara el resumen solo: ${res.docs} frentes, Oeste con ${res.oeste} registros en ${res.kb} KB`);
-  ok((await p.evaluate(() => window.__fakeStore()['config/general'].resumenV)) === 1, 'queda marcado para no repetirlo');
+  await p.waitForFunction(() => window.__fakeStore()['config/general']?.resumenV === 2, null, { timeout: 20000 });
+  const res = await p.evaluate(() => { const s = window.__fakeStore(); const r = Object.keys(s).filter(k => k.startsWith('resumen/')); const partes = r.filter(k => /^resumen\/pp-oeste(~\d)?$/.test(k)); const frentes = new Set(r.map(k => k.slice(8).split('~')[0])); return { docs: frentes.size, partes: partes.length, oeste: partes.reduce((t, k) => t + Object.keys(s[k].r).length, 0), kb: Math.max(...partes.map(k => Math.round(JSON.stringify(s[k]).length / 1024))) }; });
+  ok(res.docs >= 10 && res.oeste > 800 && res.partes === 4, `el administrador prepara el resumen solo: ${res.docs} frentes, Oeste con ${res.oeste} registros en ${res.partes} partes (la mayor de ${res.kb} KB)`);
+  ok((await p.evaluate(() => window.__fakeStore()['config/general'].resumenV)) === 2, 'queda marcado para no repetirlo');
   await p.click('#btnSalir'); await p.waitForSelector('#gEntrar');
 
   // Operario en celular: el panel abre en «Qué falta»
@@ -67,7 +67,7 @@ async function preparar(ctx) {
   const mis = await p.evaluate(() => Object.values(window.__fakeStore()).filter(x => x.creadoPor === 'operario@gmail.com').map(x => x.capa));
   ok(mis.length === 3 && mis.every(c => c === 'Capa 31'), `3 registros seguidos guardados, todos «Capa 31» (${mis.join(', ')})`);
   // El resumen se actualizó con lo nuevo
-  const enRes = await p.evaluate(() => Object.values(window.__fakeStore()['resumen/pp-oeste'].r).filter(a => a[1] === 'Capa 31' && a[4] === 'PT').length);
+  const enRes = await p.evaluate(() => Object.values((s => Object.assign({}, ...Object.keys(s).filter(k => /^resumen\/pp-oeste(~\d)?$/.test(k)).sort().map(k => s[k].r)))(window.__fakeStore())).filter(a => a[1] === 'Capa 31' && a[4] === 'PT').length);
   ok(enRes === 3, 'el resumen del frente incluye los 3 nuevos al instante');
   await p.click('[data-v="panel"]'); await p.waitForSelector('.qflist');
   ok((await p.textContent('.qflist')).includes('Capa 31'), 'la capa nueva aparece en «Qué falta»');
@@ -88,7 +88,7 @@ async function preparar(ctx) {
   await p.click('[data-v="bandeja"]'); await p.waitForSelector('.brow');
   ok(await p.$$eval('.brow', r => r.length) === 3, 'bandeja con los 3 nuevos');
   await p.click('#bAll2'); await p.click('[data-bk="aceptar"]'); await p.waitForTimeout(600);
-  const r3 = await p.evaluate(() => Object.values(window.__fakeStore()['resumen/pp-oeste'].r).filter(a => a[1] === 'Capa 31').map(a => a[4] + ' ' + a[6]).sort());
+  const r3 = await p.evaluate(() => Object.values((s => Object.assign({}, ...Object.keys(s).filter(k => /^resumen\/pp-oeste(~\d)?$/.test(k)).sort().map(k => s[k].r)))(window.__fakeStore())).filter(a => a[1] === 'Capa 31').map(a => a[4] + ' ' + a[6]).sort());
   ok(r3.every(x => x.startsWith('EP SKT-TOP-0269')), 'el resumen recibe el código y el estado al aceptar: ' + r3.join(', '));
   await p.click('[data-bt="EP"]'); await p.waitForSelector('.brow');
   ok(await p.$$eval('.brow', r => r.length) === 3, '«Por entregar» muestra solo lo de la app (3), no las 727 del histórico');

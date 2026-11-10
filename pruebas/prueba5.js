@@ -75,8 +75,14 @@ async function registrar(p, o) {
   const nums = await p.$$eval('.brow .num', n => n.map(x => x.textContent).sort());
   ok(nums.join() === 'SKT-TOP-02690,SKT-TOP-02691', 'códigos únicos y correlativos: ' + nums.join(', '));
   await p.click('#bAll2'); await p.click('[data-bk="entregar"]'); await p.waitForSelector('.dlg.on');
-  await p.fill('#dCargo', 'CARGO-77'); await p.screenshot({ path: OUT + '/03-entregar.png' }); await p.click('.dlg button[type=submit]'); await p.waitForTimeout(400);
+  await p.fill('#dCargo', 'CARGO-77');
+  // Sin la carpeta de OneDrive no deja entregar
+  await p.click('.dlg button[type=submit]'); await p.waitForTimeout(300);
+  ok(!!(await p.$('.dlg.on #dCarpeta')), 'sin la carpeta de OneDrive no entrega');
+  await p.fill('#dCarpeta', 'https://contoso-my.sharepoint.com/:f:/g/personal/cargo77');
+  await p.screenshot({ path: OUT + '/03-entregar.png' }); await p.click('.dlg button[type=submit]'); await p.waitForTimeout(400);
   ok((await p.textContent('#toast')).includes('2 entregadas'), '2 entregadas a Calidad');
+  ok((await p.evaluate(() => Object.values(window.__fakeStore()).filter(x => x.estado === 'EC' && x.carpeta === 'https://contoso-my.sharepoint.com/:f:/g/personal/cargo77').length)) === 2, 'las 2 guardan la carpeta de OneDrive');
   ok((await p.textContent('#blist')).includes('No hay liberaciones por entregar'), 'bandeja por entregar vacía');
   // Ficha con acciones desde Registros
   await p.click('[data-v="todos"]'); await p.waitForSelector('.item');
@@ -88,6 +94,9 @@ async function registrar(p, o) {
   // Operario ve observación y código
   await login(p, OPER); await p.waitForSelector('#nav button'); await p.click('[data-v="mis"]'); await p.waitForSelector('.item');
   ok((await p.textContent('.list')).includes('Observación: Falta la foto'), 'operario ve la observación');
+  // Con observados por corregir, «Mis registros» abre directo en ellos; «Todos» muestra el resto
+  ok(await p.getAttribute('[data-st="OB"]', 'aria-pressed') === 'true' && await p.$$eval('#lista .item', i => i.length) === 1, 'Mis registros abre en «Observado» cuando hay algo por corregir');
+  await p.click('[data-st=""]'); await p.waitForTimeout(200);
   ok((await p.textContent('.list')).includes('SKT-TOP-02690'), 'operario ve el código asignado');
   ok(await p.$$eval('.item .st.EC', s => s.length) === 2, 'dos entregadas a Calidad');
   await p.screenshot({ path: OUT + '/04-operario-mis.png', fullPage: true });

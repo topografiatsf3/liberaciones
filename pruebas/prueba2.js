@@ -170,11 +170,12 @@ async function registrar(page, o) {
 
   // Ajustes: tipos (ordenar) y descarte
   await page.click('[data-v="ajustes"]:not([hidden])'); await page.click('[data-tab="tipos"]'); await page.waitForSelector('#tyList');
-  await page.click('#tyList [data-i="1"] [data-k="up"]');
-  ok((await page.inputValue('#tyList [data-i="0"] [data-k="nom"]')) === 'Superficie de terreno nivelado', 'subir tipo cambia el orden');
+  await page.click('[data-tyv="ord"]'); await page.waitForSelector('#tyOrd');
+  await page.click('#tyOrd .tyord:nth-child(2) [data-k="up"]'); await page.waitForTimeout(200);
+  ok((await page.textContent('#tyOrd .tyord:nth-child(1) .tynom b')) === 'Superficie de terreno nivelado', 'subir tipo cambia el orden');
   await page.screenshot({ path: OUT + '/07-tipos.png' });
-  await page.reload(); await page.waitForSelector('#nav button'); await page.click('[data-v="ajustes"]:not([hidden])'); await page.click('[data-tab="tipos"]'); await page.waitForSelector('#tyList');
-  ok((await page.inputValue('#tyList [data-i="0"] [data-k="nom"]')) === 'Superficie de terreno nivelado', 'el orden se guardó solo');
+  await page.reload(); await page.waitForSelector('#nav button'); await page.click('[data-v="ajustes"]:not([hidden])'); await page.click('[data-tab="tipos"]'); await page.waitForSelector('#tyOrd');
+  ok((await page.textContent('#tyOrd .tyord:nth-child(1) .tynom b')) === 'Superficie de terreno nivelado', 'el orden se guardó solo (y recuerda la vista «Orden en el perfil»)');
 
   // Escritorio
   const ctx2 = await b.newContext({ viewport: { width: 1280, height: 900 } }); await preparar(ctx2);

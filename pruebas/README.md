@@ -8,13 +8,15 @@ Pruebas automáticas que abren la app en un navegador real (Chromium con Playwri
 
 ## Cómo correrlas
 
-Requisitos: Node.js, Python 3 y Playwright con Chromium.
+Requisitos: Node.js y Playwright con Chromium (el servidor de prueba es `servidor.js`, en Node). Python 3 solo hace falta para regenerar los datos de `datos/`.
 
 ```
 npm i -D playwright && npx playwright install chromium
 bash pruebas/correr.sh            # todas
 bash pruebas/correr.sh prueba5    # una sola
 ```
+
+En Windows sin bash: `powershell -ExecutionPolicy Bypass -File pruebas\correr.ps1` (todas) o `... pruebas\correr.ps1 prueba5 prueba25` (algunas).
 
 | Prueba | Qué revisa |
 |---|---|
@@ -41,6 +43,8 @@ bash pruebas/correr.sh prueba5    # una sola
 | prueba22 | Modelo 2D fácil de encontrar: frentes con modelo marcados, un frente vacío dice dónde sí hay, la capa con base se elige sola con su porcentaje y se recuerda la capa elegida en cada frente |
 | prueba23 | Mejoras de diseño: descripción que se llena sola, aviso sin señal, título según la actividad, aviso del PK, actividad segmentada, 44 px y 13 px en celular, contraste, «Observado» rayado, esquinas, ojo para ocultar capas, botón «⋯», menú de 5 botones con engranaje, «Enterado» y «Panel», y el punto que late solo con pendientes |
 | prueba24 | Ronda 2: bandeja y Registros caben a 1024 y 1366 px con «⋯», perfil en celular (nombre arriba, últimas 5 capas, «Ver todas»), recuadro de datos para corregir, el dron no se arrastra, ejemplos con «Ej.:», nombres cortos de actividad y «N/A» que no es capa |
+| prueba26 | Panel: avance sin contar dos veces lo «no se libera», eje CSV en formato español, bases con varias islas, borde de TIN con hueco, resumen repartido en 4 partes; carpeta de OneDrive en la ficha y en el CSV; Ajustes → Tipos (catálogo por elemento, buscador, unir con el parecido, desactivar con «Deshacer», mover a una posición); Usuarios del jefe; «Depurar fotos» explica por qué no hay |
+| prueba25 | Productividad: observado → corregido (nota visible al editar, «Corregido» en la Bandeja, historial con lo que cambió) → re-aceptado con su mismo código, búsqueda sin tildes, duplicar un rechazado, Bandeja con teclado y Mayús+clic, ficha con anterior/siguiente que pasa sola al siguiente, «Deshacer», filtros que se recuerdan, varios estados, «Esta semana» y «Ver más» en Mis registros |
 | prueba10 | Ficha en pantallas medianas, «atrás», búsqueda por capa, aceptar sin señal, gabinete sin «Editar» (solo cambiar capa), superposición, depuración de fotos, jefe en Modelo 2D |
 
 `capturas.js` toma fotos de las pantallas principales en celular y computadora (`node pruebas/capturas.js <carpeta>`), útil para comparar antes y después de un cambio de diseño. `filtros.js` reúne las ayudas que usan las pruebas para manejar los filtros del panel.

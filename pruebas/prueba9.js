@@ -12,6 +12,8 @@ async function preparar(ctx) {
   await ctx.route(/fonts\./, r => r.abort());
 }
 const store = p => p.evaluate(() => window.__fakeStore());
+// El resumen de un frente va repartido en partes («pp-oeste», «pp-oeste~1»…): se juntan aquí
+const resDe = (s, sid) => ({ r: Object.assign({}, ...Object.keys(s).filter(k => k === 'resumen/' + sid || k.startsWith('resumen/' + sid + '~')).sort().map(k => s[k].r)) });
 const escuchar = (p, n) => { p.on('pageerror', e => { errores.push(n + ': ' + e.message); console.log('PAGEERROR', n, e.message); }); p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts/.test(m.text())) { errores.push(n + ': ' + m.text()); console.log('CONSOLE', n, m.text()); } }); };
 const nuevo = (id, extra) => ({ actividad: 'LIB', estado: 'PT', numero: '', creadoPor: 'operario@gmail.com', origen: 'app', estructuraId: 'pp', subestructuraId: 'pp-oeste', elementoId: 'mt', tipoId: 'filtro1', capa: 'Capa 11', topografoId: 'GN', descripcion: 'Liberación de relleno filtro 1 capa 11 ' + id, fechaCampo: { __ts: Date.now() - 3600e3 }, creadoEn: { __ts: Date.now() - 3600e3 }, archivos: [], ...extra });
 async function entrarComo(p, u) { await p.click('#btnSalir'); await p.waitForSelector('#gEntrar'); await p.evaluate(u => { window.__fakeLogin = u; }, u); await p.click('#gEntrar'); await p.waitForSelector('#nav button'); }
@@ -116,7 +118,7 @@ async function entrarComo(p, u) { await p.click('#btnSalir'); await p.waitForSel
   await p.fill('.dlg #dRech', 'Tramo duplicado con SKT-TOP-02684'); await p.click('.dlg [type=submit]'); await p.waitForTimeout(400);
   const n1 = (await store(p))['liberaciones/n1'];
   ok(n1.estado === 'RE' && n1.notaRechazo === 'Tramo duplicado con SKT-TOP-02684', 'rechazado con su motivo');
-  ok((await store(p))['resumen/pp-oeste'].r.n1[4] === 'RE', 'el resumen lo marca rechazado (no cuenta en el avance)');
+  ok(resDe(await store(p), 'pp-oeste').r.n1[4] === 'RE', 'el resumen lo marca rechazado (no cuenta en el avance)');
   ok(!(await p.$('.btab tr[data-rid="n1"]')), 'sale de la bandeja');
   // Clic derecho en la bandeja
   const tr2 = await p.$('.btab tr[data-rid="n2"] td:nth-child(4)'); const b2 = await tr2.boundingBox();
@@ -132,7 +134,8 @@ async function entrarComo(p, u) { await p.click('#btnSalir'); await p.waitForSel
   ok((await p.textContent('.rtab tr[data-id="n1"]')).includes('Rechazo: Tramo duplicado'), 'Registros: filtro «Rechazado» con el motivo');
   await p.click('.rtab tr[data-id="n1"] td:nth-child(4)'); await p.waitForSelector('#sheet.on #fReabrir');
   await p.waitForTimeout(450); await p.screenshot({ path: OUT + '/06-ficha-lateral.png' });
-  await p.click('#fReabrir'); await p.waitForSelector('.dlg .dlg-p'); ok((await p.textContent('.dlg .dlg-p')).includes('se quita el rechazo'), 'deshacer el rechazo pide confirmar'); await p.click('.dlg [type=submit]'); await p.waitForTimeout(400);
+  // «Devolver a pendientes» ya no pide confirmar: se puede deshacer desde el aviso
+  await p.click('#fReabrir'); await p.waitForTimeout(400); ok(!(await p.$('.dlg.on')) && !!(await p.$('#toast .toast-btn')), 'devolver el rechazado no pide confirmar y el aviso trae «Deshacer»');
   ok((await store(p))['liberaciones/n1'].estado === 'PT', 'gabinete devuelve el rechazado a pendientes');
   await p.click('.chip[data-st=""]');
   // Casillas y papelera
@@ -145,12 +148,12 @@ async function entrarComo(p, u) { await p.click('#btnSalir'); await p.waitForSel
   await p.click('#rBulk [data-rk="papelera"]'); await p.waitForSelector('.dlg .dlg-p'); await p.click('.dlg [type=submit]'); await p.waitForTimeout(500);
   const st2 = await store(p), borr = Object.entries(st2).filter(([k, v]) => k.startsWith('liberaciones/') && v.borrado).map(([k]) => k);
   ok(borr.length === 2, 'mandados a la papelera: ' + borr.join(', '));
-  ok(!st2['resumen/pp-oeste'].r.n2, 'salen del resumen del panel');
+  ok(!resDe(st2, 'pp-oeste').r.n2, 'salen del resumen del panel');
   await p.click('[data-pap="1"]'); await p.waitForSelector('.rtab tr[data-id="n2"]');
   ok(await p.$$eval('.rtab tbody tr', x => x.length) === 2, 'pestaña Papelera con los 2');
   await p.screenshot({ path: OUT + '/07-papelera.png' });
   await p.click('.rtab tr[data-id="n2"] [data-ck]'); await p.click('#rBulk [data-rk="restaurar"]'); await p.waitForSelector('.dlg .dlg-p'); await p.click('.dlg [type=submit]'); await p.waitForTimeout(500);
-  ok(!(await store(p))['liberaciones/n2'].borrado && (await store(p))['resumen/pp-oeste'].r.n2, 'restaurar: vuelve a las listas y al panel');
+  ok(!(await store(p))['liberaciones/n2'].borrado && resDe(await store(p), 'pp-oeste').r.n2, 'restaurar: vuelve a las listas y al panel');
   await p.waitForSelector('#rVaciar'); await p.click('#rVaciar'); await p.waitForSelector('.dlg .dlg-p'); await p.click('.dlg [type=submit]'); await p.waitForTimeout(500);
   ok(Object.values(await store(p)).filter(v => v && v.borrado).length === 0, 'vaciar papelera borra para siempre');
 
@@ -167,8 +170,13 @@ async function entrarComo(p, u) { await p.click('#btnSalir'); await p.waitForSel
   await entrarComo(p, OPER);
   ok(await p.$eval('.nav', n => n.getBoundingClientRect().x === 0 && n.getBoundingClientRect().height > 800), 'operario en computadora: mismo menú lateral');
   ok(!(await p.$('.nbuscar')), 'operario: sin buscador Ctrl+K');
-  await p.keyboard.press('Control+k'); await p.waitForTimeout(200); ok(!(await p.$('#cmdk')), 'operario: Ctrl+K no hace nada');
-  await p.click('[data-v="mis"]'); await p.waitForSelector('.item[data-id="n1"]');
+  // Ctrl+K ahora también sirve a operarios y topógrafos, pero solo busca en sus propios registros
+  await p.keyboard.press('Control+k'); await p.waitForTimeout(200); ok(!!(await p.$('#cmdk')), 'operario: Ctrl+K busca en sus registros');
+  await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+  await p.click('[data-v="mis"]'); await p.waitForSelector('#lista');
+  // Si tiene observados, Mis registros abre en ellos: se pasa a «Todos»
+  if (await p.getAttribute('[data-st=""]', 'aria-pressed') !== 'true') { await p.click('[data-st=""]'); }
+  await p.waitForSelector('.item[data-id="n1"]');
   ok(!(await p.$('.rtab')), 'operario ve tarjetas, no la tabla');
   const ib = await (await p.$('.item[data-id="n1"]')).boundingBox(); await p.mouse.click(ib.x + 40, ib.y + 20, { button: 'right' }); await p.waitForTimeout(200);
   ok(!(await p.$('#ctx')), 'operario: sin menú de clic derecho');
