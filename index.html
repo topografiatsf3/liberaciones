@@ -1314,7 +1314,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 21;
+const VERSION_APP = 22;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -1778,6 +1778,27 @@ async function comprimirFoto(file) {
   }
   throw new Error("La foto es demasiado grande");
 }
+// Android a veces niega leer un archivo elegido: viene de Drive o WhatsApp con poca señal, todavía se está copiando,
+// o el selector se vació antes de leerlo. Por eso se copia a memoria en el mismo momento de elegirlo (antes de vaciar
+// el selector), se reintenta y, si aun así falla, se explica en español qué hacer y se ofrece volver a elegirlo.
+const errLectura = e => /NotReadable|NotFound|Security|Abort/.test((e && e.name) || "");
+async function copiarArchivo(file) {
+  for (let i = 0; ; i++) {
+    try { return new File([await file.arrayBuffer()], file.name, { type: file.type, lastModified: file.lastModified }); }
+    catch (e) { if (i >= 2 || !errLectura(e)) throw e; await new Promise(r => setTimeout(r, 700 * (i + 1))); }
+  }
+}
+const msgLectura = (nombres, e) => errLectura(e)
+  ? `El teléfono no dejó leer ${nombres.map(n => `«${n}»`).join(", ")}. Guárdalo primero en el teléfono (Descargas) y elígelo desde «Archivos»; si está en Drive o WhatsApp, descárgalo antes.`
+  : `No se pudo cargar ${nombres.map(n => `«${n}»`).join(", ")}: ${(e && e.message) || e}`;
+async function tomarArchivos(input) {
+  const fl = [...input.files], id = input.id;
+  const res = await Promise.allSettled(fl.map(copiarArchivo)); // las lecturas empiezan ya, antes de vaciar el selector
+  input.value = "";
+  const malos = res.map((r, i) => r.status === "rejected" ? i : -1).filter(i => i >= 0);
+  if (malos.length) toast(msgLectura(malos.map(i => fl[i].name), res[malos[0]].reason), "bad", { t: "Elegir de nuevo", fn: () => document.getElementById(id)?.click() });
+  return res.filter(r => r.status === "fulfilled").map(r => r.value);
+}
 async function leerArchivos(files, tipo) {
   const f = S.form; leerCampos();
   for (const file of files) {
@@ -1792,7 +1813,7 @@ async function leerArchivos(files, tipo) {
         const d = await comprimirFoto(file);
         f.archivos.push({ id: rid(), tipo: "foto", nombre: (file.name || "foto.jpg").replace(/\.(heic|heif)$/i, ".jpg"), tam: Math.round(d.length * 0.75), datos: d, nuevo: true });
       }
-    } catch (e) { toast(`No se pudo cargar «${file.name}»: ${e.message}`, "bad"); }
+    } catch (e) { toast(msgLectura([file.name], e), "bad"); }
   }
   pintarForm();
 }
@@ -2082,8 +2103,8 @@ function conectarForm() {
     const da = e.target.closest("[data-delarch]");
     if (da) { leerCampos(); const a0 = f.archivos[+da.dataset.delarch]; if (a0 && !a0.nuevo && !await confirmar("Quitar archivo", `«${esc(a0.nombre || "archivo")}» se borra al guardar el registro.`, "Quitar", true)) return; const [a] = f.archivos.splice(+da.dataset.delarch, 1); if (a && !a.nuevo) f.borrarArchivos.push(a.id); pintarForm(); }
   });
-  $("#fCsv").addEventListener("change", e => { const fl = [...e.target.files]; e.target.value = ""; if (fl.length) leerArchivos(fl, "csv"); });
-  $("#fFoto").addEventListener("change", e => { const fl = [...e.target.files]; e.target.value = ""; if (fl.length) leerArchivos(fl, "foto"); });
+  $("#fCsv").addEventListener("change", async e => { const fl = await tomarArchivos(e.target); if (fl.length) leerArchivos(fl, "csv"); });
+  $("#fFoto").addEventListener("change", async e => { const fl = await tomarArchivos(e.target); if (fl.length) leerArchivos(fl, "foto"); });
   $("#bLimpiar").addEventListener("click", async () => {
     leerCampos();
     if (S.editando) { const r = S.editando, a = formDesde(r), cambio = Object.keys(a).some(k => JSON.stringify(a[k]) !== JSON.stringify(f[k]));
@@ -4504,9 +4525,9 @@ function pintarModelo() {
   $("#pSub").addEventListener("change", e => irFrente(e.target.value));
   $("#mGrupo").addEventListener("change", e => { P.mGrupo = e.target.value; guardarCapaSub(P.subId, P.mGrupo); P.mSel = ""; P.mVB = null; irPrimera(); dibujarModelo(); centrarSta(); });
   suscribirHayModelo(); marcarFrentes();
-  $("#mBaseFile").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) subirBase(f); });
+  $("#mBaseFile").addEventListener("change", async e => { const [f] = await tomarArchivos(e.target); if (f) subirBase(f); });
   $(".chart-h .tabs").addEventListener("click", e => { const b = e.target.closest("[data-vista]"); if (b) { P.vista = b.dataset.vista; ls.set("lib.panelVista", P.vista); pintarPanel(); } });
-  $("#mFile").addEventListener("change", e => { const f = [...e.target.files]; e.target.value = ""; if (f.length) subirXmlModelo(f); });
+  $("#mFile").addEventListener("change", async e => { const f = await tomarArchivos(e.target); if (f.length) subirXmlModelo(f); });
   $("#mRoot").addEventListener("click", e => {
     const fr = e.target.closest("[data-irsub]"); if (fr) { irFrente(fr.dataset.irsub); return; }
     if (e.target.closest("[data-vercapas]")) { const c = $("#mCapas .capl"); if (c) { c.scrollIntoView({ behavior: "smooth", block: "start" }); c.classList.add("resalta"); setTimeout(() => c.classList.remove("resalta"), 1400); } return; }
@@ -5797,7 +5818,7 @@ function ajHistorico() {
   <div class="card section"><h2>Resumen del panel</h2><p class="muted small" style="margin:0 0 10px">El panel lee un resumen por frente para gastar pocas lecturas. Se actualiza solo con cada registro; usa este botón solo si ves algo raro en el panel.</p>
     <div class="actions" style="margin:0 0 10px"><button type="button" class="btn sec" id="hRes2">Reconstruir resumen</button></div></div>`;
   $("#hFile").addEventListener("change", async e => {
-    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    const [f] = await tomarArchivos(e.target); if (!f) return;
     try {
       const d = JSON.parse(await f.text());
       if (!d || !Array.isArray(d.registros) || !d.registros.length || !d.registros[0].numero) throw new Error("no es el archivo del histórico");
