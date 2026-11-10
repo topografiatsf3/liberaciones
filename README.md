@@ -79,6 +79,13 @@ Registros y Mis registros filtran por **fecha** (hoy, ayer, esta semana de lunes
 - Las reglas de Firebase también lo exigen: un cambio a «Entregado a Calidad» hecho por gabinete sin XML se rechaza.
 - **Jefe de área y administradores:** en Registros, el botón **«Superficies (XML)»** lleva a Panel → Modelo 2D, donde se ven las superficies de las liberaciones. En la ficha de un entregado, **«Ver en el modelo»** abre su frente y su capa con su superficie marcada.
 
+## Topógrafos: cambiar la clave
+
+- En **Ajustes → Topógrafos** (administrador y jefe de área) se toca la **clave** (JS, CS, AB…) para cambiarla. La nueva (2 a 5 letras) pasa a **todos sus registros**, al resumen del panel, al historial y a su cuenta; el Excel sale con la clave nueva.
+- La clave vieja queda guardada como «antes»: un registro que llega tarde con ella (teléfono sin señal) se ve con el nombre del topógrafo y sale con la clave nueva en el Excel. Por eso **nadie más puede usar esa clave vieja**; volver a ella sí se puede.
+- Un Excel del histórico que traiga la clave vieja se importa con la nueva.
+- Se necesita señal. Si una cuenta no se puede actualizar (la propia o la de un administrador), se avisa para cambiarla en Ajustes → Usuarios.
+
 ## Aspas para vuelo de dron
 
 Los levantamientos de aspas registrados en campo llegan a la **Bandeja → Aspas** del administrador y del jefe de área (el jefe ve la Bandeja con Aspas y Levantamientos; gabinete no ve Aspas). Desde la ficha se descargan el CSV y las fotos, y se marcan como procesados uno por uno o varios juntos; también se pueden devolver a «Por procesar». El número del menú cuenta los que faltan procesar.

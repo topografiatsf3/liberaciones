@@ -262,6 +262,10 @@ h1.view-title{font-weight:700;font-size:22px;line-height:1.2;letter-spacing:-.01
 .nrow{display:grid;grid-template-columns:150px 100px 100px 90px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 @media (max-width:720px){.nrow{grid-template-columns:1fr 1fr}.nrow.head{display:none}.nrow select{grid-column:1/-1}.nrow [data-k="nota"],.nrow #nNota{grid-column:1/-1}}
 .prow{display:grid;grid-template-columns:72px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+/* Clave del topógrafo: se toca para cambiarla */
+.tp-clave{display:inline-flex;align-items:center;justify-content:space-between;gap:3px;min-width:0;min-height:44px;padding:0 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font-weight:500;cursor:pointer}
+.tp-clave svg{flex:none;color:var(--muted)}
+.tp-clave:hover{border-color:var(--accent)}.tp-clave:hover svg{color:var(--accent)}
 .off-row>*:not(.mini){opacity:.5}
 .tog{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;white-space:nowrap}
 .tog input{width:20px;height:20px;accent-color:var(--accent)}
@@ -1226,11 +1230,14 @@ const L = {
   sub: id => { for (const e of S.listas.estructuras) { const s = (e.subs || []).find(x => x.id === id); if (s) return s; } return null; },
   ele: id => S.listas.elementos.find(e => e.id === id),
   tipo: id => S.listas.tipos.find(e => e.id === id),
-  topo: id => S.listas.topografos.find(e => e.id === id),
+  // También encuentra al topógrafo por una clave que tuvo antes (registros que se suben tarde desde un teléfono sin señal)
+  topo: id => S.listas.topografos.find(e => e.id === id) || (id ? S.listas.topografos.find(e => (e.antes || []).includes(id)) : undefined),
   act: id => S.listas.actividades.find(e => e.id === id),
   equipo: id => (S.listas.equipos || []).find(e => e.id === id)
 };
 const nom = (o, alt = "") => o ? o.nombre : alt;
+// Clave actual de un topógrafo (si el registro trae una clave vieja, la nueva)
+const claveTopo = id => L.topo(id)?.id || id || "";
 
 /* ---------- Nombres parecidos: buscar con errores y evitar duplicados al agregar tipos o elementos ----------
    Iguala tildes, mayúsculas, signos, plurales, palabras de enlace («de», «para»…), orden de las palabras,
@@ -1326,7 +1333,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 23;
+const VERSION_APP = 24;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2438,7 +2445,7 @@ function pasaFiltrosReg(fl, r) {
   if (fl.capa === "~" && (r.actividad !== "LIB" || capaDe(r))) return false;
   if (fl.tipo && r.tipoId !== fl.tipo) return false;
   if (fl.sub && r.subestructuraId !== fl.sub && r.estructuraId !== fl.sub) return false;
-  if (fl.topo && r.topografoId !== fl.topo) return false;
+  if (fl.topo && claveTopo(r.topografoId) !== fl.topo) return false;
   if (fl.act && r.actividad !== fl.act) return false;
   if (fl.equipo && (fl.equipo === "~" ? r.equipo : r.equipo !== fl.equipo)) return false;
   return true;
@@ -3257,7 +3264,7 @@ function filtrarPanel(conFiltros = true, subId = S.panel.subId) {
     const t = toDate(r.fechaCampo)?.getTime() || 0;
     if (d0 && t < d0) return false; if (d1 && t > d1) return false;
     if (P.st && r.estado !== P.st) return false;
-    if (P.topo && r.topografoId !== P.topo) return false;
+    if (P.topo && claveTopo(r.topografoId) !== P.topo) return false;
     if (P.hoy && toDate(r.fechaCampo)?.toDateString() !== hoyStr()) return false;
     return true;
   });
@@ -5490,7 +5497,7 @@ function pintarBandejaSeg(k) {
 // Filas del CSV de registros (mismas columnas que el Excel de protocolos)
 function csvRegistros(regs) {
   const cab = ["ITEM", "N° Registro", "Key_Topografo", "Descripcion", "Km Inicio", "Km Fin", "Fecha Campo", "Fecha Liberacion", "Fecha de entrega", "N° Entrega", "Estructura", "Sub-Estructura", "Elemento", "Tipo de Liberacion", "Capa", "Cota", "Generado", "Key_Status", "Estado", "Superficie (m2)", "Observaciones", "Actividad", "Registrado por", "Nombre de liberacion", "Equipo", "Protocolos", "Carpeta OneDrive"];
-  return [cab, ...regs.map((r, i) => [i + 1, r.numero, r.topografoId, r.descripcion, r.pkInicio ?? "", r.pkFin ?? "", fISO(r.fechaCampo), fISO(r.fechaLiberacion), fISO(r.fechaEntrega), r.numeroCargo, nom(L.est(r.estructuraId)), nom(L.sub(r.subestructuraId)), nom(L.ele(r.elementoId)), nom(L.tipo(r.tipoId)), r.capa, r.cota, r.generadoPor, r.estado, ESTADOS[r.estado] || r.estado, r.area ?? "", r.observaciones, nom(L.act(r.actividad), r.actividad), r.creadoPor, r.nombreLiberacion, nom(L.equipo(r.equipo), r.equipo || ""), (r.protocolos || []).map(x => (x.numero ? x.numero + " " : "") + x.nombre).join(" | "), r.carpeta || ""])];
+  return [cab, ...regs.map((r, i) => [i + 1, r.numero, claveTopo(r.topografoId), r.descripcion, r.pkInicio ?? "", r.pkFin ?? "", fISO(r.fechaCampo), fISO(r.fechaLiberacion), fISO(r.fechaEntrega), r.numeroCargo, nom(L.est(r.estructuraId)), nom(L.sub(r.subestructuraId)), nom(L.ele(r.elementoId)), nom(L.tipo(r.tipoId)), r.capa, r.cota, r.generadoPor, r.estado, ESTADOS[r.estado] || r.estado, r.area ?? "", r.observaciones, nom(L.act(r.actividad), r.actividad), r.creadoPor, r.nombreLiberacion, nom(L.equipo(r.equipo), r.equipo || ""), (r.protocolos || []).map(x => (x.numero ? x.numero + " " : "") + x.nombre).join(" | "), r.carpeta || ""])];
 }
 function exportarSel(regs, que = "seleccion") {
   if (!regs.length) return;
@@ -5958,7 +5965,8 @@ async function importarHist() {
   if (!await confirmar("Importar histórico", `Se cargan ${d.registros.length.toLocaleString("es-PE")} registros del Excel. Si ya estaban, se actualizan sin duplicarse.`, "Importar")) return;
   btn.disabled = true; prog.hidden = false;
   const ts = ms => ms ? Timestamp.fromDate(new Date(ms)) : null;
-  const regs = d.registros, LOTE = 400;
+  // Una clave vieja (cambiada en Ajustes → Topógrafos) se guarda con la clave actual
+  const regs = d.registros.map(r => r.topografoId && claveTopo(r.topografoId) !== r.topografoId ? { ...r, topografoId: claveTopo(r.topografoId) } : r), LOTE = 400;
   try {
     for (let i = 0; i < regs.length; i += LOTE) {
       const b = writeBatch(db), res = {};
@@ -5976,7 +5984,7 @@ async function importarHist() {
       est.textContent = `Importados ${hechos.toLocaleString("es-PE")} de ${regs.length.toLocaleString("es-PE")}…`;
     }
     // Topógrafos que aparecen en el Excel y aún no están en la lista
-    const nuevos = (d.topografosNuevos || []).filter(k => !S.listas.topografos.some(t => t.id === k));
+    const nuevos = (d.topografosNuevos || []).filter(k => !L.topo(k));
     if (nuevos.length) await setDoc(doc(db, "listas", "topografos"), { items: clon([...S.listas.topografos, ...nuevos.map(k => ({ id: k, nombre: k }))]), editadoEn: serverTimestamp(), editadoPor: S.email });
     const c = await getDoc(doc(db, "contadores", "skt"));
     if (!c.exists() || (c.data().ultimo || 0) < (d.ultimoNumero || 0)) await setDoc(doc(db, "contadores", "skt"), { ultimo: d.ultimoNumero });
@@ -6051,9 +6059,9 @@ function ajTopografos() {
   cuerpoAj();
   const B = S.aj.b;
   $("#ajBody").innerHTML = `
-  <p class="muted small" style="margin:0 0 12px">La clave (JS, CS, AB…) identifica al topógrafo en los registros y en el Excel; no se cambia una vez creada. El nombre sí se puede corregir.</p>
+  <p class="muted small" style="margin:0 0 12px">La clave (JS, CS, AB…) identifica al topógrafo en los registros y en el Excel. Para cambiarla, toca la clave: se cambia también en todos sus registros y en su cuenta. El nombre se corrige escribiendo encima.</p>
   <div class="card section ed" id="tpList">
-    ${B.map((t, i) => `<div class="prow ${t.activo === false ? "off-row" : ""}" data-i="${i}"><span class="mono" style="font-weight:500">${esc(t.id)}</span><input value="${esc(t.nombre)}" data-k="nom" aria-label="Nombre de ${esc(t.id)}"><button type="button" class="mini" data-k="act">${t.activo === false ? "Activar" : "Desactivar"}</button></div>`).join("")}
+    ${B.map((t, i) => `<div class="prow ${t.activo === false ? "off-row" : ""}" data-i="${i}"><button type="button" class="tp-clave" data-k="clave" title="Cambiar la clave" aria-label="Cambiar la clave ${esc(t.id)}"><span class="mono">${esc(t.id)}</span><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><input value="${esc(t.nombre)}" data-k="nom" aria-label="Nombre de ${esc(t.id)}"><button type="button" class="mini" data-k="act">${t.activo === false ? "Activar" : "Desactivar"}</button></div>`).join("")}
     <div class="flabel" style="font-weight:800;margin:14px 0 8px">Agregar topógrafo</div>
     <div class="prow" style="border-top:0"><input id="tpId" class="mono" placeholder="Clave" maxlength="5" aria-label="Clave" style="text-transform:uppercase"><input id="tpNom" placeholder="Nombre y apellidos" aria-label="Nombre"><button type="button" class="mini ok-btn" id="tpAdd">Agregar</button></div>
   </div>`;
@@ -6061,16 +6069,51 @@ function ajTopografos() {
   L2.addEventListener("change", e => { const r = e.target.closest("[data-i]"); if (r && e.target.dataset.k === "nom") { B[+r.dataset.i].nombre = e.target.value.trim(); guardarLista("topografos", B); } });
   L2.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); if (e.target.id === "tpId" || e.target.id === "tpNom") $("#tpAdd").click(); else e.target.blur(); } });
   L2.addEventListener("click", async e => {
+    const cl = e.target.closest('[data-k="clave"]');
+    if (cl) { cambiarClaveTopo(B, +cl.closest("[data-i]").dataset.i); return; }
     const b = e.target.closest('[data-k="act"]');
     if (b) { const t = B[+b.closest("[data-i]").dataset.i]; if (t.activo !== false && !await confirmar("Desactivar topógrafo", `${esc(t.id)} · ${esc(t.nombre)} deja de aparecer en el formulario. Sus registros se quedan.`, "Desactivar", true)) return; t.activo = t.activo === false; if (guardarLista("topografos", B)) ajTopografos(); return; }
     if (e.target.id === "tpAdd") {
       const id = $("#tpId").value.trim().toUpperCase(), n = $("#tpNom").value.trim();
       if (!/^[A-ZÑ]{2,5}$/.test(id)) { toast("La clave debe tener de 2 a 5 letras.", "bad"); $("#tpId").focus(); return; }
       if (B.some(t => t.id === id)) { toast(`La clave ${id} ya existe.`, "bad"); $("#tpId").focus(); return; }
+      const antes = B.find(t => (t.antes || []).includes(id));
+      if (antes) { toast(`${id} fue la clave de ${antes.nombre}; usa otra.`, "bad"); $("#tpId").focus(); return; }
       if (!n) { $("#tpNom").focus(); return; }
       B.push({ id, nombre: n }); if (guardarLista("topografos", B, "Topógrafo agregado")) ajTopografos();
     }
   });
+}
+/* Cambiar la clave de un topógrafo: pasa a todos sus registros (con el resumen del panel y el historial) y a la cuenta
+   que la tenga. La clave vieja queda guardada en «antes»: un registro que llegue tarde con ella (teléfono sin señal)
+   se sigue viendo con su nombre y sale con la clave nueva en el Excel. Nadie más puede usar esa clave vieja. */
+function cambiarClaveTopo(B, i) {
+  const t = B[i], vieja = t.id;
+  dialogo("Cambiar clave", `<p class="dlg-p"><b>${esc(t.nombre)}</b> tiene la clave <span class="mono">${esc(vieja)}</span>. La nueva se pone en todos sus registros, en el Excel y en su cuenta.</p>
+    <div class="f"><label for="dClave">Clave nueva</label><input id="dClave" name="clave" class="mono" maxlength="5" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase" value="${esc(vieja)}"><div class="hint">De 2 a 5 letras.</div></div>`, o => {
+    const nueva = (o.clave || "").toUpperCase();
+    if (nueva === vieja) return;
+    if (!/^[A-ZÑ]{2,5}$/.test(nueva)) { toast("La clave debe tener de 2 a 5 letras.", "bad"); return false; }
+    const otro = B.find((x, k) => k !== i && (x.id === nueva || (x.antes || []).includes(nueva)));
+    if (otro) { toast(otro.id === nueva ? `La clave ${nueva} ya es de ${otro.nombre}.` : `${nueva} fue la clave de ${otro.nombre}; usa otra.`, "bad"); return false; }
+    if (!navigator.onLine) { toast("Se necesita señal para cambiar la clave.", "bad"); return false; }
+    return pasarClaveTopo(B, i, vieja, nueva);
+  }, "Cambiar clave");
+}
+async function pasarClaveTopo(B, i, vieja, nueva) {
+  try {
+    // Primero los registros y las cuentas; la lista al final (si algo falla, se vuelve a intentar con la misma clave)
+    const regs = (await getDocs(query(collection(db, "liberaciones"), where("topografoId", "==", vieja)))).docs.map(fila);
+    await lotes(regs, (b, r) => { const dat = { topografoId: nueva, editadoEn: serverTimestamp(), editadoPor: S.email }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Clave del topógrafo: ${vieja} → ${nueva}`); }, 120);
+    const cuentas = (await getDocs(query(collection(db, "usuarios"), where("topografoId", "==", vieja)))).docs;
+    let fallan = 0;
+    for (const u of cuentas) { try { await updateDoc(doc(db, "usuarios", u.id), { topografoId: nueva }); } catch (e) { console.warn("cuenta", u.id, e); fallan++; } }
+    const t = B[i]; t.antes = [...new Set([...(t.antes || []).filter(x => x !== nueva), vieja])]; t.id = nueva;
+    if (!guardarLista("topografos", B, `Clave cambiada a ${nueva} · ${regs.length} ${regs.length === 1 ? "registro" : "registros"}`)) return false;
+    if (BUS.todos) BUS.todos.forEach(r => { if (r.topografoId === vieja) r.topografoId = nueva; });
+    if (fallan) toast(`${fallan === 1 ? "Una cuenta no se pudo" : fallan + " cuentas no se pudieron"} actualizar (la tuya o la de un administrador): cámbiale la clave en Ajustes → Usuarios.`, "bad");
+    if (S.view === "ajustes" && S.aj.tab === "topografos") ajTopografos();
+  } catch (e) { console.error(e); toast("No se pudo cambiar la clave: " + (e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); return false; }
 }
 
 // Pasa los registros de un tipo repetido al correcto y quita el repetido de la lista

@@ -37,6 +37,8 @@ service cloud.firestore {
     function soloVisto() { return resource.data.estado == 'NA' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visto', 'vistoPor', 'vistoNombre', 'vistoEn']); }
     // Unir un tipo o elemento repetido: solo cambia a qué tipo y elemento pertenece el registro
     function soloTipo() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tipoId', 'elementoId', 'editadoEn', 'editadoPor']); }
+    // Cambiar la clave de un topógrafo (Ajustes → Topógrafos): solo cambia la clave en sus registros
+    function soloTopo() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['topografoId', 'editadoEn', 'editadoPor']); }
     // Desde campo solo se puede AGREGAR un nombre al final de la lista de tipos o elementos (no cambiar ni borrar los que hay)
     function soloAgrega() {
       let n = resource.data.items.size();
@@ -152,7 +154,7 @@ service cloud.firestore {
       // marcar como procesados los levantamientos de aspas, marcar «Enterado» en los levantamientos y unir tipos o elementos repetidos.
       allow update: if isAdmin()
         || (hasRol(['gabinete']) && sinTocarCampo() && numeroFijo() && entregaConXml() && (!tocaPapelera() || resource.data.get('numero', '') == ''))
-        || (isConf() && (request.resource.data.origen == 'excel' || soloPapelera() || soloArchivos() || soloProcesado() || soloVisto() || soloTipo()))
+        || (isConf() && (request.resource.data.origen == 'excel' || soloPapelera() || soloArchivos() || soloProcesado() || soloVisto() || soloTipo() || soloTopo()))
         || (writer()
           && resource.data.creadoPor == email()
           && resource.data.get('numero', '') == ''

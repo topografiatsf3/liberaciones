@@ -16,6 +16,14 @@ const lib = (id, numero, pk0, pk1) => ({ actividad: 'LIB', estado: 'EP', numero,
 async function entrarComo(p, u) { await p.click('#btnSalir'); await p.waitForSelector('#gEntrar'); await p.evaluate(u => { window.__fakeLogin = u; }, u); await p.click('#gEntrar'); await p.waitForSelector('#nav button'); await p.waitForTimeout(500); }
 const errXml = p => p.textContent('.dlg.on #dXmlE');
 const falta = p => p.$$eval('.dlg.on #dXmlL li', l => l.map(x => x.textContent));
+// Esperas por resultado (no por tiempo fijo): en la corrida completa la máquina va más lenta
+const esperarToast = (p, re) => p.waitForFunction(r => new RegExp(r).test(document.querySelector('#toast')?.textContent || ''), re.source, { timeout: 10000 }).catch(() => {});
+async function subirXml(p, archivos) {
+  await p.evaluate(() => { document.querySelector('.dlg.on #dXmlE').innerHTML = '<p>__esperando</p>'; });
+  await p.setInputFiles('.dlg.on #dXml', archivos);
+  await p.waitForFunction(() => { const t = document.querySelector('.dlg.on #dXmlE')?.textContent || ''; return !/__esperando|Leyendo/.test(t); }, null, { timeout: 15000 }).catch(() => {});
+}
+const esperarEstado = (p, ids, est) => p.waitForFunction(([ids, est]) => ids.every(id => window.__fakeStore()['liberaciones/' + id]?.estado === est), [ids, est], { timeout: 15000 }).catch(() => {});
 
 (async () => {
   const b = await chromium.launch();
@@ -46,21 +54,21 @@ const falta = p => p.$$eval('.dlg.on #dXmlL li', l => l.map(x => x.textContent))
   await p.click('#blist tr[data-rid="ep1"] [data-a="entregar"]'); await p.waitForSelector('.dlg.on #dXml', { state: 'attached' });
   ok(/SKT-TOP-02686\s*Falta XML/.test((await falta(p)).join()), 'el diálogo de entrega pide el XML de SKT-TOP-02686');
   await p.fill('#dCarpeta', 'OneDrive\\Liberaciones\\Cargo 20');
-  await p.click('.dlg.on [type=submit]'); await p.waitForTimeout(300);
+  await p.click('.dlg.on [type=submit]'); await esperarToast(p, /Falta el XML/);
   ok(!!(await p.$('.dlg.on #dXml')) && /Falta el XML de la superficie SKT-TOP-02686/.test(await p.textContent('#toast')), 'sin XML no deja entregar');
-  await p.setInputFiles('.dlg.on #dXml', supXml('SKT-TOP-02688', 'otra.xml')); await p.waitForTimeout(800);
+  await subirXml(p, supXml('SKT-TOP-02688', 'otra.xml'));
   ok(/es SKT-TOP-02688 y no es el mismo código de la liberación que entregas \(SKT-TOP-02686\)\. No se sube/.test(await errXml(p)), 'una superficie con otro código no se acepta: ' + (await errXml(p)).slice(0, 80));
   ok(/Falta XML/.test((await falta(p)).join()), 'sigue faltando el XML');
-  await p.setInputFiles('.dlg.on #dXml', supXml(null, 'sin-codigo.xml')); await p.waitForTimeout(800);
+  await subirXml(p, supXml(null, 'sin-codigo.xml'));
   ok(/no tiene código en el nombre/.test(await errXml(p)), 'una superficie sin código no se acepta');
-  await p.setInputFiles('.dlg.on #dXml', { name: 'notas.xml', mimeType: 'application/xml', buffer: Buffer.from('esto no es xml') }); await p.waitForTimeout(500);
+  await subirXml(p, { name: 'notas.xml', mimeType: 'application/xml', buffer: Buffer.from('esto no es xml') });
   ok(/no es un XML válido/.test(await errXml(p)), 'un archivo que no es XML no se acepta');
   await p.click('.dlg.on [type=submit]'); await p.waitForTimeout(300);
   ok(!!(await p.$('.dlg.on #dXml')), 'con XML equivocados sigue sin dejar entregar');
-  await p.setInputFiles('.dlg.on #dXml', supXml('SKT-TOP-02686', 'liberacion 02686.xml')); await p.waitForSelector('.dlg.on .xml-ok');
+  await subirXml(p, supXml('SKT-TOP-02686', 'liberacion 02686.xml')); await p.waitForSelector('.dlg.on .xml-ok');
   ok(/✓ 2\+220_2\+260_STN F1_SKT-TOP-02686/.test((await falta(p)).join()) && (await errXml(p)) === '', 'con el mismo código se acepta y se borra el error');
   await p.screenshot({ path: path.join(OUT, '1-entregar.png') });
-  await p.click('.dlg.on [type=submit]'); await p.waitForTimeout(800);
+  await p.click('.dlg.on [type=submit]'); await esperarEstado(p, ['ep1'], 'EC'); await esperarToast(p, /entregada a Calidad/); await p.waitForSelector('.dlg.on', { state: 'detached', timeout: 10000 }).catch(() => {});
   ok(!(await p.$('.dlg.on')) && /1 entregada a Calidad/.test(await p.textContent('#toast')), 'se entrega a Calidad');
   let st = await store(p), r1 = st['liberaciones/ep1'], x = (r1.xmlEntrega || [])[0] || {};
   ok(r1.estado === 'EC' && x.codigo === 'SKT-TOP-02686' && x.archivo === 'liberacion 02686.xml' && x.superficie === '2+220_2+260_STN F1_SKT-TOP-02686', 'el registro guarda el XML entregado');
@@ -74,12 +82,12 @@ const falta = p => p.$$eval('.dlg.on #dXmlL li', l => l.map(x => x.textContent))
   await p.click('#bAll2'); await p.click('[data-bk="entregar"]'); await p.waitForSelector('.dlg.on #dXml', { state: 'attached' });
   ok((await falta(p)).length === 2, 'en grupo lista cada liberación con su código');
   await p.fill('#dCarpeta', 'OneDrive\\Liberaciones\\Cargo 21');
-  await p.setInputFiles('.dlg.on #dXml', supXml('SKT-TOP-02688')); await p.waitForTimeout(800);
-  await p.click('.dlg.on [type=submit]'); await p.waitForTimeout(300);
+  await subirXml(p, supXml('SKT-TOP-02688'));
+  await p.click('.dlg.on [type=submit]'); await esperarToast(p, /Falta el XML de la superficie SKT-TOP-02689/);
   ok(!!(await p.$('.dlg.on')) && /Falta el XML de la superficie SKT-TOP-02689/.test(await p.textContent('#toast')), 'en grupo no entrega mientras falte el XML de una');
-  await p.setInputFiles('.dlg.on #dXml', [supXml('SKT-TOP-02689'), supXml('SKT-TOP-02686', 'ya-entregada.xml')]); await p.waitForTimeout(1000);
+  await subirXml(p, [supXml('SKT-TOP-02689'), supXml('SKT-TOP-02686', 'ya-entregada.xml')]);
   ok(/SKT-TOP-02686 y no es el mismo código de ninguna de las liberaciones que entregas/.test(await errXml(p)), 'la superficie de otra liberación no se mezcla');
-  await p.click('.dlg.on [type=submit]'); await p.waitForTimeout(900);
+  await p.click('.dlg.on [type=submit]'); await esperarEstado(p, ['ep2', 'ep3'], 'EC');
   st = await store(p);
   ok(['ep2', 'ep3'].every(id => st['liberaciones/' + id].estado === 'EC' && st['liberaciones/' + id].xmlEntrega[0].codigo === st['liberaciones/' + id].numero), 'las dos se entregan, cada una con su propio XML');
 
@@ -100,7 +108,7 @@ const falta = p => p.$$eval('.dlg.on #dXmlL li', l => l.map(x => x.textContent))
   ok(await p.evaluate(() => location.hash) === '#panel' && !!(await p.$('#mFile')), 'lleva a Panel → Modelo 2D, donde se ven las superficies');
   await p.click('[data-v="todos"]'); await p.waitForSelector('#lista tr[data-id="ep1"]');
   await p.click('#lista tr[data-id="ep1"] .tdesc'); await p.waitForSelector('#sheet.on #fVerSup');
-  await p.click('#fVerSup'); await p.waitForSelector('#mBody'); await p.waitForTimeout(800);
+  await p.click('#fVerSup'); await p.waitForSelector('#mBody'); await p.waitForFunction(id => document.querySelector('#mGrupo')?.value === 'filtro1|Capa 11' && document.querySelector(`#mBody [data-sid="${id}"]`), x.supId, { timeout: 10000 }).catch(() => {});
   ok(await p.$eval('#pSub', s => s.value) === 'pp-oeste' && await p.$eval('#mGrupo', s => s.value) === 'filtro1|Capa 11', '«Ver en el modelo» abre su frente y su capa');
   ok(!!(await p.$(`#mBody [data-sid="${x.supId}"]`)), 'y ahí está su superficie');
   await p.screenshot({ path: path.join(OUT, '3-modelo-jefe.png') });
