@@ -36,7 +36,8 @@ Las cámaras Samsung con «Imágenes de alta eficiencia» y los iPhone guardan f
 
 Registros y Mis registros filtran por **fecha** (hoy, ayer, esta semana de lunes a domingo, últimos 7 días, este mes, un día o entre fechas), **tipo de liberación**, **frente** (o toda la estructura), **topógrafo**, **actividad**, **equipo** y **sin capa**, además de la búsqueda y el estado. En computadora es una barra sobre la tabla; en el celular, un renglón que abre una hoja con «Aplicar» y chips con lo activo. Con fechas, Registros pide a Firebase justo ese rango, así encuentra también registros antiguos.
 
-- En Registros se elige **qué fecha** se filtra: en campo, de liberación (código) o de entrega a Calidad. Así «qué entregó JS esta semana» sale directo.
+- En Registros se elige **qué fecha** se filtra: de liberación (la que se pone en campo), de entrega (cuando gabinete genera el código) o de entrega a Calidad. Así «qué entregó JS esta semana» sale directo.
+- Nombres de las fechas (versión 25): la que antes decía «Fecha en campo» ahora dice **«Fecha de liberación»**, y la que decía «Fecha liberación» ahora dice **«Fecha de entrega»**. Los datos guardados y las columnas del CSV no cambian.
 - La búsqueda **ignora tildes y mayúsculas** («transicion» encuentra «Transición») y también busca por la clave del topógrafo (JS, CS…). Lo mismo en la Bandeja y en Ctrl+K.
 - **Estado:** un clic elige uno; con Ctrl o Mayús + clic se suman varios. Si hay pendientes y observados aparece el chip «Pendientes + observados». Los números de los chips cuentan lo que se ve (con la búsqueda y sin los eliminados).
 - Sin fechas, Registros mira los últimos 100; si hay filtros lo avisa y ofrece **«Buscar en todo el historial»** (usa el resumen de todos los frentes).

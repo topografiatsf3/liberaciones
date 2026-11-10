@@ -1333,7 +1333,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 24;
+const VERSION_APP = 25;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -1904,7 +1904,7 @@ function pintarForm() {
         ${S.listas.actividades.map(a => `<button type="button" data-act="${esc(a.id)}" aria-pressed="${f.actividad === a.id}" title="${esc(a.nombre)}" aria-label="${esc(a.nombre)}">${esc(ACT_CORTO[a.id] || a.nombre)}</button>`).join("")}
       </div></div>
       <div class="grid">
-        <div class="f"><label for="iFecha">Fecha y hora en campo</label><input id="iFecha" name="fechaCampo" type="datetime-local" value="${esc(f.fechaCampo)}" required></div>
+        <div class="f"><label for="iFecha">Fecha y hora de liberación</label><input id="iFecha" name="fechaCampo" type="datetime-local" value="${esc(f.fechaCampo)}" required></div>
         <div class="f"><label for="iTopo">Topógrafo</label><select id="iTopo" name="topografoId">${opciones(S.listas.topografos, f.topografoId, "Elegir…")}</select></div>
         <div class="f full" id="fEquipo"><span class="flabel">Equipo</span><input type="hidden" name="equipo" value="${esc(f.actividad === "DRN" ? "DRN" : f.equipo || "")}">${f.actividad === "DRN"
           ? '<p class="muted" style="margin:0">Dron</p>'
@@ -2413,7 +2413,7 @@ const tablaPC = () => enPC() && poder();
 const CAMPOS_RF = ["fecha", "f1", "f2", "fc", "tipo", "sub", "topo", "act", "equipo", "capa"];
 const FECHAS_RF = [["", "Todas"], ["hoy", "Hoy"], ["ayer", "Ayer"], ["sem", "Esta semana"], ["7d", "Últimos 7 días"], ["mes", "Este mes"], ["dia", "Un día"], ["rango", "Entre fechas"]];
 // Qué fecha se filtra: la de campo (por defecto), la de liberación (código) o la de entrega a Calidad
-const FECHA_CAMPO = { "": ["fechaCampo", "Fecha en campo"], lib: ["fechaLiberacion", "Fecha de liberación"], ent: ["fechaEntrega", "Fecha de entrega"] };
+const FECHA_CAMPO = { "": ["fechaCampo", "Fecha de liberación"], lib: ["fechaLiberacion", "Fecha de entrega"], ent: ["fechaEntrega", "Entrega a Calidad"] };
 const campoFecha = fl => (FECHA_CAMPO[fl.fc || ""] || FECHA_CAMPO[""])[0];
 // Filtros de Registros y Mis registros que se recuerdan al recargar (por persona; la búsqueda escrita no)
 const guardarFiltros = () => { const q = x => { const { q: _q, pap, hist, ...resto } = x; return resto; }; ls.set("lib.filtros." + S.email, { mis: q(S.filtro.mis), todos: q(S.filtro.todos) }); };
@@ -2482,7 +2482,7 @@ const opcionesTipo = sel => `<option value="">Todos</option>` + S.listas.element
 function controlesReg(fl, cual, hoja) {
   const ops = (lista, sel, todos = "Todos") => `<option value="">${todos}</option>` + lista.filter(x => x.activo !== false).map(x => `<option value="${esc(x.id)}" ${sel === x.id ? "selected" : ""}>${esc(x.nombre)}</option>`).join("");
   const tituloF = (FECHA_CAMPO[fl.fc || ""] || FECHA_CAMPO[""])[1];
-  // «Fecha de»: campo, liberación o entrega (solo en Registros; Mis registros va por fecha en campo)
+  // «Filtrar por»: fecha de liberación (fechaCampo), de entrega (fechaLiberacion) o entrega a Calidad (solo en Registros; Mis registros va por fechaCampo)
   const deQue = cual === "todos" ? `<div class="f"><label for="rfFc">Filtrar por</label><select id="rfFc" data-rf="fc">${Object.entries(FECHA_CAMPO).map(([k, [, t]]) => `<option value="${k}" ${(fl.fc || "") === k ? "selected" : ""}>${t}</option>`).join("")}</select></div>` : "";
   const fechas = hoja
     ? `${deQue}<div class="f"><span class="flabel">${tituloF}</span><div class="chips" role="group">${FECHAS_RF.map(([k, t]) => `<button type="button" class="chip" data-fe="${k}" aria-pressed="${(fl.fecha || "") === k}">${t}</button>`).join("")}</div></div>`
@@ -2715,12 +2715,12 @@ function abrirFicha(r) {
       ${fila("Cota", esc(r.cota))}
       ${fila("Capa", esc(capaDe(r)))}
       ${fila("Área", r.area != null ? esc(r.area.toLocaleString("es-PE")) + " m²" : "")}
-      ${fila("Fecha en campo", esc(fmtFecha(r.fechaCampo)))}
+      ${fila("Fecha de liberación", esc(fmtFecha(r.fechaCampo)))}
       ${fila("Topógrafo", esc(nom(L.topo(r.topografoId), r.topografoId)))}
       ${r.equipo ? fila("Equipo", esc(nom(L.equipo(r.equipo), r.equipo))) : ""}
       ${(r.protocolos || []).length ? fila("Protocolos", r.protocolos.map(x => `<div>${x.numero ? `<span class="mono">${esc(x.numero)}</span> · ` : ""}${esc(x.nombre)}</div>`).join("")) : ""}
       ${fila("Registrado por", esc(r.creadoPor))}
-      ${fila("Fecha liberación", esc(fmtFecha(r.fechaLiberacion, false)))}
+      ${fila("Fecha de entrega", esc(fmtFecha(r.fechaLiberacion, false)))}
       ${fila("Entrega a Calidad", esc(fmtFecha(r.fechaEntrega, false)))}
       ${r.carpeta ? fila("Carpeta OneDrive", verCarpeta(r.carpeta)) : r.estado === "EC" && esGab() && !r.borrado ? fila("Carpeta OneDrive", `<span class="muted">Falta</span>`) : ""}
       ${(r.xmlEntrega || []).length ? fila("Superficie (XML)", r.xmlEntrega.map(x => `<div><span class="mono">${esc(x.superficie)}</span><span class="muted small"> · ${esc(x.archivo)}</span></div>`).join("") + (puedeAjustes() && r.xmlEntrega.some(x => x.supId) ? '<button type="button" class="linkbtn" id="fVerSup">Ver en el modelo</button>' : "")) : ""}
