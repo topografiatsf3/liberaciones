@@ -969,6 +969,15 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 .nv .nn small{color:var(--muted)}
 .nv-acc{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .nv-sel{min-height:var(--h-mini);border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);padding:0 10px;font-size:13px;max-width:240px}
+.nv-ed{display:flex;flex-wrap:wrap;gap:8px;flex:1 1 100%;align-items:center}
+.nv-nom{flex:1 1 260px;min-width:0;min-height:var(--h-mini);border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);padding:0 10px;font-size:15px;font-weight:600}
+.nv-nom:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.nv-meta{flex:1 1 100%;color:var(--muted);font-size:13px}.nv-meta .linkbtn{font-size:13px}
+.nv-sep{flex:1 1 100%;margin:0;font-size:13px;background:var(--ep-bg);color:var(--ep);border-radius:8px;padding:8px 10px}
+.nv-sep .linkbtn{font-size:13px}
+.tsel-aqui{color:var(--accent-strong);font-weight:600}
+.tsel-i small .tsel-det-v{display:inline;font-size:inherit;font-weight:700;color:var(--ink)}
+.dlg-lista{max-height:min(50vh,420px);overflow:auto}
 /* Ajustes → Tipos: catálogo por elemento y orden del perfil */
 .ty-vistas{margin-bottom:12px}
 .ty-bar{display:flex;gap:8px;margin:0 0 10px}.ty-bar .search{flex:1;max-width:420px}
@@ -1013,6 +1022,8 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
   .tyord{grid-template-columns:56px minmax(0,1fr) auto}
   .ty-add{grid-template-columns:1fr!important}
   .nv-sel{max-width:none;flex:1 1 100%;min-height:44px}
+  .nv-nom{flex-basis:100%;min-height:44px}
+  .nv-acc .mini{min-height:44px}
 }
 
 /* Equipo, protocolos y filtros de registros */
@@ -1376,7 +1387,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 27;
+const VERSION_APP = 28;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -1783,11 +1794,11 @@ function formVacio() {
   const u = ls.get(ULT(), {});
   return { actividad: u.actividad || "LIB", fechaCampo: localInput(new Date()), topografoId: S.perfil?.topografoId || u.topografoId || "", equipo: u.actividad === "DRN" ? "DRN" : u.equipo === "DRN" ? "" : u.equipo || "",
     estructuraId: u.estructuraId || "", subestructuraId: u.subestructuraId || "", elementoId: u.elementoId || "", tipoId: u.tipoId || "",
-    pkInicio: "", pkFin: "", sinPk: false, cota: "", capa: "", area: "", descripcion: "", observaciones: "", linksCsv: [], linksFotos: [], archivos: [], borrarArchivos: [] };
+    detalle: "", pkInicio: "", pkFin: "", sinPk: false, cota: "", capa: "", area: "", descripcion: "", observaciones: "", linksCsv: [], linksFotos: [], archivos: [], borrarArchivos: [] };
 }
 function formDesde(r) {
   return { actividad: r.actividad || "LIB", fechaCampo: localInput(toDate(r.fechaCampo) || new Date()), topografoId: r.topografoId || "", equipo: r.equipo || "",
-    estructuraId: r.estructuraId || "", subestructuraId: r.subestructuraId || "", elementoId: r.elementoId || "", tipoId: r.tipoId || "",
+    estructuraId: r.estructuraId || "", subestructuraId: r.subestructuraId || "", elementoId: r.elementoId || "", tipoId: r.tipoId || "", detalle: r.detalle || "",
     pkInicio: r.pkInicio == null ? "" : fmtPk(r.pkInicio), pkFin: r.pkFin == null ? "" : fmtPk(r.pkFin), sinPk: r.pkInicio == null && r.pkFin == null,
     cota: r.cota || "", capa: r.capa || "", area: r.area == null ? "" : String(r.area), descripcion: r.descripcion || "", observaciones: r.observaciones || "",
     linksCsv: (r.linksCsv || []).slice(), linksFotos: (r.linksFotos || []).slice(),
@@ -1923,8 +1934,8 @@ function descAuto(f) {
   const sub = L.sub(f.subestructuraId)?.nombre || "";
   if (f.actividad === "LIB") {
     const t = L.tipo(f.tipoId); if (!t || !sub) return "";
-    const capa = normCapa(f.capa || "", f.subestructuraId, f.tipoId);
-    return `Liberación de ${t.nombre.toLowerCase()}${capa ? " " + capa.toLowerCase() : ""} ${sub}`;
+    const capa = normCapa(f.capa || "", f.subestructuraId, f.tipoId), det = (f.detalle || "").trim();
+    return `Liberación de ${t.nombre.toLowerCase()}${det ? " " + det : ""}${capa ? " " + capa.toLowerCase() : ""} ${sub}`;
   }
   const a = nom(L.act(f.actividad)); return a && sub ? `${a} ${sub}` : "";
 }
@@ -1973,6 +1984,7 @@ function pintarForm() {
         <div class="f"><label for="iEst">Estructura</label><select id="iEst" name="estructuraId" required>${opciones(S.listas.estructuras, f.estructuraId, "Elegir…")}</select></div>
         <div class="f"><label for="iSub">Sub-estructura / frente</label><select id="iSub" name="subestructuraId" required ${!est ? "disabled" : ""}>${opciones(subs, f.subestructuraId, est ? "Elegir…" : "Primero la estructura")}</select></div>
         ${selectorTipo(f, esLib)}
+        ${L.tipo(f.tipoId) || f.detalle ? campoDetalle(f) : ""}
       </div>
     </div>
     <div class="card section">
@@ -2012,40 +2024,86 @@ function pintarForm() {
 }
 /* --- «Qué se liberó»: un solo buscador; el elemento se pone solo según el tipo --- */
 const tiposActivos = () => S.listas.tipos.filter(t => t.activo !== false);
-// Los tipos que más usa esta persona (sus registros y lo último que guardó)
-function tiposUsados() {
+// Los tipos que más usa esta persona (sus registros y lo último que guardó), sin repetir los de «excl»
+function tiposUsados(excl = []) {
   const c = {}; S.mis.forEach(r => { if (r.tipoId) c[r.tipoId] = (c[r.tipoId] || 0) + 1; });
   const u = ls.get(ULT(), {}); if (u.tipoId) c[u.tipoId] = (c[u.tipoId] || 0) + 1000;
-  return Object.entries(c).sort((a, b) => b[1] - a[1]).map(([id]) => L.tipo(id)).filter(t => t && t.activo !== false).slice(0, 4);
+  return Object.entries(c).sort((a, b) => b[1] - a[1]).map(([id]) => L.tipo(id)).filter(t => t && t.activo !== false && !excl.includes(t)).slice(0, 4);
+}
+// Cuántas veces se usó cada tipo en un frente: el resumen del frente (se pide una vez por sesión; sin señal sale de la copia guardada)
+// más los tipos que tienen capas configuradas ahí. Mientras llega, cuenta con los registros que ya están en el teléfono.
+const T_FRENTE = {}, T_FRENTE_PEDIDO = new Set();
+function usosFrente(sid) {
+  if (!sid) return {};
+  const cache = T_FRENTE[sid], c = cache ? { ...cache.c } : {}, vistos = new Set(cache ? cache.ids : []);
+  // Los registros del teléfono que el resumen leído aún no tenía (p. ej. el que se acaba de guardar)
+  [...(S.mis || []), ...(S.todos || [])].forEach(r => { if (r.subestructuraId === sid && r.tipoId && !vistos.has(r.id) && vivo(r) && r.estado !== "X") { vistos.add(r.id); c[r.tipoId] = (c[r.tipoId] || 0) + 1; } });
+  if (!cache && !T_FRENTE_PEDIDO.has(sid)) {
+    T_FRENTE_PEDIDO.add(sid);
+    leerResumenFrente(sid).then(m => {
+      const k = {}; Object.values(m || {}).forEach(a => { if (a && a[0]) k[a[0]] = (k[a[0]] || 0) + 1; });
+      T_FRENTE[sid] = { c: k, ids: Object.keys(m || {}) }; repintarSelectorTipo(sid);
+    }).catch(e => { console.warn("tipos del frente", e); T_FRENTE_PEDIDO.delete(sid); });
+  }
+  Object.keys(S.capasCfg?.[sid]?.tipos || {}).forEach(id => { c[id] = (c[id] || 0) + 0.5; });
+  return c;
+}
+// Los tipos usados en el frente, del más usado al menos usado
+const tiposAqui = sid => Object.entries(usosFrente(sid)).sort((a, b) => b[1] - a[1]).map(([id]) => L.tipo(id)).filter(t => t && t.activo !== false);
+// Cuando llega el resumen del frente se repinta solo el selector (si nadie está escribiendo en él)
+function repintarSelectorTipo(sid) {
+  const f = S.form, box = $("#tSel"); if (S.view !== "nueva" || !f || f.subestructuraId !== sid || !box) return;
+  if (box.contains(document.activeElement)) { pintarTipoRes(); return; }
+  leerCampos(); box.outerHTML = selectorTipo(f, f.actividad === "LIB"); conectarSelectorTipo(f);
 }
 function selectorTipo(f, esLib) {
   const t = L.tipo(f.tipoId), e = L.ele(f.elementoId) || (t && L.ele(t.elementoId));
   const ocultos = `<input type="hidden" name="tipoId" value="${esc(f.tipoId)}"><input type="hidden" name="elementoId" value="${esc(f.elementoId)}">`;
   const titulo = `<span class="flabel">${esLib ? "Qué se liberó" : 'Tipo <span class="opt">(opcional)</span>'}</span>`;
   if (t || (e && !esLib)) return `<div class="f full tsel" id="tSel">${titulo}${ocultos}<button type="button" class="tsel-ok" id="tCambiar" aria-label="Cambiar tipo"><span><b>${esc(t ? t.nombre : "Sin tipo")}</b><small>${esc(nom(e, "Sin elemento"))}</small></span><span class="c">Cambiar</span></button></div>`;
-  const usados = tiposUsados();
+  const sub = L.sub(f.subestructuraId), aqui = sub ? tiposAqui(sub.id).slice(0, 6) : [], usados = tiposUsados(aqui);
+  const chips = (tit, ls0) => ls0.length ? `<span class="tsel-sub">${tit}</span><div class="tsel-chips">${ls0.map(u => `<button type="button" class="chip" data-tipo="${esc(u.id)}">${esc(u.nombre)}</button>`).join("")}</div>` : "";
   return `<div class="f full tsel" id="tSel">${titulo}${ocultos}
-    ${usados.length ? `<span class="tsel-sub">Usados por ti</span><div class="tsel-chips">${usados.map(u => `<button type="button" class="chip" data-tipo="${esc(u.id)}">${esc(u.nombre)}</button>`).join("")}</div><span class="tsel-sub">Buscar otro</span>` : ""}
+    ${chips(`Usados en ${esc(sub?.nombre || "")}`, aqui)}${chips("Usados por ti", usados)}${aqui.length || usados.length ? '<span class="tsel-sub">Buscar otro</span>' : ""}
     <input id="iTipoQ" class="tsel-q" type="search" placeholder="Ej.: relleno masivo" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(S._tq || "")}" aria-label="Buscar tipo">
     <div class="tsel-res" id="tRes"></div></div>`;
 }
+// Detalle del registro: el código o número puntual que no es parte del tipo (PZ3-7, BH-12)
+const campoDetalle = f => `<div class="f full tsel-det"><label for="iDet">Detalle <span class="opt">(opcional · código o número puntual, ej.: PZ3-7)</span></label><input id="iDet" name="detalle" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Ej.: PZ3-7" value="${esc(f.detalle || "")}"></div>`;
+// Si un nombre termina en un código (letras y números: «pz3-7», «BH-12», «P-4»), lo separa: el tipo queda general y el código va al detalle
+function separarDetalle(nombre) {
+  const m = String(nombre || "").trim().match(/^(.*\S)\s+([a-zñ]{1,4}\.?\s?-?\s?\d+[a-z0-9]*(?:\s?[-/.]\s?[a-z0-9]+)*)$/i);
+  if (!m || !/[a-zñ]/i.test(m[2]) || palabras(m[1]).length < 1 || m[1].trim().length < 3) return null;
+  return { base: capital(m[1].replace(/[\s,;:-]+$/, "")), det: m[2].replace(/\s+/g, "").toUpperCase() };
+}
 function pintarTipoRes() {
   const box = $("#tRes"); if (!box) return;
-  const q = (S._tq || "").trim(), todos = tiposActivos();
-  const fila = (t, ok) => `<button type="button" class="tsel-i" data-tipo="${esc(t.id)}"><b>${resaltar(t.nombre, ok)}</b><small>${esc(nom(L.ele(t.elementoId)))}</small></button>`;
+  const q = (S._tq || "").trim(), todos = tiposActivos(), sid = S.form?.subestructuraId, sub = L.sub(sid);
+  const aqui = sub ? tiposAqui(sid) : [], enAqui = new Set(aqui.map(t => t.id));
+  const fila = (t, ok, det) => `<button type="button" class="tsel-i" data-tipo="${esc(t.id)}"${det ? ` data-det="${esc(det)}"` : ""}><b>${resaltar(t.nombre, ok)}</b><small>${esc(nom(L.ele(t.elementoId)))}${det ? ` · detalle <b class="tsel-det-v">${esc(det)}</b>` : ""}${enAqui.has(t.id) ? ' · <span class="tsel-aqui">usado aquí</span>' : ""}</small></button>`;
   if (!q) {
     box.innerHTML = S._tTodos
-      ? S.listas.elementos.map(e => { const ts = todos.filter(t => t.elementoId === e.id); return ts.length ? `<div class="tsel-g">${esc(e.nombre)}</div>${ts.map(t => fila(t)).join("")}` : ""; }).join("") + `<button type="button" class="tsel-i tsel-add" data-nuevo="">＋ Agregar un tipo nuevo</button>`
+      ? (aqui.length ? `<div class="tsel-g">Usados en ${esc(sub.nombre)}</div>${aqui.map(t => fila(t)).join("")}` : "")
+        + S.listas.elementos.filter(e => e.activo !== false).map(e => { const ts = todos.filter(t => t.elementoId === e.id); return ts.length ? `<div class="tsel-g">${esc(e.nombre)}</div>${ts.map(t => fila(t)).join("")}` : ""; }).join("")
+        + (() => { const sin = todos.filter(t => !L.ele(t.elementoId) || L.ele(t.elementoId).activo === false); return sin.length ? `<div class="tsel-g">Otros</div>${sin.map(t => fila(t)).join("")}` : ""; })()
+        + `<button type="button" class="tsel-i tsel-add" data-nuevo="">＋ Agregar un tipo nuevo</button>`
       : `<button type="button" class="tsel-i tsel-ver" data-todos>Ver todos los tipos (${todos.length})</button>`;
     return;
   }
-  const r = buscarNombres(q, todos).slice(0, 6), igual = todos.some(t => similitud(t.nombre, q) === 1);
-  box.innerHTML = r.map(x => fila(x.o, x.ok)).join("") + (!r.length ? `<p class="tsel-nada">No hay ningún tipo parecido a «${esc(q)}».</p>` : "")
+  // Si lo escrito termina en un código («… pz3-8»), también se busca sin él: al elegir, el código va al detalle
+  const sepQ = separarDetalle(q), porId = new Map();
+  buscarNombres(q, todos).forEach(x => porId.set(x.o.id, x));
+  if (sepQ) buscarNombres(sepQ.base, todos).forEach(x => { const y = porId.get(x.o.id); if (!y || x.s - 0.01 > y.s) porId.set(x.o.id, { ...x, s: x.s - 0.01, det: sepQ.det }); });
+  // A igual parecido, primero los que ya se usaron en este frente
+  const r = [...porId.values()].map(x => ({ ...x, s2: x.s + (enAqui.has(x.o.id) ? 0.06 : 0) })).sort((a, b) => b.s2 - a.s2 || a.o.nombre.localeCompare(b.o.nombre)).slice(0, 6);
+  const igual = todos.some(t => similitud(t.nombre, q) === 1);
+  box.innerHTML = r.map(x => fila(x.o, x.ok, x.det)).join("") + (!r.length ? `<p class="tsel-nada">No hay ningún tipo parecido a «${esc(q)}».</p>` : "")
     + (!igual && palabras(q).length && q.length >= 3 ? `<button type="button" class="tsel-i tsel-add" data-nuevo="${esc(q)}">＋ Agregar «${esc(capital(q))}» como nuevo</button>` : "");
 }
-function elegirTipo(f, id) {
+function elegirTipo(f, id, det) {
   leerCampos(); const t = L.tipo(id); if (!t) return;
   f.tipoId = t.id; f.elementoId = t.elementoId || ""; S._tq = ""; S._tTodos = false;
+  if (det) f.detalle = det;
   pintarForm(); guardarBorrador();
   const sig = f.sinPk ? $("#iDesc") : $("#iPk1"); if (sig && !sig.value) sig.focus({ preventScroll: false });
 }
@@ -2053,22 +2111,23 @@ function conectarSelectorTipo(f) {
   const box = $("#tSel"); if (!box) return;
   pintarTipoRes();
   box.addEventListener("click", e => {
-    const t = e.target.closest("[data-tipo]"); if (t) { elegirTipo(f, t.dataset.tipo); return; }
+    const t = e.target.closest("[data-tipo]"); if (t) { elegirTipo(f, t.dataset.tipo, t.dataset.det); return; }
     if (e.target.closest("#tCambiar")) { leerCampos(); f.tipoId = ""; f.elementoId = ""; S._tq = ""; pintarForm(); $("#iTipoQ")?.focus(); return; }
     if (e.target.closest("[data-todos]")) { S._tTodos = true; pintarTipoRes(); return; }
     const n = e.target.closest("[data-nuevo]"); if (n) agregarTipo(n.dataset.nuevo);
   });
   $("#iTipoQ")?.addEventListener("input", e => { S._tq = e.target.value; pintarTipoRes(); });
-  $("#iTipoQ")?.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); const p = $("#tRes [data-tipo]"); if (p) elegirTipo(f, p.dataset.tipo); } });
+  $("#iTipoQ")?.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); const p = $("#tRes [data-tipo]"); if (p) elegirTipo(f, p.dataset.tipo, p.dataset.det); } });
 }
 // Agregar un tipo (y si hace falta, un elemento) desde campo: antes muestra los nombres parecidos que ya existen
 function agregarTipo(nombre0) {
   if (!navigator.onLine) { toast("Se necesita señal para agregar un nombre nuevo. Mientras tanto elige uno de la lista.", "bad"); return; }
   const f = S.form; leerCampos();
-  const st = { ele: f.elementoId || ls.get(ULT(), {}).elementoId || "", eleNuevo: false };
+  const st = { ele: f.elementoId || ls.get(ULT(), {}).elementoId || "", eleNuevo: false, det: "", noSep: false };
   const eles = () => S.listas.elementos.filter(e => e.activo !== false);
   const d = dialogo("Agregar tipo nuevo", `<p class="dlg-p muted small">Se agrega para todos. Revisa que no exista ya con otro nombre.</p>
     <div class="f"><label for="nNom">Nombre</label><input id="nNom" name="nombre" value="${esc(capital(nombre0))}" autocomplete="off" maxlength="60" placeholder="Ej. Relleno filtro 3"></div>
+    <div id="nDet"></div>
     <div id="nSim"></div>
     <div class="f" style="margin-top:12px"><span class="flabel">Elemento</span><div class="tsel-chips" id="nEle"></div></div>
     <div class="f" id="nEleBox" hidden style="margin-top:8px"><label for="nEleNom">Nombre del elemento nuevo</label><input id="nEleNom" autocomplete="off" maxlength="40" placeholder="Ej. Drenaje"><div id="nEleSim"></div></div>`,
@@ -2081,6 +2140,12 @@ function agregarTipo(nombre0) {
   };
   const pintar = () => {
     const nombre = nNom.value, r = simHtml(tiposActivos(), nombre, "data-usar");
+    // Un código al final del nombre («… pz3-7») es un dato de este registro: se ofrece pasarlo al detalle
+    const sep = st.noSep ? null : separarDetalle(nombre);
+    d.querySelector("#nDet").innerHTML = (sep ? `<div class="sim muy">«${esc(sep.det)}» parece un dato de este registro, no parte del tipo. Si lo separas, el siguiente que registre otro igual usa el mismo tipo.</div>
+      <button type="button" class="btn pri" style="width:100%;margin-top:8px" data-sep>Separar: tipo «${esc(sep.base)}» · detalle «${esc(sep.det)}»</button>
+      <button type="button" class="linkbtn small" style="margin-top:6px" data-nosep>Dejar el nombre completo</button>` : "")
+      + (st.det ? `<p class="dlg-p small" style="margin:8px 0 0">Detalle del registro: <b>${esc(st.det)}</b> <button type="button" class="linkbtn small" data-quitadet>Quitar</button></p>` : "");
     d.querySelector("#nSim").innerHTML = r.html + (r.top ? `<button type="button" class="btn pri" style="width:100%;margin-top:8px" data-usar="${esc(r.top.o.id)}">Usar «${esc(r.top.o.nombre)}»</button>` : "");
     d.querySelector("#nEle").innerHTML = eles().map(e => `<button type="button" class="chip" data-ele="${esc(e.id)}" aria-pressed="${!st.eleNuevo && st.ele === e.id}">${esc(e.nombre)}</button>`).join("") + `<button type="button" class="chip" data-ele="" aria-pressed="${st.eleNuevo}">＋ Otro elemento</button>`;
     d.querySelector("#nEleBox").hidden = !st.eleNuevo;
@@ -2088,11 +2153,14 @@ function agregarTipo(nombre0) {
     const exacto = r.top && r.top.s === 1, nom0 = capital(nombre);
     sub.disabled = exacto || nom0.length < 3;
     sub.textContent = exacto ? "Ya existe" : r.top ? `No, agregar «${nom0}»` : "Agregar";
-    sub.className = "btn " + (r.top ? "sec" : "pri");
+    sub.className = "btn " + (r.top || sep ? "sec" : "pri");
   };
   d.addEventListener("input", e => { if (e.target === nNom || e.target === nEleNom) pintar(); });
   d.addEventListener("click", e => {
-    const u = e.target.closest("[data-usar]"); if (u) { d.cerrar(true); elegirTipo(f, u.dataset.usar); return; }
+    const u = e.target.closest("[data-usar]"); if (u) { d.cerrar(true); elegirTipo(f, u.dataset.usar, st.det); return; }
+    if (e.target.closest("[data-sep]")) { const s = separarDetalle(nNom.value); if (s) { nNom.value = s.base; st.det = s.det; } pintar(); nNom.focus(); return; }
+    if (e.target.closest("[data-nosep]")) { st.noSep = true; pintar(); return; }
+    if (e.target.closest("[data-quitadet]")) { st.det = ""; st.noSep = true; pintar(); return; }
     const ue = e.target.closest("[data-usar-ele]"); if (ue) { st.ele = ue.dataset.usarEle; st.eleNuevo = false; nEleNom.value = ""; pintar(); return; }
     const c = e.target.closest("[data-ele]"); if (c) { if (c.dataset.ele) { st.ele = c.dataset.ele; st.eleNuevo = false; } else { st.eleNuevo = true; setTimeout(() => nEleNom.focus(), 30); } pintar(); }
   });
@@ -2121,11 +2189,11 @@ function agregarTipo(nombre0) {
         tx.set(rT, { items: [...tipos, item], editadoEn: serverTimestamp(), editadoPor: S.email });
         return { item, eleId, ele: st.eleNuevo ? { id: eleId, nombre: eleNom, ...meta } : null };
       });
-      if (res.ya) { d.cerrar(true); elegirTipo(f, res.ya.id); toast(`«${res.ya.nombre}» ya existía; se eligió ese.`); return; }
+      if (res.ya) { d.cerrar(true); elegirTipo(f, res.ya.id, st.det); toast(`«${res.ya.nombre}» ya existía; se eligió ese.`); return; }
       // Se agrega ya en el teléfono para no esperar a que llegue la lista actualizada
       if (!L.tipo(res.item.id)) S.listas.tipos.push(res.item);
       if (res.ele && !L.ele(res.ele.id)) S.listas.elementos.push(res.ele);
-      d.cerrar(true); elegirTipo(f, res.item.id);
+      d.cerrar(true); elegirTipo(f, res.item.id, st.det);
       toast(`«${res.item.nombre}» agregado para todos`);
     } catch (e) {
       console.error(e); sub.disabled = false; pintar();
@@ -2164,6 +2232,8 @@ function conectarForm() {
   const descDesdeCampos = () => { leerCampos(); if (refrescarDesc(f)) { $("#iDesc").value = f.descripcion; guardarBorrador(); } };
   $("#iCapa").addEventListener("blur", e => { const v = normCapa(e.target.value, f.subestructuraId, f.tipoId); if (v !== e.target.value.trim()) e.target.value = v; descDesdeCampos(); });
   $("#iCapa").addEventListener("input", descDesdeCampos);
+  $("#iDet")?.addEventListener("input", descDesdeCampos);
+  $("#iDet")?.addEventListener("blur", e => { const v = e.target.value.trim().replace(/\s+/g, " "); if (v !== e.target.value) { e.target.value = v; descDesdeCampos(); } });
   $("#bVar").addEventListener("click", () => { $("#iCota").value = "Variable"; });
   // Al salir del PK se avisa si no se entiende o si el final queda antes que el inicio (sin bloquear lo que se escribe)
   const revisarPk = () => {
@@ -2236,7 +2306,7 @@ function marcarErrores(err) {
 }
 
 // Qué cambió entre dos versiones de un registro, en palabras («PK 1+200 → 1+250»)
-const CAMPOS_DIF = [["pk", "PK"], ["capa", "Capa"], ["tipoId", "Tipo"], ["subestructuraId", "Frente"], ["cota", "Cota"], ["fechaCampo", "Fecha"], ["area", "Área"], ["equipo", "Equipo"], ["actividad", "Actividad"], ["descripcion", "Descripción"], ["observaciones", "Observaciones"]];
+const CAMPOS_DIF = [["pk", "PK"], ["capa", "Capa"], ["tipoId", "Tipo"], ["detalle", "Detalle"], ["subestructuraId", "Frente"], ["cota", "Cota"], ["fechaCampo", "Fecha"], ["area", "Área"], ["equipo", "Equipo"], ["actividad", "Actividad"], ["descripcion", "Descripción"], ["observaciones", "Observaciones"]];
 function cambiosDe(a, b) {
   const v = (r, k) => k === "pk" ? (r.pkInicio == null ? "" : rangoPk(r.pkInicio, r.pkFin)) : k === "tipoId" ? nom(L.tipo(r.tipoId), r.tipoId || "") : k === "subestructuraId" ? nom(L.sub(r.subestructuraId), r.subestructuraId || "")
     : k === "fechaCampo" ? (r.fechaCampo ? fmtFecha(r.fechaCampo) : "") : k === "equipo" ? nom(L.equipo(r.equipo), r.equipo || "") : k === "actividad" ? nom(L.act(r.actividad), r.actividad || "") : String(r[k] ?? "").trim();
@@ -2289,6 +2359,8 @@ function guardar() {
   const datos = {
     actividad: f.actividad, fechaCampo: Timestamp.fromDate(new Date(f.fechaCampo)), topografoId: f.topografoId, equipo: f.actividad === "DRN" ? "DRN" : f.equipo || "",
     estructuraId: f.estructuraId, subestructuraId: f.subestructuraId, elementoId: f.elementoId || "", tipoId: f.tipoId || "",
+    // El detalle solo se escribe si hay o había uno (así no aparece un campo vacío nuevo en registros viejos)
+    ...(String(f.detalle || "").trim() || E?.detalle ? { detalle: String(f.detalle || "").trim().slice(0, 40) } : {}),
     pkInicio: f.sinPk || p1 == null || isNaN(p1) ? null : p1,
     pkFin: f.sinPk || p1 == null || isNaN(p1) ? null : (p2 == null || isNaN(p2) ? p1 : p2),
     cota: f.cota.trim(), capa: normCapa(f.capa, f.subestructuraId, f.tipoId), area, descripcion: f.descripcion.trim(), observaciones: f.observaciones.trim(),
@@ -2446,7 +2518,7 @@ function abrirResumenWsp(filtrados, hayFiltro) {
 /* ---------- Listas de registros ---------- */
 function textoBusqueda(r) {
   // Sin tildes ni mayúsculas: «transicion» encuentra «Transición». Incluye la clave del topógrafo (JS, CS…).
-  return sinTilde([r.numero, r.nombreLiberacion, r.descripcion, nom(L.sub(r.subestructuraId)), nom(L.tipo(r.tipoId)), nom(L.topo(r.topografoId), r.topografoId), r.topografoId, nom(L.equipo(r.equipo)), nom(L.act(r.actividad)), ...(r.protocolos || []).flatMap(x => [x.numero, x.nombre]), fmtPk(r.pkInicio), fmtPk(r.pkFin), r.observaciones, r.capa, r.cota, ESTADOS[r.estado], r.numeroCargo].join(" "));
+  return sinTilde([r.numero, r.nombreLiberacion, r.descripcion, nom(L.sub(r.subestructuraId)), nom(L.tipo(r.tipoId)), r.detalle, nom(L.topo(r.topografoId), r.topografoId), r.topografoId, nom(L.equipo(r.equipo)), nom(L.act(r.actividad)), ...(r.protocolos || []).flatMap(x => [x.numero, x.nombre]), fmtPk(r.pkInicio), fmtPk(r.pkFin), r.observaciones, r.capa, r.cota, ESTADOS[r.estado], r.numeroCargo].join(" "));
 }
 // Palabras de una búsqueda (sin tildes); un registro coincide si tiene todas
 const terminos = q => sinTilde(q).trim().split(/\s+/).filter(Boolean);
@@ -2774,6 +2846,7 @@ function abrirFicha(r) {
       ${fila("Estructura", esc([nom(est), sub && sub.nombre !== nom(est) ? sub.nombre : ""].filter(Boolean).join(" · ")))}
       ${fila("Elemento", esc(nom(L.ele(r.elementoId))))}
       ${fila("Tipo", esc(nom(L.tipo(r.tipoId))))}
+      ${fila("Detalle", esc(r.detalle || ""))}
       ${fila("Progresiva", r.pkInicio != null ? `<span class="mono">${esc(rangoPk(r.pkInicio, r.pkFin))}</span>` : "")}
       ${fila("Cota", esc(r.cota))}
       ${fila("Capa", esc(capaDe(r)))}
@@ -6402,35 +6475,142 @@ async function pasarClaveTopo(B, i, vieja, nueva) {
   } catch (e) { console.error(e); toast("No se pudo cambiar la clave: " + (e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); return false; }
 }
 
-// Pasa los registros de un tipo repetido al correcto y quita el repetido de la lista
+const nRegs = n => `${n} ${n === 1 ? "registro" : "registros"}`;
+const sinPermiso = e => e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message;
+// Identifica una superficie o base del modelo para poder devolverla a su tipo si se deshace una unión
+const claveGrupo = d => JSON.stringify([d.subId || "", d.nombre || "", d.fecha || 0, d.liberacionId || "", (d.capa || "").trim()]);
+// Pasa los registros de un tipo repetido al correcto y quita el repetido de la lista. El aviso trae «Deshacer».
 async function unirTipo(viejoId, destinoId, yaConfirmado) {
   const viejo = L.tipo(viejoId), dest = L.tipo(destinoId); if (!viejo || !dest) return;
   if (!navigator.onLine) { toast("Se necesita señal para unir.", "bad"); return; }
   try {
     const regs = (await getDocs(query(collection(db, "liberaciones"), where("tipoId", "==", viejo.id)))).docs.map(fila);
     const n = regs.length, cuantos = n ? `${n === 1 ? "Su registro pasa" : `Sus <b>${n}</b> registros pasan`} a «${esc(dest.nombre)}»` : "No tiene registros";
-    if (!yaConfirmado && !await confirmar("Unir tipos", `${cuantos} y «${esc(viejo.nombre)}» se quita de la lista.`, "Unir")) return;
+    if (!yaConfirmado && !await confirmar("Unir tipos", `${cuantos} y «${esc(viejo.nombre)}» se quita de la lista. Se puede deshacer justo después.`, "Unir")) return;
+    // Lo que había antes, para «Deshacer»
+    const antes = tiposFrescos(), pos = antes.findIndex(t => t.id === viejo.id), item = clon(antes[pos]);
+    const capasAntes = Object.entries(S.capasCfg || {}).filter(([, c]) => c?.tipos?.[viejo.id]).map(([sid, c]) => ({ sid, val: clon(c.tipos[viejo.id]), teniaDest: !!c.tipos[dest.id] }));
     await lotes(regs, (b, r) => { const dat = { tipoId: dest.id, elementoId: dest.elementoId || r.elementoId || "", editadoEn: serverTimestamp(), editadoPor: S.email }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Tipo unido: «${viejo.nombre}» → «${dest.nombre}»`); }, 120);
     // Las capas configuradas del tipo quitado pasan al tipo correcto (si este no tenía) en cada frente
-    const ps = Object.entries(S.capasCfg || {}).filter(([, c]) => c?.tipos?.[viejo.id]).map(([sid, c]) => updateDoc(doc(db, "capas", sid), { [`tipos.${viejo.id}`]: deleteField(), ...(c.tipos[dest.id] ? {} : { [`tipos.${dest.id}`]: c.tipos[viejo.id] }) }));
-    await Promise.all(ps).catch(e => console.warn("capas al unir", e));
+    await Promise.all(capasAntes.map(x => updateDoc(doc(db, "capas", x.sid), { [`tipos.${viejo.id}`]: deleteField(), ...(x.teniaDest ? {} : { [`tipos.${dest.id}`]: x.val }) }))).catch(e => console.warn("capas al unir", e));
     // Superficies XML y bases del tipo quitado pasan al tipo correcto (el Modelo 2D las muestra con su nombre)
-    await moverGrupos("tipoId", viejo.id, d => d.tipoId === viejo.id ? { tipoId: dest.id } : null).catch(e => { console.warn("superficies al unir", e); toast("Los registros se unieron, pero sus superficies XML no se pudieron pasar en el modelo: " + e.message + ". Vuelve a unir con señal.", "bad"); });
-    guardarLista("tipos", tiposFrescos().filter(t => t.id !== viejo.id), `Unido con «${dest.nombre}» · ${n} ${n === 1 ? "registro" : "registros"}`);
+    const movidos = new Set(); let yaDest = new Set();
+    try { yaDest = new Set((await getDocsFromServer(query(collection(db, "bases"), where("tipoId", "==", dest.id)))).docs.map(x => claveGrupo(x.data()))); } catch (e) { console.warn("bases del destino", e); }
+    await moverGrupos("tipoId", viejo.id, d => { if (d.tipoId !== viejo.id) return null; movidos.add(claveGrupo(d)); return { tipoId: dest.id }; }).catch(e => { console.warn("superficies al unir", e); toast("Los registros se unieron, pero sus superficies XML no se pudieron pasar en el modelo: " + e.message + ". Vuelve a unir con señal.", "bad"); });
+    yaDest.forEach(k => movidos.delete(k));
     if (BUS.todos) BUS.todos.forEach(r => { if (r.tipoId === viejo.id) r.tipoId = dest.id; });
-  } catch (e) { console.error(e); toast("No se pudo unir: " + (e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); }
+    T_FRENTE_PEDIDO.clear(); Object.keys(T_FRENTE).forEach(k => delete T_FRENTE[k]);
+    const ok = await Promise.resolve(guardarLista("tipos", tiposFrescos().filter(t => t.id !== viejo.id), `Unido con «${dest.nombre}» · ${nRegs(n)}`));
+    if (!ok) return;
+    toast(`«${viejo.nombre}» unido con «${dest.nombre}» · ${nRegs(n)}.`, "", { t: "Deshacer", fn: () => deshacerUnionTipo({ item, pos, dest, regs, capasAntes, movidos }) });
+  } catch (e) { console.error(e); toast("No se pudo unir: " + sinPermiso(e), "bad"); }
 }
-async function unirElemento(viejoId, destinoId) {
+// Devuelve el tipo a la lista, y sus registros, capas, superficies y bases a como estaban
+async function deshacerUnionTipo({ item, pos, dest, regs, capasAntes, movidos }) {
+  if (!navigator.onLine) { toast("Se necesita señal para deshacer.", "bad"); return; }
+  try {
+    const its = tiposFrescos();
+    if (!its.some(o => o.id === item.id)) { its.splice(Math.min(pos, its.length), 0, item); if (!await Promise.resolve(guardarTipos(its, `«${item.nombre}» restaurado`, false))) return; }
+    await lotes(regs, (b, r) => { const dat = { tipoId: item.id, elementoId: r.elementoId || "", editadoEn: serverTimestamp(), editadoPor: S.email }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Unión deshecha: vuelve a «${item.nombre}»`); }, 120);
+    await Promise.all(capasAntes.map(x => updateDoc(doc(db, "capas", x.sid), { [`tipos.${item.id}`]: x.val, ...(x.teniaDest ? {} : { [`tipos.${dest.id}`]: deleteField() }) }))).catch(e => console.warn("capas al deshacer", e));
+    if (movidos.size) await moverGrupos("tipoId", dest.id, d => d.tipoId === dest.id && movidos.has(claveGrupo(d)) ? { tipoId: item.id } : null).catch(e => { console.warn("superficies al deshacer", e); toast("Los registros volvieron, pero sus superficies XML no: " + e.message, "bad"); });
+    const ids = new Set(regs.map(r => r.id)); if (BUS.todos) BUS.todos.forEach(r => { if (ids.has(r.id)) r.tipoId = item.id; });
+    T_FRENTE_PEDIDO.clear(); Object.keys(T_FRENTE).forEach(k => delete T_FRENTE[k]);
+    toast(`Unión deshecha: «${item.nombre}» volvió${regs.length ? ` con ${regs.length === 1 ? "su registro" : `sus ${regs.length} registros`}` : ""}.`);
+  } catch (e) { console.error(e); toast("No se pudo deshacer: " + sinPermiso(e), "bad"); }
+  repintarTipos();
+}
+async function unirElemento(viejoId, destinoId, yaConfirmado) {
   const viejo = L.ele(viejoId), dest = L.ele(destinoId); if (!viejo || !dest) return;
   if (!navigator.onLine) { toast("Se necesita señal para unir.", "bad"); return; }
-  if (!await confirmar("Unir elementos", `Los tipos y registros de «${esc(viejo.nombre)}» pasan a «${esc(dest.nombre)}» y «${esc(viejo.nombre)}» se quita de la lista.`, "Unir")) return;
+  if (!yaConfirmado && !await confirmar("Unir elementos", `Los tipos y registros de «${esc(viejo.nombre)}» pasan a «${esc(dest.nombre)}» y «${esc(viejo.nombre)}» se quita de la lista. Se puede deshacer justo después.`, "Unir")) return;
   try {
+    const els = clon(S.listas.elementos), pos = els.findIndex(e => e.id === viejo.id), item = clon(els[pos]);
     const regs = (await getDocs(query(collection(db, "liberaciones"), where("elementoId", "==", viejo.id)))).docs.map(fila);
     await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: dest.id, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Elemento unido: «${viejo.nombre}» → «${dest.nombre}»`); }, 150);
+    const movT = S.listas.tipos.filter(t => t.elementoId === viejo.id).map(t => t.id);
     const tipos = clon(S.listas.tipos); tipos.forEach(t => { if (t.elementoId === viejo.id) t.elementoId = dest.id; });
     guardarLista("tipos", tipos, "Tipos actualizados");
-    guardarLista("elementos", S.listas.elementos.filter(e => e.id !== viejo.id), `Unido con «${dest.nombre}» · ${regs.length} ${regs.length === 1 ? "registro" : "registros"}`);
-  } catch (e) { console.error(e); toast("No se pudo unir: " + (e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); }
+    const ok = await Promise.resolve(guardarLista("elementos", S.listas.elementos.filter(e => e.id !== viejo.id), `Unido con «${dest.nombre}» · ${nRegs(regs.length)}`));
+    if (!ok) return;
+    toast(`«${viejo.nombre}» unido con «${dest.nombre}» · ${nRegs(regs.length)}.`, "", { t: "Deshacer", fn: async () => {
+      if (!navigator.onLine) { toast("Se necesita señal para deshacer.", "bad"); return; }
+      try {
+        const es = clon(S.listas.elementos);
+        if (!es.some(e => e.id === item.id)) { es.splice(Math.min(pos, es.length), 0, item); if (!await Promise.resolve(guardarLista("elementos", es, `«${item.nombre}» restaurado`))) return; }
+        const ts = clon(S.listas.tipos); ts.forEach(t => { if (movT.includes(t.id)) t.elementoId = item.id; }); guardarLista("tipos", ts, "Tipos restaurados");
+        await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: item.id, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Unión deshecha: vuelve a «${item.nombre}»`); }, 150);
+        toast(`Unión deshecha: «${item.nombre}» volvió con sus tipos.`);
+      } catch (e) { console.error(e); toast("No se pudo deshacer: " + sinPermiso(e), "bad"); }
+      repintarTipos();
+    } });
+  } catch (e) { console.error(e); toast("No se pudo unir: " + sinPermiso(e), "bad"); }
+}
+// Elegir con qué tipo (o elemento) unir: buscador, los parecidos arriba y cuántos registros tiene cada uno
+function elegirDestino(x, esTipo) {
+  const usos = esTipo ? usosTipos() || {} : {};
+  const lista = (esTipo ? tiposActivos() : S.listas.elementos.filter(e => e.activo !== false)).filter(o => o.id !== x.id);
+  if (!lista.length) { toast(`No hay otro ${esTipo ? "tipo" : "elemento"} con el que unirlo.`, "bad"); return; }
+  const n = esTipo ? usos[x.id] : null, par = parecidos(x.nombre, lista, 0.5).slice(0, 5).map(p => p.o);
+  const meta = o => esTipo ? `${esc(nom(L.ele(o.elementoId), "Sin elemento"))}${usos[o.id] ? " · " + nRegs(usos[o.id]) : ""}` : (k => `${k} ${k === 1 ? "tipo" : "tipos"}`)(S.listas.tipos.filter(t => t.elementoId === o.id).length);
+  const filaD = (o, ok) => `<button type="button" class="tsel-i" data-dest="${esc(o.id)}"><b>${resaltar(o.nombre, ok)}</b><small>${meta(o)}</small></button>`;
+  const txt = esTipo ? `${n ? (n === 1 ? "Su registro pasa" : `Sus <b>${n}</b> registros pasan`) : "Sus registros pasan"} al tipo que elijas` : "Sus tipos y registros pasan al elemento que elijas";
+  const d = dialogo(`Unir «${x.nombre}»`, `<p class="dlg-p">${txt} y «${esc(x.nombre)}» se quita de la lista. Se puede deshacer justo después.</p>
+    <input id="dQ" class="tsel-q" type="search" placeholder="Buscar el nombre correcto…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Buscar ${esTipo ? "tipo" : "elemento"}">
+    <div class="tsel-res dlg-lista" id="dRes"></div>`, () => {}, "Cerrar", { soloCerrar: true });
+  const res = d.querySelector("#dRes"), q = d.querySelector("#dQ");
+  const pintar = () => {
+    const t = q.value.trim();
+    if (t) { res.innerHTML = buscarNombres(t, lista).slice(0, 20).map(y => filaD(y.o, y.ok)).join("") || `<p class="tsel-nada">Ningún ${esTipo ? "tipo" : "elemento"} parecido a «${esc(t)}».</p>`; return; }
+    const resto = lista.filter(o => !par.includes(o)).sort((a, b) => a.nombre.localeCompare(b.nombre));
+    res.innerHTML = (par.length ? `<div class="tsel-g">Parecidos</div>${par.map(o => filaD(o)).join("")}<div class="tsel-g">Todos</div>` : "") + resto.map(o => filaD(o)).join("");
+  };
+  q.addEventListener("input", pintar);
+  q.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); res.querySelector("[data-dest]")?.click(); } });
+  res.addEventListener("click", e => {
+    const b = e.target.closest("[data-dest]"); if (!b) return; d.cerrar(true);
+    (esTipo ? unirTipo(x.id, b.dataset.dest, true) : unirElemento(x.id, b.dataset.dest, true)).then(repintarTipos);
+  });
+  pintar();
+}
+// Los registros de un tipo (del resumen), para decidir con contexto; cada uno abre su ficha
+async function verRegistrosTipo(t) {
+  if (!BUS.todos) { toast("Cargando registros…"); await cargarTodoResumen(); }
+  const regs = (BUS.todos || []).filter(r => r.tipoId === t.id).sort((a, b) => (toDate(b.fechaCampo)?.getTime() || 0) - (toDate(a.fechaCampo)?.getTime() || 0)), lim = 80;
+  const filaR = r => `<button type="button" class="tsel-i" data-id="${esc(r.id)}"><b>${esc(r.numero || ESTADOS[r.estado] || r.estado || "Registro")} · ${esc(nom(L.sub(r.subestructuraId)))}</b><small>${[r.pkInicio != null ? rangoPk(r.pkInicio, r.pkFin) : "", r.capa || "", r.fechaCampo ? fmtFecha(r.fechaCampo, false) : "", r.topografoId ? nom(L.topo(r.topografoId), r.topografoId) : ""].filter(Boolean).map(esc).join(" · ")}</small></button>`;
+  const d = dialogo(`Registros de «${t.nombre}»`, regs.length
+    ? `<p class="dlg-p muted small">${nRegs(regs.length)} · toca uno para abrirlo.</p><div class="tsel-res dlg-lista">${regs.slice(0, lim).map(filaR).join("")}</div>${regs.length > lim ? `<p class="muted small" style="margin:8px 0 0">y ${regs.length - lim} más (búscalos en Registros con el filtro de tipo).</p>` : ""}`
+    : `<p class="dlg-p">No tiene registros (sin contar la papelera).</p>`, () => {}, "Cerrar", { soloCerrar: true });
+  d.addEventListener("click", e => { const b = e.target.closest(".dlg-lista [data-id]"); if (!b) return; d.cerrar(true); abrirFichaId(b.dataset.id); });
+}
+// Si el nombre de un tipo trae un código («… pz3-7»): el tipo queda con el nombre general y el código pasa al detalle de sus registros
+async function separarDetTipo(t, nombreActual) {
+  const s = separarDetalle(nombreActual || t.nombre); if (!s) return;
+  if (!navigator.onLine) { toast("Se necesita señal para separar el detalle.", "bad"); return; }
+  try {
+    const regs = (await getDocs(query(collection(db, "liberaciones"), where("tipoId", "==", t.id)))).docs.map(fila), sinDet = regs.filter(r => !String(r.detalle || "").trim());
+    const igual = tiposActivos().find(o => o.id !== t.id && similitud(o.nombre, s.base) === 1);
+    const txt = `${sinDet.length ? `${sinDet.length === 1 ? "Su registro guarda" : `Sus <b>${sinDet.length}</b> registros guardan`} «${esc(s.det)}» como detalle` : "No tiene registros sin detalle"} y ${igual ? `se une con «${esc(igual.nombre)}», que ya existe` : `el tipo pasa a llamarse «${esc(s.base)}»`}.`;
+    if (!await confirmar("Separar detalle", txt, "Separar")) return;
+    await lotes(sinDet, (b, r) => { b.update(doc(db, "liberaciones", r.id), { detalle: s.det, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Detalle separado del tipo: ${s.det}`); }, 120);
+    if (igual) { await unirTipo(t.id, igual.id, true); return; }
+    await Promise.resolve(cambiarTipo(t.id, x => { x.nombre = s.base; }, `Ahora se llama «${s.base}»`));
+  } catch (e) { console.error(e); toast("No se pudo separar: " + sinPermiso(e), "bad"); }
+}
+// «Está bien» de un tipo agregado desde campo: guarda el nombre y el elemento corregidos y lo da por revisado
+async function aprobarTipo(t, nombre0, ele) {
+  const nombre = capital(nombre0).slice(0, 60);
+  if (nombre.length < 3) { toast("Escribe el nombre del tipo.", "bad"); return; }
+  const igual = tiposActivos().find(o => o.id !== t.id && similitud(o.nombre, nombre) === 1);
+  if (igual) { if (await confirmar("Ese nombre ya existe", `Ya hay un tipo «${esc(igual.nombre)}». ¿Unir «${esc(t.nombre)}» con él?`, "Unir")) unirTipo(t.id, igual.id, true).then(repintarTipos); return; }
+  const cambiaEle = ele && ele !== t.elementoId;
+  const p = cambiarTipo(t.id, x => { x.nombre = nombre; if (ele) x.elementoId = ele; x.nuevo = false; x.revisadoPor = S.email; x.revisadoEn = new Date().toISOString(); }, nombre !== t.nombre ? `Revisado como «${nombre}»` : "Marcado como revisado");
+  if (!p || !cambiaEle || !await Promise.resolve(p)) return;
+  // Si cambió el elemento, sus registros también pasan
+  try {
+    const regs = (await getDocs(query(collection(db, "liberaciones"), where("tipoId", "==", t.id)))).docs.map(fila).filter(r => r.elementoId !== ele);
+    await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: ele, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Elemento del tipo «${nombre}»: ${nom(L.ele(r.elementoId))} → ${nom(L.ele(ele))}`); }, 150);
+  } catch (e) { toast("Los registros no cambiaron de elemento: " + sinPermiso(e), "bad"); }
 }
 // Cuántos registros usa cada tipo (del resumen del panel; se carga una vez y se reutiliza 5 minutos)
 function usosTipos() {
@@ -6454,15 +6634,7 @@ function moverTipo(id, pos) {
   all.splice(k, 0, t);
   if (guardarTipos(all, `«${t.nombre}» quedó en la posición ${pos}`)) $(`#tyOrd [data-id="${CSS.escape(id)}"] [data-k="pos"]`)?.focus();
 }
-function elegirUnion(t) {
-  const usos = usosTipos() || {}, n = usos[t.id];
-  const par = parecidos(t.nombre, tiposActivos().filter(o => o.id !== t.id), 0.5).map(p => p.o);
-  const resto = tiposActivos().filter(o => o.id !== t.id && !par.includes(o)).sort((a, b) => a.nombre.localeCompare(b.nombre));
-  const op = o => `<option value="${esc(o.id)}">${esc(o.nombre)}${usos[o.id] ? ` · ${usos[o.id]} reg.` : ""}</option>`;
-  dialogo(`Unir «${t.nombre}»`, `<p class="dlg-p">${n != null ? `Sus <b>${n}</b> ${n === 1 ? "registro pasa" : "registros pasan"}` : "Sus registros pasan"} al tipo que elijas y «${esc(t.nombre)}» se quita de la lista. También se pasan sus capas configuradas.</p>
-    <div class="f"><label for="dUnir">Unir con</label><select id="dUnir" name="dest" required><option value="">Elige el tipo correcto…</option>${par.length ? `<optgroup label="Parecidos">${par.map(op).join("")}</optgroup><optgroup label="Todos">${resto.map(op).join("")}</optgroup>` : resto.map(op).join("")}</select></div>`,
-    o => { if (!o.dest) return false; unirTipo(t.id, o.dest, true).then(() => { if (S.view === "ajustes" && S.aj.tab === "tipos") ajTipos(); }); }, "Unir");
-}
+const elegirUnion = t => elegirDestino(t, true);
 function cambiarEleTipo(t) {
   const usos = usosTipos() || {}, n = usos[t.id] || 0;
   dialogo(`Elemento de «${t.nombre}»`, `<div class="f"><label for="dEle">Elemento</label><select id="dEle" name="ele">${S.listas.elementos.filter(e => e.activo !== false || e.id === t.elementoId).map(e => `<option value="${esc(e.id)}" ${e.id === t.elementoId ? "selected" : ""}>${esc(e.nombre)}</option>`).join("")}</select></div>
@@ -6533,13 +6705,7 @@ function moverElemento(id, paso) {
   [items[i], items[j]] = [items[j], items[i]];
   Promise.resolve(guardarLista("elementos", items, `«${items[j].nombre}» movido ${paso < 0 ? "arriba" : "abajo"}`)).then(() => { repintarTipos(); $(`#tyList .elgrp[data-e="${CSS.escape(id)}"] [data-k="emas"]`)?.focus(); });
 }
-function elegirUnionEle(e) {
-  const otros = S.listas.elementos.filter(o => o.id !== e.id && o.activo !== false);
-  if (!otros.length) { toast("No hay otro elemento con el que unirlo.", "bad"); return; }
-  dialogo(`Unir «${e.nombre}»`, `<p class="dlg-p">Sus tipos y registros pasan al elemento que elijas y «${esc(e.nombre)}» se quita de la lista.</p>
-    <div class="f"><label for="dUnirE">Unir con</label><select id="dUnirE" name="dest" required><option value="">Elige el elemento correcto…</option>${otros.map(o => `<option value="${esc(o.id)}">${esc(o.nombre)}</option>`).join("")}</select></div>`,
-    o => { if (!o.dest) return false; unirElemento(e.id, o.dest).then(repintarTipos); }, "Unir");
-}
+const elegirUnionEle = e => elegirDestino(e, false);
 const repintarTipos = () => { if (S.view === "ajustes" && S.aj.tab === "tipos") ajTipos(); };
 function ajTipos() {
   cuerpoAj();
@@ -6547,21 +6713,26 @@ function ajTipos() {
   const B = tiposFrescos(); A.b = clon(B);
   const usos = usosTipos();
   const nT = S.listas.tipos.filter(t => t.nuevo && t.activo !== false), nE = S.listas.elementos.filter(e => e.nuevo && e.activo !== false);
-  const otrosT = id => tiposActivos().filter(t => t.id !== id).sort((a, b) => a.nombre.localeCompare(b.nombre));
-  const otrosE = id => S.listas.elementos.filter(e => e.id !== id && e.activo !== false);
   const quien = x => `Agregado por ${esc(x.creadoNombre || x.creadoPor || "")}${x.creadoEn ? " · " + esc(fmtFecha(x.creadoEn)) : ""}`;
-  const parecido = (x, lista) => parecidos(x.nombre, lista.filter(o => o.id !== x.id), 0.6)[0]?.o;
+  // El parecido que se ofrece en un toque; no uno mucho más genérico («Ubicación» para «Ubicación de piezómetro casagrande»)
+  const parecido = (x, lista) => { const n = palabras(x.nombre).length; return parecidos(x.nombre, lista.filter(o => o.id !== x.id), 0.6).find(p => palabras(p.o.nombre).length * 2 > n)?.o; };
   const nReg = n => `${n} ${n === 1 ? "registro" : "registros"}`;
   const regsTxt = id => usos && usos[id] ? nReg(usos[id]) : usos ? "Sin registros" : "";
   const regsEle = id => usos ? B.filter(t => t.elementoId === id).reduce((s, t) => s + (usos[t.id] || 0), 0) : null;
-  // Agregados desde campo: el parecido se ofrece como botón principal; «Es distinto» lo deja como tipo nuevo
+  // Agregados desde campo: se corrige el nombre y el elemento ahí mismo; el parecido se ofrece como botón principal
   const nvFila = (x, esTipo) => {
-    const p = parecido(x, esTipo ? tiposActivos() : S.listas.elementos), otros = esTipo ? otrosT(x.id) : otrosE(x.id);
-    return `<div class="nv" ${esTipo ? `data-nt="${esc(x.id)}"` : `data-ne="${esc(x.id)}"`}><div class="nn"><b>${esc(x.nombre)}</b><small>${esTipo ? `Tipo · ${esc(nom(L.ele(x.elementoId)))}` : "Elemento"}${esTipo && regsTxt(x.id) ? " · " + regsTxt(x.id) : ""} · ${quien(x)}</small></div>
-      <div class="nv-acc">${p ? `<button type="button" class="mini ok-btn" data-k="unirP" data-dest="${esc(p.id)}">Unir con «${esc(corta(p.nombre, 34))}»</button>` : ""}<button type="button" class="mini ${p ? "" : "ok-btn"}" data-k="rev">${p ? "Es distinto" : "Está bien"}</button>
-      <select class="nv-sel" data-k="unir" aria-label="Unir ${esc(x.nombre)} con otro"><option value="">Unir con otro…</option>${otros.map(o => `<option value="${esc(o.id)}">${esc(o.nombre)}</option>`).join("")}</select></div></div>`;
+    const p = parecido(x, esTipo ? tiposActivos() : S.listas.elementos), sep = esTipo ? separarDetalle(x.nombre) : null;
+    const n = esTipo && usos ? usos[x.id] || 0 : null;
+    const regs = esTipo ? (n ? `<button type="button" class="linkbtn" data-k="regs">${nRegs(n)}</button>` : usos ? "Sin registros" : "") : "";
+    const eles = S.listas.elementos.filter(e => e.activo !== false || e.id === x.elementoId);
+    return `<div class="nv" ${esTipo ? `data-nt="${esc(x.id)}"` : `data-ne="${esc(x.id)}"`}>
+      <div class="nv-ed"><input class="nv-nom" data-k="nom" value="${esc(x.nombre)}" maxlength="60" aria-label="Nombre de ${esTipo ? "tipo" : "elemento"} ${esc(x.nombre)}">
+        ${esTipo ? `<select class="nv-sel" data-k="ele" aria-label="Elemento de ${esc(x.nombre)}">${eles.map(e => `<option value="${esc(e.id)}" ${e.id === x.elementoId ? "selected" : ""}>${esc(e.nombre)}</option>`).join("")}${!L.ele(x.elementoId) ? '<option value="" selected>Sin elemento</option>' : ""}</select>` : ""}</div>
+      <small class="nv-meta">${esTipo ? "Tipo" : "Elemento"}${regs ? " · " + regs : ""} · ${quien(x)}</small>
+      ${sep ? `<p class="nv-sep">«${esc(sep.det)}» parece un dato del registro, no del tipo. <button type="button" class="linkbtn" data-k="sep">Separar detalle</button></p>` : ""}
+      <div class="nv-acc">${p ? `<button type="button" class="mini ok-btn" data-k="unirP" data-dest="${esc(p.id)}">Unir con «${esc(corta(p.nombre, 34))}»</button>` : ""}<button type="button" class="mini ${p ? "" : "ok-btn"}" data-k="rev">${p ? "Es distinto" : "Está bien"}</button><button type="button" class="mini" data-k="unirB">Unir con otro…</button></div></div>`;
   };
-  const nuevos = nT.length || nE.length ? `<div class="nuevos" id="nvBox"><h3>Agregados desde campo (${nT.length + nE.length})</h3><p class="muted small" style="margin:0 0 4px">Revisa que no estén repetidos. «Unir» pasa sus registros al nombre correcto y quita el repetido.</p>
+  const nuevos = nT.length || nE.length ? `<div class="nuevos" id="nvBox"><h3>Agregados desde campo (${nT.length + nE.length})</h3><p class="muted small" style="margin:0 0 4px">Corrige el nombre si hace falta y toca «Está bien». Si ya existía con otro nombre, «Unir» pasa sus registros al correcto y quita el repetido (se puede deshacer).</p>
     ${nT.map(t => nvFila(t, true)).join("")}${nE.map(e => nvFila(e, false)).join("")}</div>` : "";
   const seg = `<div class="tabs ty-vistas" role="group" aria-label="Vista"><button type="button" class="tab" data-tyv="cat" aria-pressed="${A.tyVista === "cat"}">Catálogo (${B.length})</button><button type="button" class="tab" data-tyv="ord" aria-pressed="${A.tyVista === "ord"}">Orden en el perfil (${B.filter(t => t.enGrafico && t.activo !== false).length})</button></div>`;
   let cuerpo;
@@ -6608,16 +6779,22 @@ function ajTipos() {
     items.push({ id: nuevoId(n, new Set(items.map(o => o.id))).toUpperCase(), nombre: n }); Promise.resolve(guardarLista("equipos", items, "Equipo agregado")).then(ok => { if (ok) { repintarTipos(); $("#eqNom")?.focus(); } });
   });
   $("#nvBox")?.addEventListener("click", e => {
-    const b = e.target.closest("[data-k]"), r = e.target.closest(".nv"); if (!b || !r) return;
-    if (b.dataset.k === "unirP") { (r.dataset.nt ? unirTipo(r.dataset.nt, b.dataset.dest) : unirElemento(r.dataset.ne, b.dataset.dest)).then(repintarTipos); return; }
+    const b = e.target.closest("button[data-k]"), r = e.target.closest(".nv"); if (!b || !r) return;
+    const t = r.dataset.nt ? L.tipo(r.dataset.nt) : null, el = r.dataset.ne ? L.ele(r.dataset.ne) : null; if (!t && !el) return;
+    const nomV = r.querySelector('[data-k="nom"]')?.value || "";
+    if (b.dataset.k === "unirP") { (t ? unirTipo(t.id, b.dataset.dest) : unirElemento(el.id, b.dataset.dest)).then(repintarTipos); return; }
+    if (b.dataset.k === "unirB") { elegirDestino(t || el, !!t); return; }
+    if (b.dataset.k === "regs" && t) { verRegistrosTipo(t); return; }
+    if (b.dataset.k === "sep" && t) { separarDetTipo(t, nomV).then(repintarTipos); return; }
     if (b.dataset.k !== "rev") return;
-    if (r.dataset.nt) { cambiarTipo(r.dataset.nt, x => { x.nuevo = false; }, "Marcado como revisado"); return; }
-    Promise.resolve(cambiarElemento(r.dataset.ne, x => { x.nuevo = false; }, "Marcado como revisado")).then(ok => { if (ok) repintarTipos(); });
+    if (t) { aprobarTipo(t, nomV, r.querySelector('[data-k="ele"]')?.value || "").then(repintarTipos); return; }
+    const nombre = capital(nomV).slice(0, 60); if (nombre.length < 2) { toast("Escribe el nombre del elemento.", "bad"); return; }
+    const igual = S.listas.elementos.find(o => o.id !== el.id && similitud(o.nombre, nombre) === 1);
+    if (igual) { confirmar("Ese nombre ya existe", `Ya hay un elemento «${esc(igual.nombre)}». ¿Unir «${esc(el.nombre)}» con él?`, "Unir").then(si => { if (si) unirElemento(el.id, igual.id, true).then(repintarTipos); }); return; }
+    Promise.resolve(cambiarElemento(el.id, x => { x.nombre = nombre; x.nuevo = false; x.revisadoPor = S.email; x.revisadoEn = new Date().toISOString(); }, "Marcado como revisado")).then(ok => { if (ok) repintarTipos(); });
   });
-  $("#nvBox")?.addEventListener("change", e => {
-    if (e.target.dataset.k !== "unir" || !e.target.value) return; const r = e.target.closest(".nv"), dest = e.target.value; e.target.value = "";
-    (r.dataset.nt ? unirTipo(r.dataset.nt, dest) : unirElemento(r.dataset.ne, dest)).then(repintarTipos);
-  });
+  // Enter en el nombre corregido = «Está bien»
+  $("#nvBox")?.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.dataset.k === "nom") { e.preventDefault(); e.target.closest(".nv").querySelector('[data-k="rev"]')?.click(); } });
   document.querySelector(".ty-vistas")?.addEventListener("click", e => { const b = e.target.closest("[data-tyv]"); if (!b) return; S.aj.tyVista = b.dataset.tyv; ls.set("lib.tyVista", S.aj.tyVista); ajTipos(); });
   const tq = $("#tyQ");
   if (tq) buscadorDiferido(tq, v => { S.aj.tyQ = v; }, () => ajTipos(), () => S.view === "ajustes" && S.aj.tab === "tipos");
@@ -6654,6 +6831,8 @@ function ajTipos() {
       abrirMenu({ titulo: esc(t.nombre), sub: esc(nom(L.ele(t.elementoId))) + (regsTxt(t.id) ? " · " + regsTxt(t.id) : ""), x: rc.right - 8, y: rc.bottom + 2, items: [
         { t: "Cambiar elemento…", fn: () => cambiarEleTipo(t) },
         { t: "Unir con otro tipo…", fn: () => elegirUnion(t) },
+        ...(u && u[t.id] ? [{ t: `Ver sus ${nRegs(u[t.id])}`, fn: () => verRegistrosTipo(t) }] : []),
+        ...(separarDetalle(t.nombre) ? [{ t: "Separar detalle del nombre…", fn: () => separarDetTipo(t).then(repintarTipos) }] : []),
         ...(t.activo !== false && t.enGrafico ? [{ t: "Mover en el perfil…", fn: () => { S.aj.tyVista = "ord"; ls.set("lib.tyVista", "ord"); ajTipos(); $(`#tyOrd [data-id="${CSS.escape(t.id)}"] [data-k="pos"]`)?.focus(); } }] : []),
         { sep: 1 }, t.activo === false ? { t: "Activar", fn: () => activarTipo(t, true) } : { t: "Desactivar", fn: () => activarTipo(t, false), peligro: true },
         ...(sin ? [{ t: "Quitar de la lista", fn: () => quitarTipo(t), peligro: true }] : [])

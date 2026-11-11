@@ -117,7 +117,8 @@ const lista = (p, k) => p.evaluate(k => (window.__fakeStore()['listas/' + k] || 
   await p.screenshot({ path: path.join(OUT, '4-ajustes.png'), fullPage: true });
   await p.click(`#nvBox [data-ne="${dr.id}"] [data-k="rev"]`); await p.waitForTimeout(400);
   ok((await lista(p, 'elementos')).find(e => e.id === dr.id).nuevo === false, '«Revisado» quita la marca');
-  await p.selectOption(`#nvBox [data-nt="${t3.id}"] [data-k="unir"]`, 'filtro2'); await p.waitForSelector('.dlg.on'); await p.click('.dlg.on [type=submit]'); await p.waitForTimeout(900);
+  await p.click(`#nvBox [data-nt="${t3.id}"] [data-k="unirB"]`); await p.waitForSelector('.dlg.on #dQ'); await p.fill('.dlg.on #dQ', 'filtro 2'); await p.waitForTimeout(150);
+  await p.click('.dlg.on #dRes [data-dest="filtro2"]'); await p.waitForTimeout(900);
   ok(await p.evaluate(() => Object.values(window.__fakeStore()).find(x => x && x.descripcion === 'Primera con filtro 3')?.tipoId) === 'filtro2', '«Unir con…» pasa sus registros al tipo correcto');
   ok(!(await lista(p, 'tipos')).some(t => t.id === t3.id), 'y quita el repetido de la lista');
   ok(await p.evaluate(() => Object.values(window.__fakeStore()).some(x => x && x.accion === 'editado' && /Tipo unido/.test(x.nota || ''))), 'queda en el historial');

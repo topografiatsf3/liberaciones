@@ -71,7 +71,13 @@ async function caso(nombre, fn) { try { await fn(); ok++; console.log('OK   ', n
   await caso('jefe NO puede cambiar capa y estado a la vez', () => assertFails(updateDoc(doc(jefe, 'liberaciones', 'E1'), { capa: 'Capa 4', estado: 'PT' })));
   await caso('jefe cambia la estructura de un registro (soloEstructura)', () => assertSucceeds(updateDoc(doc(jefe, 'liberaciones', 'E1'), { estructuraId: 'e2', editadoEn: serverTimestamp(), editadoPor: U.jefe })));
   await caso('jefe NO puede cambiar estructura y número a la vez', () => assertFails(updateDoc(doc(jefe, 'liberaciones', 'E1'), { estructuraId: 'e3', numero: 'SKT-TOP-09999' })));
-  await caso('topógrafo NO puede cambiar la estructura de un entregado', () => assertFails(updateDoc(doc(topo, 'liberaciones', 'E1'), { estructuraId: 'e3' })));
+  await caso('jefe separa el detalle del tipo (soloTipo con detalle)', () => assertSucceeds(updateDoc(doc(jefe, 'liberaciones', 'E1'), { detalle: 'PZ3-7', editadoEn: serverTimestamp(), editadoPor: U.jefe })));
+  await caso('jefe une tipo y pone detalle a la vez', () => assertSucceeds(updateDoc(doc(jefe, 'liberaciones', 'E1'), { tipoId: 't2', elementoId: 'e9', detalle: 'BH-1', editadoEn: serverTimestamp(), editadoPor: U.jefe })));
+  await caso('jefe NO puede poner un detalle enorme', () => assertFails(updateDoc(doc(jefe, 'liberaciones', 'E1'), { detalle: 'x'.repeat(60) })));
+  await caso('jefe NO puede cambiar detalle y estado a la vez', () => assertFails(updateDoc(doc(jefe, 'liberaciones', 'E1'), { detalle: 'P-1', estado: 'PT' })));
+  await caso('gabinete NO puede cambiar el detalle de campo', () => assertFails(updateDoc(doc(gab, 'liberaciones', 'L4'), { detalle: 'X-1' })));
+  await caso('topógrafo pone detalle en su pendiente', () => assertSucceeds(updateDoc(doc(topo, 'liberaciones', 'T1'), { detalle: 'PZ3-8', estado: 'PT' })));
+  await caso('topógrafo NO puede cambiar la estructura de un entregado',() => assertFails(updateDoc(doc(topo, 'liberaciones', 'E1'), { estructuraId: 'e3' })));
 
   console.log('— Jefe: el atajo «excel» ya no abre todo');
   await caso('jefe NO puede editar un registro de la app marcándolo como excel', () => assertFails(updateDoc(doc(jefe, 'liberaciones', 'T1'), { origen: 'excel', estado: 'EC', numero: 'SKT-TOP-09998' })));

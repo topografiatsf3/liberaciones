@@ -35,8 +35,9 @@ service cloud.firestore {
     function soloProcesado() { return resource.data.actividad == 'ASP' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['procesado', 'procesadoPor', 'procesadoNombre', 'procesadoEn']); }
     // Levantamientos (sin código): gabinete, jefe de área y administrador marcan «Enterado» o lo quitan
     function soloVisto() { return resource.data.estado == 'NA' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visto', 'vistoPor', 'vistoNombre', 'vistoEn']); }
-    // Unir un tipo o elemento repetido: solo cambia a qué tipo y elemento pertenece el registro
-    function soloTipo() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tipoId', 'elementoId', 'editadoEn', 'editadoPor']); }
+    // Unir un tipo o elemento repetido, o separar el detalle de su nombre: solo cambia el tipo, el elemento y el detalle del registro
+    function soloTipo() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tipoId', 'elementoId', 'detalle', 'editadoEn', 'editadoPor'])
+      && request.resource.data.get('detalle', '') is string && request.resource.data.get('detalle', '').size() <= 40; }
     // Cambiar la clave de un topógrafo (Ajustes → Topógrafos): solo cambia la clave en sus registros
     function soloTopo() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['topografoId', 'editadoEn', 'editadoPor']); }
     // Renombrar una capa (Ajustes → Capas): solo cambia el nombre de la capa en sus registros
@@ -56,7 +57,7 @@ service cloud.firestore {
     function sinTocarCampo() { return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
       'actividad', 'fechaCampo', 'topografoId', 'equipo', 'estructuraId', 'subestructuraId', 'elementoId', 'tipoId',
       'pkInicio', 'pkFin', 'cota', 'area', 'descripcion', 'observaciones', 'linksCsv', 'linksFotos', 'archivos',
-      'creadoPor', 'creadoEn', 'origen']); }
+      'detalle', 'creadoPor', 'creadoEn', 'origen']); }
     function tocaPapelera() { return request.resource.data.diff(resource.data).affectedKeys().hasAny(['borrado']); }
     // Entregar a Calidad exige el XML de la superficie (con el mismo código; la app lo revisa al subirlo)
     function entregaConXml() {
