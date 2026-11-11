@@ -48,7 +48,18 @@ En Windows sin bash: `powershell -ExecutionPolicy Bypass -File pruebas\correr.ps
 | prueba28 | Entregar a Calidad con el XML de la superficie: obligatorio, se rechaza otro código, sin código o un archivo que no es XML; en grupo se empareja cada XML por su código; la superficie queda en el Modelo 2D con su tipo y capa; acceso directo «Superficies (XML)» y «Ver en el modelo» solo para jefe y administradores (también en celular) |
 | prueba29 | Cambiar la clave de un topógrafo: pasa a sus registros, resumen, historial y cuenta; no deja usar la de otro, una con números ni la clave vieja para otro topógrafo; un registro que llega tarde con la clave vieja se ve con el nombre y sale con la nueva en el Excel; se puede volver a la anterior; clave de 5 letras y celular |
 | prueba30 | Nombres de las fechas: «Fecha de liberación» (fecha en campo), «Fecha de entrega» (cuando se genera el código) y «Entrega a Calidad» en la ficha, el filtro de Registros y el formulario |
+| prueba31 | Versión 26: carpeta de OneDrive opcional y de texto libre (entrega en grupo sin borrar la que había), pestaña «En proceso», renombrar una capa pasa registros, superficie XML y resumen del modelo y «Ver en el modelo» abre la capa nueva; Ajustes → Tipos con elementos como tarjetas (agregar tipo en su grupo, quitar con «Deshacer», un tipo con registros no ofrece «Quitar», renombrar elemento, quitar elemento vacío); Lugares por id (agregar y quitar frente, mover frente a otra estructura, desactivar con «Deshacer», «Subir eje» con Tab); celular sin desplazamiento lateral |
+| prueba32 | La fecha del registro nuevo no queda en la de ayer (app abierta toda la noche, borrador viejo, recarga); la fecha cambiada a mano se respeta; la versión nueva se aplica sola sin nada escrito y, con algo escrito, al volver a la app |
+| prueba33 | Jornada completa con cada rol: administrador crea tipo y capa, operario registra 2, gabinete acepta y observa, operario corrige, gabinete re-acepta y entrega con XML sin carpeta, la ficha muestra las tres fechas, y al renombrar capa y tipo la ruta del modelo dice los nombres nuevos |
 | prueba25 | Productividad: observado → corregido (nota visible al editar, «Corregido» en la Bandeja, historial con lo que cambió) → re-aceptado con su mismo código, búsqueda sin tildes, duplicar un rechazado, Bandeja con teclado y Mayús+clic, ficha con anterior/siguiente que pasa sola al siguiente, «Deshacer», filtros que se recuerdan, varios estados, «Esta semana» y «Ver más» en Mis registros |
 | prueba10 | Ficha en pantallas medianas, «atrás», búsqueda por capa, aceptar sin señal, gabinete sin «Editar» (solo cambiar capa), superposición, depuración de fotos, jefe en Modelo 2D |
 
 `capturas.js` toma fotos de las pantallas principales en celular y computadora (`node pruebas/capturas.js <carpeta>`), útil para comparar antes y después de un cambio de diseño. `filtros.js` reúne las ayudas que usan las pruebas para manejar los filtros del panel.
+
+## Reglas de Firebase (emulador)
+
+`pruebas/reglas/reglas.test.js` prueba `firestore.rules` en el emulador (no toca la base real): código SKT-TOP, entrega con XML y carpeta opcional, permisos del jefe (renombrar capa, mover frente, el atajo «excel» cerrado), superficies y bases, quitar un frente, listas, correlativo, resumen, archivos y usuarios. Hace falta Java 21 y, una vez, `npm i --no-save firebase-tools@14 @firebase/rules-unit-testing@4 firebase@11`. Desde la raíz:
+
+```
+node node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --only firestore --project demo-lib --config pruebas/reglas/firebase.json "node pruebas/reglas/reglas.test.js"
+```

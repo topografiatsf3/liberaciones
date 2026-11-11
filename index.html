@@ -225,7 +225,7 @@ h1.view-title{font-weight:700;font-size:22px;line-height:1.2;letter-spacing:-.01
 .est-h input{flex:1;font-family:var(--f-disp);font-weight:700;font-size:16px}
 .ed input,.ed select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 12px;min-height:42px;min-width:0;width:100%}
 .ed input:focus,.ed select:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.srow{display:grid;grid-template-columns:1fr 92px 92px auto auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.srow{display:grid;grid-template-columns:minmax(0,1fr) 92px 92px 108px 104px 44px;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .srow.head{border-top:0;padding:0 0 4px;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
 .srow .mono{font-size:14px}
 .trow{display:grid;grid-template-columns:1fr 150px auto auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
@@ -266,7 +266,9 @@ h1.view-title{font-weight:700;font-size:22px;line-height:1.2;letter-spacing:-.01
 .tp-clave{display:inline-flex;align-items:center;justify-content:space-between;gap:3px;min-width:0;min-height:44px;padding:0 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font-weight:500;cursor:pointer}
 .tp-clave svg{flex:none;color:var(--muted)}
 .tp-clave:hover{border-color:var(--accent)}.tp-clave:hover svg{color:var(--accent)}
-.off-row>*:not(.mini){opacity:.5}
+/* Desactivado: se distingue por el fondo y el texto «Desactivado», sin bajar el contraste */
+.off-row>*:not(.mini){opacity:1}
+.off-row input:not([type=checkbox]){color:var(--muted);background:var(--surface-2)}
 .tog{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;white-space:nowrap}
 .tog input{width:20px;height:20px;accent-color:var(--accent)}
 .ord{display:flex;gap:4px}
@@ -292,9 +294,12 @@ h1.view-title{font-weight:700;font-size:22px;line-height:1.2;letter-spacing:-.01
 .ed input,.ed select{min-height:40px;font-size:14.5px}
 .est-h input{font-size:15.5px}
 .mini.eje{min-height:38px;justify-content:center;white-space:nowrap}
+.srow .mini.eje{padding:0 8px;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:560px){
-  .srow{grid-template-columns:1fr 1fr auto auto;gap:6px}
+  .srow{grid-template-columns:1fr 1fr auto;gap:6px}
   .srow .sn{grid-column:1/-1}
+  .srow .lu-uso{grid-column:span 2}
+  .est-h{flex-wrap:wrap}.est-h input{flex:1 1 100%}.est-h .lu-uso{flex:1}
   .srow input.mono{font-size:13.5px;padding:8px 9px}
   .ed .mini,.urow .mini{padding:0 10px;font-size:12px}
   .crow{grid-template-columns:1fr 1fr auto}
@@ -970,14 +975,36 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 .tygrp b{font-family:var(--f-disp);font-size:14.5px}
 .tyrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:10px;align-items:center;padding:6px 0}
 .tyuso{white-space:nowrap;min-width:80px;text-align:right}
-.tymas{font-size:18px;letter-spacing:1px;min-width:40px}
+.tymas{font-size:18px;letter-spacing:1px;min-width:44px}
 .tyord{grid-template-columns:64px minmax(0,1fr) auto;border-top:1px solid var(--line);padding:8px 0}
 .tyord:first-child{border-top:0}
 .typos{width:64px;text-align:center}
 .tynom b{display:block;font-weight:600}.tynom small{color:var(--muted)}
 .ord button[disabled]{opacity:.35}
 .ty-add{grid-template-columns:minmax(0,1fr) minmax(200px,240px) auto}
+/* Catálogo: cada elemento es un grupo con su nombre editable, su uso, «⋯» y su propia fila para agregar tipos */
+.ty-bar .tog{white-space:nowrap}
+.elgrp{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:0 0 8px;margin-bottom:4px;border-bottom:1px solid var(--line)}
+.tycard .elgrp,.tycard .elgrp:first-child{border-top:0;padding-top:0}
+/* El nombre del elemento o de la estructura se lee como título; el borde aparece al pasar o al editar */
+.ed .elgrp>input,.ed .est-h input{font-family:var(--f-disp);font-weight:700;font-size:17px;border-color:transparent;background:transparent;padding-left:0}
+.ed .elgrp>input:hover,.ed .est-h input:hover{border-color:var(--line-strong);padding-left:12px}
+.ed .elgrp>input:focus,.ed .est-h input:focus{padding-left:12px;background:var(--surface)}
+.elgrp.off-row>input{text-decoration:line-through}
+.ty-add2{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:8px 0 4px;margin-top:4px;border-top:1px solid var(--line)}
+.ty-add2 input{font-size:14px}
+.el-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:14px;padding-top:12px;border-top:2px solid var(--line)}
+.lu-uso{white-space:nowrap;font-size:13px}
+.ty-add2 input:not(:placeholder-shown)+.mini,.addrow input[data-k="snew"]:not(:placeholder-shown)+.mini{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* «Subir eje»: el selector de archivo cubre la etiqueta (se alcanza con Tab y se abre con Enter o Espacio) */
+.mini.eje{position:relative}
+.mini.eje input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;min-height:0!important;padding:0;border:0}
+.mini.eje:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.lu-off{margin:6px 0 0}
 @media (max-width:720px){
+  .elgrp{grid-template-columns:minmax(0,1fr) auto;row-gap:4px}
+  .elgrp>input{grid-column:1/-1}
+  .ty-add2{padding-left:0}
   .tyrow{grid-template-columns:minmax(0,1fr) auto auto;row-gap:4px}
   .tyrow>input[data-k="nom"]{grid-column:1/-1}
   .tyuso{text-align:left;min-width:0}
@@ -1077,7 +1104,7 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, getDoc, getDocs, runTransaction, setDoc, deleteField, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit, writeBatch, serverTimestamp, Timestamp, waitForPendingWrites } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, getDoc, getDocs, getDocsFromServer, runTransaction, setDoc, deleteField, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit, writeBatch, serverTimestamp, Timestamp, waitForPendingWrites } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
 window.__arranco = true;
 // Colores leídos de las variables de DESIGN.md (así el gráfico y el plano usan los mismos que el CSS)
@@ -1333,7 +1360,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 25;
+const VERSION_APP = 26;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -1342,17 +1369,28 @@ function hayAlgoEscrito() {
   try { leerCampos(); } catch (_) {}
   const f = S.form; return ["pkInicio", "pkFin", "cota", "capa", "area", "descripcion", "observaciones"].some(k => String(f[k] || "").trim()) || (f.archivos || []).length > 0;
 }
-let recargando = false;
+let recargando = false, hayVersionNueva = false;
+// La versión nueva se aplica sola: al momento si no hay nada escrito; si lo hay, en cuanto se vuelva a la app sin nada pendiente
+function recargarApp() { if (recargando) return; recargando = true; if (S.view === "nueva" && !S.editando) guardarBorrador(); ls.set("lib.actualizada", VERSION_APP); location.reload(); }
 document.addEventListener("version-nueva", () => {
   if (recargando) return;
-  if (performance.now() < 15000 && !hayAlgoEscrito()) { recargando = true; ls.set("lib.actualizada", VERSION_APP); location.reload(); return; }
+  hayVersionNueva = true;
+  if (!hayAlgoEscrito()) { recargarApp(); return; }
   if ($("#verNueva")) return;
   const d = document.createElement("div"); d.id = "verNueva"; d.className = "vernueva"; d.setAttribute("role", "status");
   d.innerHTML = '<span>Hay una versión nueva</span><button type="button" data-ok>Actualizar</button><button type="button" class="x" aria-label="Cerrar">✕</button>';
-  d.querySelector("[data-ok]").onclick = () => { if (S.view === "nueva") guardarBorrador(); location.reload(); };
+  d.querySelector("[data-ok]").onclick = () => recargarApp();
   d.querySelector(".x").onclick = () => d.remove();
   document.body.append(d);
 });
+// Al volver a la app (quedó abierta desde ayer): se aplica la versión nueva pendiente y el formulario nuevo toma la hora actual
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  if (hayVersionNueva && !hayAlgoEscrito()) { recargarApp(); return; }
+  if (S.view === "nueva" && S.form && !S.editando && !S.form._fechaTocada) { const i = $("#iFecha"), v = localInput(new Date()); S.form.fechaCampo = v; if (i && document.activeElement !== i) i.value = v; }
+});
+// Quien cambia la fecha a mano la conserva; si no, el registro nuevo siempre sale con la hora actual
+document.addEventListener("input", e => { if (e.target.id === "iFecha" && S.form) S.form._fechaTocada = true; });
 // Atajos del ícono (mantener presionado): si la app ya está abierta, se cambia de pantalla sin recargar
 if ("launchQueue" in window) {
   try {
@@ -1883,6 +1921,8 @@ function refrescarDesc(f) {
 function pintarForm() {
   if (!S.form) { S.form = S.editando ? formDesde(S.editando) : (ls.get(BORR(), null) || formVacio()); if (!S.editando && !S.form.topografoId) S.form.topografoId = S.perfil?.topografoId || ""; }
   const f = S.form, E = S.editando;
+  // Registro nuevo: si nadie cambió la fecha a mano, se pone la hora actual (la app o el borrador pueden venir de ayer)
+  if (!E && !f._fechaTocada) f.fechaCampo = localInput(new Date());
   f.archivos ||= []; f.borrarArchivos ||= []; f.linksCsv ||= []; f.linksFotos ||= [];
   precargarFrente(f.subestructuraId);
   const est = L.est(f.estructuraId);
@@ -2275,6 +2315,8 @@ function guardar() {
     ls.set(ULT(), { actividad: f.actividad, topografoId: f.topografoId, equipo: f.actividad === "DRN" ? (ls.get(ULT(), {}).equipo || "") : f.equipo, estructuraId: f.estructuraId, subestructuraId: f.subestructuraId, elementoId: f.elementoId, tipoId: f.tipoId,
       capa: datos.capa, pkFin: datos.pkFin, largo: datos.pkFin != null ? Math.round((datos.pkFin - datos.pkInicio) * 100) / 100 : null });
     toast(navigator.onLine ? (E ? "Cambios guardados" : avisoGuardado(f.actividad)) : "Guardado en el teléfono. Se subirá cuando haya señal.", navigator.onLine ? "" : "pend");
+    // Si cambió el tipo o la capa de un registro entregado con XML, su superficie en el modelo lo sigue
+    if (E && navigator.onLine && (E.tipoId !== datos.tipoId || capaDe(E) !== datos.capa) && (esGab() || puedeAjustes())) pc.then(() => supDelRegistro(E, { tipoId: datos.tipoId, capa: datos.capa }), () => {});
     // Si era el último observado por corregir, la lista vuelve a mostrar todo (si no, quedaría vacía)
     if (E && E.estado === "OB" && S.filtro.mis.st === "OB" && !S.mis.some(r => r.estado === "OB" && r.id !== E.id)) S.filtro.mis.st = "";
     if (E) { S.editando = null; S.form = null; if (S.view === "nueva") ir(E.creadoPor === S.email ? "mis" : "todos"); return; }
@@ -2322,13 +2364,16 @@ const ICON_WSP = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" st
 const ICON_SUP = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/></svg>';
 // Acceso directo de jefe y administrador: Panel → Modelo 2D, donde se ven las superficies XML de las liberaciones.
 // Con un registro, abre su frente y su capa con su superficie marcada.
-function irSuperficies(r) {
+// La capa se lee de la superficie tal como está ahora (no del grupo guardado al entregar), así un nombre cambiado
+// después en Ajustes, al unir tipos o al cambiar la capa del registro se ve con su nombre nuevo.
+async function irSuperficies(r) {
   const P = S.panel, x = r && (r.xmlEntrega || []).find(s => s.supId);
   if (x && x.subId) {
-    P.subId = x.subId; ls.set("lib.panelSub", x.subId);
-    P.mGrupo = x.grupo || ""; P.mInicial = x.subId; guardarCapaSub(x.subId, P.mGrupo);
-    P.mSel = x.supId; P.mVB = null; P.mZoom = 1;
+    if (!MOD.res[x.subId]) { try { const d = await getDoc(doc(db, "superficiesRes", x.subId)); MOD.res[x.subId] = d.exists() ? d.data().r || {} : {}; } catch (e) { console.warn("superficies", e); } }
     const a = MOD.res[x.subId]?.[x.supId], est = MOD.secc[x.subId]?.est || [];
+    P.subId = x.subId; ls.set("lib.panelSub", x.subId);
+    P.mGrupo = a ? grupoDe(a[2], a[3]) : grupoDe(r.tipoId, normCapa(capaDe(r), x.subId, r.tipoId)); P.mInicial = x.subId; guardarCapaSub(x.subId, P.mGrupo);
+    P.mSel = x.supId; P.mVB = null; P.mZoom = 1;
     P.mSta = a && a[4] != null ? est.find(s => s >= a[4] - 0.05 && s <= a[5] + 0.05) ?? null : null;
   }
   P.vista = "modelo"; ls.set("lib.panelVista", "modelo");
@@ -2477,7 +2522,8 @@ function suscribirFechaTodos(fl) {
 // «+2» junto al código cuando un levantamiento con dron tiene varios códigos (uno por protocolo)
 const masCodigos = r => { const n = new Set((r.protocolos || []).map(x => x.numero).filter(Boolean)).size; return n > 1 ? `<span class="num-mas">+${n - 1}</span>` : ""; };
 const opcionesFrente = (sel, todos = "Todos") => `<option value="">${todos}</option>` + S.listas.estructuras.filter(e => e.activo !== false).map(e => `<optgroup label="${esc(e.nombre)}"><option value="${esc(e.id)}" ${sel === e.id ? "selected" : ""}>Toda ${esc(e.nombre)}</option>${(e.subs || []).filter(x => x.activo !== false).map(x => `<option value="${esc(x.id)}" ${sel === x.id ? "selected" : ""}>${esc(x.nombre)}</option>`).join("")}</optgroup>`).join("");
-const opcionesTipo = sel => `<option value="">Todos</option>` + S.listas.elementos.map(e => { const ts = S.listas.tipos.filter(t => t.elementoId === e.id && t.activo !== false).sort((a, b) => a.nombre.localeCompare(b.nombre)); return ts.length ? `<optgroup label="${esc(e.nombre)}">${ts.map(t => `<option value="${esc(t.id)}" ${sel === t.id ? "selected" : ""}>${esc(t.nombre)}</option>`).join("")}</optgroup>` : ""; }).join("");
+const opcionesTipo = sel => `<option value="">Todos</option>` + S.listas.elementos.map(e => { const ts = S.listas.tipos.filter(t => t.elementoId === e.id && t.activo !== false).sort((a, b) => a.nombre.localeCompare(b.nombre)); return ts.length ? `<optgroup label="${esc(e.nombre)}">${ts.map(t => `<option value="${esc(t.id)}" ${sel === t.id ? "selected" : ""}>${esc(t.nombre)}</option>`).join("")}</optgroup>` : ""; }).join("")
+  + (s => s.length ? `<optgroup label="Sin elemento">${s.map(t => `<option value="${esc(t.id)}" ${sel === t.id ? "selected" : ""}>${esc(t.nombre)}</option>`).join("")}</optgroup>` : "")(S.listas.tipos.filter(t => t.activo !== false && !L.ele(t.elementoId)));
 // Controles de filtro; «hoja» = versión grande para el celular (dentro de la hoja con «Aplicar»)
 function controlesReg(fl, cual, hoja) {
   const ops = (lista, sel, todos = "Todos") => `<option value="">${todos}</option>` + lista.filter(x => x.activo !== false).map(x => `<option value="${esc(x.id)}" ${sel === x.id ? "selected" : ""}>${esc(x.nombre)}</option>`).join("");
@@ -2722,7 +2768,7 @@ function abrirFicha(r) {
       ${fila("Registrado por", esc(r.creadoPor))}
       ${fila("Fecha de entrega", esc(fmtFecha(r.fechaLiberacion, false)))}
       ${fila("Entrega a Calidad", esc(fmtFecha(r.fechaEntrega, false)))}
-      ${r.carpeta ? fila("Carpeta OneDrive", verCarpeta(r.carpeta)) : r.estado === "EC" && esGab() && !r.borrado ? fila("Carpeta OneDrive", `<span class="muted">Falta</span>`) : ""}
+      ${r.carpeta ? fila("Carpeta OneDrive", verCarpeta(r.carpeta)) : ""}
       ${(r.xmlEntrega || []).length ? fila("Superficie (XML)", r.xmlEntrega.map(x => `<div><span class="mono">${esc(x.superficie)}</span><span class="muted small"> · ${esc(x.archivo)}</span></div>`).join("") + (puedeAjustes() && r.xmlEntrega.some(x => x.supId) ? '<button type="button" class="linkbtn" id="fVerSup">Ver en el modelo</button>' : "")) : ""}
       ${fila("Observaciones", esc(r.observaciones))}
       ${r.actividad === "ASP" && r.procesado ? fila("Procesado", esc(`${r.procesadoNombre || r.procesadoPor || ""} · ${fmtFecha(r.procesadoEn)}`)) : ""}
@@ -4230,6 +4276,92 @@ async function guardarSuperficies(lst, subId, msg) {
     return true;
   } catch (e) { toast("No se guardó: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"); return false; }
 }
+// Cambia el tipo o la capa de las superficies (y, si se pide, de las bases) que cumplen `cambio(d)`.
+// Se usa al renombrar una capa, al unir tipos y al cambiar la capa o el tipo de un registro con XML,
+// para que el Modelo 2D y los accesos directos muestren el nombre nuevo. Devuelve cuántas superficies cambiaron.
+// Se lee siempre del servidor (no de la copia del teléfono) para no dejar nada atrás.
+async function moverGrupos(campo, valor, cambio, conBases = true) {
+  const n = await moverSups(campo, valor, cambio);
+  if (conBases) await moverBases(campo, valor, cambio);
+  recordarGrupos(cambio);
+  return n;
+}
+async function moverSups(campo, valor, cambio) {
+  const sups = (await getDocsFromServer(query(collection(db, "superficies"), where(campo, "==", valor)))).docs;
+  const porSub = new Map(); let n = 0;
+  sups.forEach(s => {
+    const d = s.data(), c = cambio(d); if (!c) return;
+    const tipoId = c.tipoId ?? d.tipoId ?? "", capa = (c.capa ?? d.capa ?? "").trim();
+    if (tipoId === (d.tipoId || "") && capa === (d.capa || "").trim()) return;
+    const nd = { ...d, tipoId, capa, grupo: grupoDe(tipoId, capa), v: (d.v || 0) + 1 };
+    (porSub.get(d.subId) || porSub.set(d.subId, []).get(d.subId)).push([s.id, nd]); n++;
+  });
+  for (const [subId, lst] of porSub) for (let i = 0; i < lst.length; i += 200) {
+    const b = writeBatch(db), r = {}, parte = lst.slice(i, i + 200);
+    parte.forEach(([id, nd]) => { b.update(doc(db, "superficies", id), { tipoId: nd.tipoId, capa: nd.capa, grupo: nd.grupo, v: nd.v, editadoEn: serverTimestamp(), editadoPor: S.email }); r[id] = supCompacto(nd); });
+    b.set(doc(db, "superficiesRes", subId), { r }, { merge: true });
+    await b.commit();
+    // El modelo de este teléfono cambia solo cuando Firebase lo confirmó
+    parte.forEach(([id, nd]) => { if (MOD.res[subId]) MOD.res[subId][id] = r[id]; const m = MOD.sup[subId]?.get(id); if (m) Object.assign(m, { tipoId: nd.tipoId, capa: nd.capa, grupo: nd.grupo, _v: nd.v, v: nd.v }); });
+  }
+  return n;
+}
+async function moverBases(campo, valor, cambio) {
+  {
+    const bases = (await getDocsFromServer(query(collection(db, "bases"), where(campo, "==", valor)))).docs.filter(bs => cambio(bs.data()));
+    // Bases que ya existen en cada frente: una base de la capa nueva nunca se pisa
+    const ocupado = new Map();
+    for (const sid of new Set(bases.map(bs => bs.data().subId)))
+      ocupado.set(sid, new Set((await getDocsFromServer(query(collection(db, "bases"), where("subId", "==", sid)))).docs.map(x => x.id)));
+    for (const bs of bases) {
+      const d = bs.data(), c = cambio(d);
+      const tipoId = c.tipoId ?? d.tipoId ?? "", capa = (c.capa ?? d.capa ?? "").trim(), g = grupoDe(tipoId, capa);
+      if (g === d.grupo) continue;
+      const id = idSup(d.subId, "base-" + g), dat = { tipoId, capa, grupo: g, editadoEn: serverTimestamp(), editadoPor: S.email };
+      // Mismo id (solo cambian mayúsculas o signos): se actualiza en su lugar
+      if (id === bs.id) { await updateDoc(doc(db, "bases", bs.id), dat); continue; }
+      const ya = ocupado.get(d.subId);
+      if (ya.has(id)) { console.warn("base: ya hay una base en", g, "; se deja la que está y la de", d.grupo); continue; }
+      const b = writeBatch(db);
+      b.set(doc(db, "bases", id), { ...d, ...dat });
+      b.delete(doc(db, "bases", bs.id));
+      await b.commit(); ya.add(id); ya.delete(bs.id);
+    }
+  }
+}
+// La capa recordada en este teléfono y la que está abierta en el panel siguen a la nueva
+function recordarGrupos(cambio) {
+  const m = ls.get("lib.mGrupoSub", {}) || {}; let cambia = false;
+  for (const [sid, g] of Object.entries(m)) {
+    if (!g) continue; const [t, c] = g.split("|"), nc = cambio({ subId: sid, tipoId: t, capa: c });
+    if (nc) { const ng = grupoDe(nc.tipoId ?? t, nc.capa ?? c); if (ng !== g) { m[sid] = ng; cambia = true; if (S.panel.subId === sid && S.panel.mGrupo === g) S.panel.mGrupo = ng; } }
+  }
+  if (cambia) ls.set("lib.mGrupoSub", m);
+}
+// Un registro entregado con XML cambia de tipo o capa: su superficie en el Modelo 2D lo sigue
+function supDelRegistro(r, nuevo) {
+  if (!(r.xmlEntrega || []).some(x => x.supId)) return;
+  moverGrupos("liberacionId", r.id, d => d.liberacionId === r.id ? { tipoId: nuevo.tipoId ?? d.tipoId, capa: normCapa(nuevo.capa ?? d.capa, d.subId, nuevo.tipoId ?? d.tipoId) } : null, false)
+    .catch(e => { console.warn("superficie del registro", e); toast("El registro se guardó, pero su superficie XML no se pudo actualizar en el modelo: " + e.message, "bad"); });
+}
+// Renombrar una capa en Ajustes → Capas: sus registros, superficies XML y base pasan al nombre nuevo.
+// Los renombrados van en fila (A→B y enseguida B→C terminan bien).
+let colaCapas = Promise.resolve();
+const renombrarCapa = (...a) => (colaCapas = colaCapas.then(() => renombrarCapaYa(...a)));
+async function renombrarCapaYa(subId, tipoId, viejo, nuevo) {
+  const es = d => d.subId === subId && (d.tipoId || "") === tipoId && (d.capa || "").trim() === viejo;
+  try {
+    const regs = (await getDocsFromServer(query(collection(db, "liberaciones"), where("subestructuraId", "==", subId)))).docs.map(fila)
+      .filter(r => r.tipoId === tipoId && capaDe(r) === viejo);
+    await lotes(regs, (b, r) => { const dat = { capa: nuevo, editadoEn: serverTimestamp(), editadoPor: S.email }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Capa renombrada: ${viejo} → ${nuevo}`); }, 120);
+    if (BUS.todos) BUS.todos.forEach(r => { if (r.subestructuraId === subId && r.tipoId === tipoId && capaDe(r) === viejo) r.capa = nuevo; });
+    // Solo las superficies de esa capa (no se baja todo el modelo del frente)
+    const cambio = d => es(d) ? { capa: nuevo } : null;
+    const n = await moverSups("grupo", grupoDe(tipoId, viejo), cambio);
+    await moverBases("subId", subId, cambio); recordarGrupos(cambio);
+    if (regs.length || n) toast(`Capa renombrada a «${nuevo}» · ${[regs.length ? `${regs.length} ${regs.length === 1 ? "registro" : "registros"}` : "", n ? `${n} ${n === 1 ? "superficie" : "superficies"}` : ""].filter(Boolean).join(" y ")}`);
+  } catch (e) { console.error(e); toast("La capa se renombró, pero no se pudieron pasar sus registros o superficies: " + (e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); }
+}
 async function quitarSuperficie(x) {
   if (!await confirmar("Quitar superficie", `Se quita <b>${esc(x.nombre)}</b> del modelo. El registro de la liberación no cambia.`, "Quitar", true)) return false;
   try {
@@ -5004,7 +5136,7 @@ function ponerCapa(r) {
       b.update(doc(db, "liberaciones", r.id), { capa, solapaCon: sol, editadoEn: serverTimestamp(), editadoPor: S.email });
       resumenEn(b, r.id, { ...r, capa });
       hist(b, r, "editado", `Capa: ${capa || "sin capa"}${r.capa ? ` (antes ${r.capa})` : ""}`);
-      escribir(b.commit(), capa ? `Capa ${capa} guardada` : "Capa quitada", "No se guardó la capa: ").then(okk => { if (okk && S._ficha?.id === r.id) cerrarFicha(); });
+      escribir(b.commit(), capa ? `Capa ${capa} guardada` : "Capa quitada", "No se guardó la capa: ").then(okk => { if (okk && S._ficha?.id === r.id) cerrarFicha(); if (okk) supDelRegistro(r, { capa }); });
     }, "Guardar capa");
   vigilarCruces(d, [r], false, "Guardar capa");
 }
@@ -5085,16 +5217,16 @@ function observar(r) {
   dialogo(n === 1 ? "Observar" : `Observar ${n}`, `<p class="muted small" style="margin:0 0 10px">${n === 1 ? "El topógrafo verá" : "Cada topógrafo verá"} la nota en «Mis registros» y podrá corregir.</p><div class="f"><label for="dNota">Qué debe corregir</label><textarea id="dNota" name="nota" style="min-height:80px" required></textarea></div>`,
     o => { if (!o.nota) { toast("Escribe qué debe corregir.", "bad"); return false; } return cambiarEstado(ids, { notaObservacion: o.nota }, "OB", o.nota, k => k === 1 ? "Marcada como observada" : `${k} marcadas como observadas`).then(k => { if (!k) return false; trasGrupo(ids); }); }, "Observar");
 }
-// Carpeta de OneDrive donde gabinete deja los archivos de lo entregado a Calidad: enlace (https://…) o ruta de la carpeta
-const carpetaValida = t => /^https?:\/\/\S+\.\S+/i.test(t) || /^([a-z]:[\\/]|\\\\|\/|~[\\/])/i.test(t) || /\S[\\/]\S/.test(t);
+// Carpeta de OneDrive donde gabinete deja los archivos de lo entregado a Calidad: opcional y de texto libre
+// (enlace https://…, ruta o una nota). Si es un enlace se muestra «Abrir carpeta».
 const CARP_LS = () => "lib.carpetas." + S.email;
 function campoCarpeta(valor) {
   const recientes = ls.get(CARP_LS(), []);
-  return `<div class="f"><label for="dCarpeta">Carpeta en OneDrive</label><input id="dCarpeta" name="carpeta" value="${esc(valor || "")}" placeholder="Pega el enlace o la ruta de la carpeta" autocomplete="off" list="dlCarpeta" required>
+  return `<div class="f"><label for="dCarpeta">Carpeta en OneDrive <span class="opt">(opcional)</span></label><input id="dCarpeta" name="carpeta" value="${esc(valor || "")}" placeholder="Enlace, ruta o nota" autocomplete="off" list="dlCarpeta" maxlength="1000">
     <datalist id="dlCarpeta">${recientes.map(c => `<option value="${esc(c)}">`).join("")}</datalist>
-    <div class="hint">En OneDrive: clic derecho en la carpeta → «Compartir» → «Copiar vínculo» y pégalo aquí. También sirve la ruta, por ejemplo <span class="mono">OneDrive\\Liberaciones\\Cargo 12</span>.</div></div>`;
+    <div class="hint">En OneDrive: clic derecho en la carpeta → «Compartir» → «Copiar vínculo» y pégalo aquí. También sirve la ruta o cualquier nota.</div></div>`;
 }
-function recordarCarpeta(c) { ls.set(CARP_LS(), [c, ...ls.get(CARP_LS(), []).filter(x => x !== c)].slice(0, 6)); }
+function recordarCarpeta(c) { if (c) ls.set(CARP_LS(), [c, ...ls.get(CARP_LS(), []).filter(x => x !== c)].slice(0, 6)); }
 function verCarpeta(c) {
   if (!c) return "";
   return `${/^https?:\/\//i.test(c) ? `<a href="${esc(c)}" target="_blank" rel="noopener noreferrer">Abrir carpeta</a>` : `<span class="mono" style="word-break:break-all">${esc(c)}</span>`} <button type="button" class="linkbtn" data-copiar-carpeta>Copiar</button>`;
@@ -5105,10 +5237,10 @@ function ponerCarpeta(regs) {
   const comun = regs.every(r => r.carpeta === regs[0].carpeta) ? regs[0].carpeta : "";
   dialogo(regs.length === 1 ? "Carpeta en OneDrive" : `Carpeta de ${regs.length} registros`, campoCarpeta(comun), o => {
     const c = (o.carpeta || "").trim();
-    if (!carpetaValida(c)) { toast("Pega el enlace de la carpeta (https://…) o su ruta.", "bad"); return false; }
     recordarCarpeta(c);
-    const p = lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { carpeta: c, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", "Carpeta OneDrive: " + c); });
-    return escribir(p, regs.length === 1 ? "Carpeta guardada" : `Carpeta guardada en ${regs.length} registros`, "No se guardó la carpeta: ").then(ok => { if (!ok) return false; regs.forEach(r => { r.carpeta = c; }); if (S._ficha && regs.some(r => r.id === S._ficha.id)) abrirFicha(S._ficha); });
+    const p = lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { carpeta: c || deleteField(), editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", c ? "Carpeta OneDrive: " + c : "Carpeta OneDrive quitada"); });
+    const hecho = c ? "Carpeta guardada" : "Carpeta quitada";
+    return escribir(p, regs.length === 1 ? hecho : `${hecho} en ${regs.length} registros`, "No se guardó la carpeta: ").then(ok => { if (!ok) return false; regs.forEach(r => { if (c) r.carpeta = c; else delete r.carpeta; }); if (S._ficha && regs.some(r => r.id === S._ficha.id)) abrirFicha(S._ficha); });
   }, "Guardar");
 }
 /* ---------- XML obligatorio al entregar a Calidad ----------
@@ -5169,15 +5301,15 @@ function entregar(ids) {
     o => {
       if (!o.fecha) return false;
       const carpeta = (o.carpeta || "").trim();
-      if (!carpetaValida(carpeta)) { toast("Falta la carpeta de OneDrive: pega su enlace (https://…) o su ruta.", "bad"); return false; }
       const faltan = regs.filter(r => !(xmls.get(r.id) || []).length);
       if (faltan.length) { toast(faltan.length === 1 ? `Falta el XML de la superficie ${codigosDe(faltan[0])[0] || ""}.` : `Faltan ${faltan.length} XML: ${faltan.slice(0, 3).map(r => codigosDe(r)[0]).join(", ")}${faltan.length > 3 ? "…" : ""}.`, "bad"); d.querySelector(".xml-ent .upbtn")?.focus(); return false; }
       if (!navigator.onLine) { toast("Sin señal: para entregar con el XML se necesita conexión.", "bad"); return false; }
       recordarCarpeta(carpeta);
-      const nota = [o.cargo ? "Cargo " + o.cargo : "", "Carpeta: " + carpeta].filter(Boolean).join(" · ");
-      return guardarSupEntrega(regs, xmls).then(ok => !ok ? false : cambiarEstado(ids, r => ({ fechaEntrega: Timestamp.fromDate(new Date(o.fecha + "T12:00:00")), numeroCargo: o.cargo, carpeta,
+      const nota = [o.cargo ? "Cargo " + o.cargo : "", carpeta ? "Carpeta: " + carpeta : ""].filter(Boolean).join(" · ");
+      // Sin carpeta no se escribe: una entrega en grupo no borra la que ya tenía cada registro
+      return guardarSupEntrega(regs, xmls).then(ok => !ok ? false : cambiarEstado(ids, r => ({ fechaEntrega: Timestamp.fromDate(new Date(o.fecha + "T12:00:00")), numeroCargo: o.cargo, ...(carpeta ? { carpeta } : {}),
         xmlEntrega: (xmls.get(r.id) || []).map(x => ({ archivo: x.archivo, superficie: x.nombre, codigo: x.codigo, supId: x.supId || "", subId: r.subestructuraId || "", grupo: x.grupo || "" })) }),
-        "EC", nota + " · XML: " + regs.map(r => (xmls.get(r.id) || []).map(x => x.archivo).join(", ")).filter(Boolean).join(" · "), k => `${k} ${k === 1 ? "entregada" : "entregadas"} a Calidad`).then(k => { if (!k) return false; S.bandeja.sel.clear(); S.bandeja.epHist = S.bandeja.epHist.filter(r => !ids.includes(r.id)); if (S.view === "bandeja") pintarBandeja(); cerrarFichaDe(ids); }));
+        "EC", (nota ? nota + " · " : "") + "XML: " +regs.map(r => (xmls.get(r.id) || []).map(x => x.archivo).join(", ")).filter(Boolean).join(" · "), k => `${k} ${k === 1 ? "entregada" : "entregadas"} a Calidad`).then(k => { if (!k) return false; S.bandeja.sel.clear(); S.bandeja.epHist = S.bandeja.epHist.filter(r => !ids.includes(r.id)); if (S.view === "bandeja") pintarBandeja(); cerrarFichaDe(ids); }));
     }, "Entregar");
   const ul = d.querySelector("#dXmlL"), er = d.querySelector("#dXmlE");
   const pintarX = () => {
@@ -5331,10 +5463,10 @@ const SEG = {
   LEV: { kOk: "enterado", kDes: "quitar", okCorto: "Enterado", okLargo: "Marcar enterado", desCorto: "Quitar", campo: "visto", chip: "lev", por: "Por ver", hechas: "Enterados", hechoPor: "Enterado", ok: "Enterado", oks: "Marcar enterados", des: "Quitar enterado", lead: "Levantamientos topográficos de campo (sin código). Revísalos y marca «Enterado»; quien lo registró ve que ya llegó.", vacioPor: "No hay levantamientos por ver", vacioHechas: "Aún no hay levantamientos marcados como enterados", vacioTxt: "Los levantamientos que registren en campo aparecerán aquí al instante.", nota: "Toca una fila para ver la ficha con sus archivos.", fuente: () => S.bandeja.levs, marcar: (r, si) => marcarVisto(r, si) }
 };
 const porHacer = k => SEG[k].fuente().filter(r => !r[SEG[k].campo]);
-// Pestañas de la bandeja según el rol: gabinete (aceptar, observadas, entregar, levantamientos), jefe (aspas, levantamientos), administrador (todas)
+// Pestañas de la bandeja según el rol: gabinete (por aceptar, observadas, en proceso, levantamientos), jefe (aspas, levantamientos), administrador (todas)
 function tabsBandeja(t) {
   const B = S.bandeja, ts = [];
-  if (esGab()) ts.push(["PT", "Por aceptar", B.pend.filter(r => r.estado === "PT").length], ["OB", "Observadas", B.pend.filter(r => r.estado === "OB").length], ["EP", "Por entregar", B.ep.length + B.epHist.length]);
+  if (esGab()) ts.push(["PT", "Por aceptar", B.pend.filter(r => r.estado === "PT").length], ["OB", "Observadas", B.pend.filter(r => r.estado === "OB").length], ["EP", ESTADOS.EP, B.ep.length + B.epHist.length]);
   if (puedeAjustes()) ts.push(["ASP", "Aspas", porHacer("ASP").length]);
   ts.push(["LEV", "Levantamientos", porHacer("LEV").length]);
   return `<div class="tabs" role="group">${ts.map(([k, n, c]) => `<button type="button" data-bt="${k}" aria-pressed="${t === k}">${n} <span class="cnt">${c}</span></button>`).join("")}</div>`;
@@ -5420,7 +5552,7 @@ function pintarBandeja() {
   <div class="cap-bulk ${ns ? "on" : ""}" id="bBulk"><label class="ck" style="margin-right:4px"><input type="checkbox" id="bAll" ${vis.length && vis.slice(0, lim).every(r => B.sel.has(r.id)) ? "checked" : ""} aria-label="Seleccionar todo"></label><span><b>${ns}</b> ${ns === 1 ? "seleccionada" : "seleccionadas"}</span>
     ${t === "EP" ? `<button type="button" class="mini ok-btn" data-bk="entregar">Entregar a Calidad</button><button type="button" class="mini" data-bk="exportar">Exportar CSV</button>` : `<button type="button" class="mini ok-btn" data-bk="aceptar">Aceptar y generar códigos</button><button type="button" class="mini" data-bk="observar">Observar</button>${t === "OB" ? '<button type="button" class="mini" data-bk="reabrir">Devolver a pendientes</button>' : ""}<button type="button" class="mini warn-mini" data-bk="rechazar">Rechazar</button><button type="button" class="mini" data-bk="exportar">Exportar CSV</button><button type="button" class="mini warn-mini" data-bk="papelera">Mandar a la papelera</button>`}<button type="button" class="mini" data-bk="limpiar">Deseleccionar</button></div>
   ${!ns && vis.length ? `<label class="check small muted" style="padding:0 0 8px"><input type="checkbox" id="bAll2" aria-label="Seleccionar todo">Seleccionar ${Math.min(vis.length, lim)} para ${t === "EP" ? "entregar" : "aceptar"} en grupo</label>` : ""}
-  ${tablaPC() && vis.length ? `<div class="card twrap"><table class="rtab btab" id="blist"><thead><tr><th class="ck"></th>${t === "EP" ? "<th>Código</th>" : ""}<th>Liberación</th><th>Frente</th><th>Progresiva</th><th class="tacc">Acciones</th></tr></thead><tbody>${vis.slice(0, lim).map(r => `<tr data-rid="${esc(r.id)}" class="${B.sel.has(r.id) ? "sel" : ""}"><td class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></td>${t === "EP" ? `<td class="mono nw">${r.numero ? esc(r.numero) + masCodigos(r) : '<span class="muted">—</span>'}</td>` : ""}<td class="tdesc"><b>${esc(nom(L.tipo(r.tipoId)) || (r.actividad !== "LIB" ? nom(L.act(r.actividad), r.actividad) : ""))}${capaDe(r) ? " · " + esc(capaDe(r)) : ""}</b><span>${esc(r.nombreLiberacion || r.descripcion || "")}</span>${r.estado === "OB" && r.notaObservacion ? `<span class="tn">Observación: ${esc(r.notaObservacion)}</span>` : ""}${marcasFila(r)}${lineaQuien(r, t === "EP" ? r.fechaLiberacion || r.fechaCampo : r.fechaCampo)}</td>${tdFrente(r)}<td class="mono nw">${esc(rangoPk(r.pkInicio, r.pkFin))}</td><td class="tacc"><div class="bact">${t === "EP" ? '<button type="button" class="mini ok-btn" data-a="entregar" title="Entregar a Calidad" aria-label="Entregar a Calidad">Entregar</button>' : '<button type="button" class="mini ok-btn" data-a="aceptar" title="Aceptar y generar código" aria-label="Aceptar y generar código">Aceptar</button>'}${btnMas(r)}</div></td></tr>`).join("")}</tbody></table></div><p class="nota-g">Usa ⋯ o el clic derecho para ver todas las acciones. Teclado: <kbd>j</kbd>/<kbd>k</kbd> moverse · <kbd>x</kbd> marcar (Mayús+clic marca un rango) · <kbd>Enter</kbd> abrir · <kbd>a</kbd> aceptar · <kbd>o</kbd> observar · <kbd>e</kbd> entregar · <kbd>←</kbd>/<kbd>→</kbd> en la ficha.</p>` : `<div class="list" id="blist">${vis.length ? vis.slice(0, lim).map((r, i) => `<div class="brow ${B.sel.has(r.id) ? "sel" : ""}" data-rid="${esc(r.id)}"><label class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></label><div class="bcard">${conMas(tarjeta(r, i), r)}<div class="bact">${t === "EP" ? `<button type="button" class="mini ok-btn" data-a="entregar">Entregar a Calidad</button><button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini ok-btn" data-a="aceptar">Aceptar y generar código</button>${t === "PT" ? `<button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini" data-a="reabrir">Devolver a pendientes</button>`}<button type="button" class="mini warn-mini" data-a="rechazar">Rechazar</button>`}${btnEdCapa(r)}</div></div></div>`).join("") : `<div class="empty card"><b>${fuente.length ? "Nada coincide con la búsqueda" : t === "PT" ? "No hay registros por aceptar" : t === "OB" ? "No hay observadas" : "No hay liberaciones por entregar"}</b>${fuente.length ? "" : "Cuando lleguen de campo aparecerán aquí al instante."}</div>`}</div>`}
+  ${tablaPC() && vis.length ? `<div class="card twrap"><table class="rtab btab" id="blist"><thead><tr><th class="ck"></th>${t === "EP" ? "<th>Código</th>" : ""}<th>Liberación</th><th>Frente</th><th>Progresiva</th><th class="tacc">Acciones</th></tr></thead><tbody>${vis.slice(0, lim).map(r => `<tr data-rid="${esc(r.id)}" class="${B.sel.has(r.id) ? "sel" : ""}"><td class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></td>${t === "EP" ? `<td class="mono nw">${r.numero ? esc(r.numero) + masCodigos(r) : '<span class="muted">—</span>'}</td>` : ""}<td class="tdesc"><b>${esc(nom(L.tipo(r.tipoId)) || (r.actividad !== "LIB" ? nom(L.act(r.actividad), r.actividad) : ""))}${capaDe(r) ? " · " + esc(capaDe(r)) : ""}</b><span>${esc(r.nombreLiberacion || r.descripcion || "")}</span>${r.estado === "OB" && r.notaObservacion ? `<span class="tn">Observación: ${esc(r.notaObservacion)}</span>` : ""}${marcasFila(r)}${lineaQuien(r, t === "EP" ? r.fechaLiberacion || r.fechaCampo : r.fechaCampo)}</td>${tdFrente(r)}<td class="mono nw">${esc(rangoPk(r.pkInicio, r.pkFin))}</td><td class="tacc"><div class="bact">${t === "EP" ? '<button type="button" class="mini ok-btn" data-a="entregar" title="Entregar a Calidad" aria-label="Entregar a Calidad">Entregar</button>' : '<button type="button" class="mini ok-btn" data-a="aceptar" title="Aceptar y generar código" aria-label="Aceptar y generar código">Aceptar</button>'}${btnMas(r)}</div></td></tr>`).join("")}</tbody></table></div><p class="nota-g">Usa ⋯ o el clic derecho para ver todas las acciones. Teclado: <kbd>j</kbd>/<kbd>k</kbd> moverse · <kbd>x</kbd> marcar (Mayús+clic marca un rango) · <kbd>Enter</kbd> abrir · <kbd>a</kbd> aceptar · <kbd>o</kbd> observar · <kbd>e</kbd> entregar · <kbd>←</kbd>/<kbd>→</kbd> en la ficha.</p>` : `<div class="list" id="blist">${vis.length ? vis.slice(0, lim).map((r, i) => `<div class="brow ${B.sel.has(r.id) ? "sel" : ""}" data-rid="${esc(r.id)}"><label class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></label><div class="bcard">${conMas(tarjeta(r, i), r)}<div class="bact">${t === "EP" ? `<button type="button" class="mini ok-btn" data-a="entregar">Entregar a Calidad</button><button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini ok-btn" data-a="aceptar">Aceptar y generar código</button>${t === "PT" ? `<button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini" data-a="reabrir">Devolver a pendientes</button>`}<button type="button" class="mini warn-mini" data-a="rechazar">Rechazar</button>`}${btnEdCapa(r)}</div></div></div>`).join("") : `<div class="empty card"><b>${fuente.length ? "Nada coincide con la búsqueda" : t === "PT" ? "No hay registros por aceptar" : t === "OB" ? "No hay observadas" : "No hay liberaciones en proceso"}</b>${fuente.length ? "" : "Cuando lleguen de campo aparecerán aquí al instante."}</div>`}</div>`}
   ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : ""}
   ${t === "EP" && !B.epHistOk ? `<button class="btn sec more" id="bHist" type="button">Cargar también las del histórico sin entregar</button>` : ""}`;
   $("#bHist")?.addEventListener("click", async e => { e.target.disabled = true; e.target.textContent = "Cargando…";
@@ -5665,50 +5797,184 @@ function ajArchivos() {
 function cuerpoAj() { const b = $("#ajBody"), n = b.cloneNode(false); b.replaceWith(n); return n; }
 const numONull = v => { const p = leerPk(v); return p == null || isNaN(p) ? null : p; };
 
+// Cuántos registros hay por frente y por estructura (del resumen del panel, como en Tipos)
+function usosLugares() {
+  if (!BUS.todos) { if (!S.aj._usosLug) { S.aj._usosLug = true; cargarTodoResumen().then(() => { if (S.view !== "ajustes" || S.aj.tab !== "lugares") return; if (document.activeElement?.closest?.("#ajBody")) S.aj._sucio = true; else ajLugares(); }); } return null; }
+  const c = {}; BUS.todos.forEach(r => { if (r.subestructuraId) c[r.subestructuraId] = (c[r.subestructuraId] || 0) + 1; }); return c;
+}
+const estFresca = () => clon(S.listas.estructuras || []);
+const guardarLug = (items, msg) => Promise.resolve(guardarLista("estructuras", items, msg));
+const repintarLug = () => { if (S.view === "ajustes" && S.aj.tab === "lugares") ajLugares(); };
+// ¿Se puede quitar este frente? Solo si no tiene registros, superficies XML ni base en el modelo
+async function frenteLibre(s) {
+  if (await hayRegistros("subestructuraId", s.id)) return `«${s.nombre}» tiene registros (también cuentan los de la papelera): desactívalo en lugar de quitarlo.`;
+  if ((await getDocsFromServer(query(collection(db, "superficies"), where("subId", "==", s.id), limit(1)))).size > 0) return `«${s.nombre}» tiene superficies XML en el modelo: desactívalo en lugar de quitarlo.`;
+  if ((await getDocsFromServer(query(collection(db, "bases"), where("subId", "==", s.id), limit(1)))).size > 0) return `«${s.nombre}» tiene bases en el modelo: desactívalo en lugar de quitarlo.`;
+  return "";
+}
+// Lo que cuelga del frente (eje, capas configuradas y su resumen vacío) se borra junto con él
+async function borrarDatosFrente(id) {
+  let partes = 1; try { const s = await getDoc(doc(db, "secciones", id)); partes = (s.exists() && s.data().partes) || 1; } catch (e) {}
+  const ps = [deleteDoc(doc(db, "ejes", id)), deleteDoc(doc(db, "capas", id)), deleteDoc(doc(db, "superficiesRes", id)), deleteDoc(doc(db, "secciones", id)),
+    ...Array.from({ length: partes - 1 }, (_, k) => deleteDoc(doc(db, "secciones", id + "~p" + (k + 1)))), ...[0, 1, 2, 3].map(k => deleteDoc(docRes(id, k)))];
+  await Promise.all(ps.map(p => p.catch(e => console.warn("quitar frente", id, e))));
+  delete S.ejes[id]; delete S.capasCfg?.[id];
+}
+async function quitarFrente(eId, sId) {
+  const est = L.est(eId), s = (est?.subs || []).find(x => x.id === sId); if (!s) return;
+  if (!navigator.onLine) { toast("Se necesita señal para revisar si tiene registros.", "bad"); return; }
+  let motivo; try { motivo = await frenteLibre(s); } catch (e) { toast("No se pudo revisar: " + e.message, "bad"); return; }
+  if (motivo) { toast(motivo, "bad"); return; }
+  const solo = (est.subs || []).length === 1;
+  if (!await confirmar("Quitar frente", `Se quita <b>${esc(s.nombre)}</b> de ${esc(est.nombre)}${S.ejes[s.id] ? " junto con su eje" : ""}. No tiene registros.${solo ? " Es el único frente: la estructura queda sin frentes." : ""} No se puede deshacer.`, "Quitar", true)) return;
+  const items = estFresca(), e = items.find(x => x.id === eId); if (!e) return;
+  e.subs = (e.subs || []).filter(x => x.id !== sId);
+  if (await guardarLug(items, `Frente «${s.nombre}» quitado`)) { await borrarDatosFrente(sId); repintarLug(); }
+}
+async function quitarEstructura(eId) {
+  const est = L.est(eId); if (!est) return;
+  if (!navigator.onLine) { toast("Se necesita señal para revisar si tiene registros.", "bad"); return; }
+  try {
+    if (await hayRegistros("estructuraId", est.id)) { toast(`«${est.nombre}» tiene registros: desactívala en lugar de quitarla.`, "bad"); return; }
+    for (const s of est.subs || []) { const m = await frenteLibre(s); if (m) { toast(m, "bad"); return; } }
+  } catch (e) { toast("No se pudo revisar: " + e.message, "bad"); return; }
+  const n = (est.subs || []).length;
+  if (!await confirmar("Quitar estructura", `Se quita <b>${esc(est.nombre)}</b>${n ? ` con ${n === 1 ? "su frente" : `sus ${n} frentes`}` : ""}. No tiene registros. No se puede deshacer.`, "Quitar", true)) return;
+  if (await guardarLug(estFresca().filter(x => x.id !== eId), `Estructura «${est.nombre}» quitada`)) { for (const s of est.subs || []) await borrarDatosFrente(s.id); repintarLug(); }
+}
+function activarLugar(eId, sId, si) {
+  const items = estFresca(), e = items.find(x => x.id === eId), x = sId ? (e?.subs || []).find(o => o.id === sId) : e; if (!x) return;
+  const nombre = x.nombre, tipo = sId ? "Frente" : "Estructura";
+  x.activo = si;
+  guardarLug(items, `${tipo} ${si ? "activad" : "desactivad"}${sId ? "o" : "a"}`).then(ok => {
+    if (!ok) return; repintarLug();
+    if (!si) toast(`«${nombre}» ${sId ? "desactivado" : "desactivada"}: ya no aparece en el formulario ni en el panel. Sus registros se quedan.`, "", { t: "Deshacer", fn: () => activarLugar(eId, sId, true) });
+  });
+}
+function moverLugar(eId, sId, paso) {
+  const items = estFresca(), e = items.find(x => x.id === eId); if (!e) return;
+  const lst = sId ? (e.subs || []) : items, i = lst.findIndex(x => x.id === (sId || eId)), j = i < 0 ? -1 : vecino(lst, i, paso, o => S.aj.luOff || o.activo !== false); if (j < 0) return;
+  [lst[i], lst[j]] = [lst[j], lst[i]];
+  guardarLug(items, `«${lst[j].nombre}» movido ${paso < 0 ? "arriba" : "abajo"}`).then(ok => { if (!ok) return; repintarLug(); $(sId ? `#ajBody [data-s="${CSS.escape(sId)}"] [data-k="smas"]` : `#ajBody .est[data-e="${CSS.escape(eId)}"] [data-k="emas"]`)?.focus(); });
+}
+// Un frente pasa a otra estructura: sus registros cambian de estructura (para los filtros y el Excel)
+function moverFrenteA(eId, sId) {
+  const est = L.est(eId), s = (est?.subs || []).find(x => x.id === sId); if (!s) return;
+  const otras = S.listas.estructuras.filter(x => x.id !== eId);
+  if (!otras.length) { toast("No hay otra estructura. Agrega una primero.", "bad"); return; }
+  dialogo(`Mover «${s.nombre}»`, `<p class="dlg-p">El frente pasa con su eje, sus capas y sus registros a la estructura que elijas.</p><div class="f"><label for="dMovE">Estructura</label><select id="dMovE" name="dest" required><option value="">Elige la estructura…</option>${otras.map(o => `<option value="${esc(o.id)}">${esc(o.nombre)}${o.activo === false ? " (desactivada)" : ""}</option>`).join("")}</select></div>`, async o => {
+    if (!o.dest) return false;
+    if (!navigator.onLine) { toast("Se necesita señal para mover sus registros.", "bad"); return false; }
+    try {
+      if (!L.est(o.dest) || !(L.est(eId)?.subs || []).some(x => x.id === sId)) { toast("La lista cambió mientras tanto: vuelve a intentarlo.", "bad"); repintarLug(); return false; }
+      const regs = (await getDocsFromServer(query(collection(db, "liberaciones"), where("subestructuraId", "==", sId)))).docs.map(fila).filter(r => r.estructuraId !== o.dest);
+      const dest = L.est(o.dest);
+      await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { estructuraId: o.dest, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Frente «${s.nombre}» movido de «${est.nombre}» a «${dest.nombre}»`); }, 150);
+      const items = estFresca(), de = items.find(x => x.id === eId), a = items.find(x => x.id === o.dest), sub = (de?.subs || []).find(x => x.id === sId); if (!de || !a || !sub) { toast("La lista cambió mientras tanto: vuelve a intentarlo.", "bad"); repintarLug(); return false; }
+      de.subs = de.subs.filter(x => x.id !== sId); (a.subs ||= []).push(sub);
+      if (BUS.todos) BUS.todos.forEach(r => { if (r.subestructuraId === sId) r.estructuraId = o.dest; });
+      if (!await guardarLug(items, `«${s.nombre}» pasó a ${dest.nombre}${regs.length ? ` con ${regs.length} ${regs.length === 1 ? "registro" : "registros"}` : ""}`)) { toast("Sus registros ya pasaron, pero la lista no se guardó: vuelve a moverlo a la misma estructura.", "bad"); return false; }
+      repintarLug();
+    } catch (e) { toast("No se pudo mover: " + (e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); return false; }
+  }, "Mover");
+}
 function ajLugares() {
   cuerpoAj();
-  const B = S.aj.b;
-  const usados = new Set(); B.forEach(e => { usados.add(e.id); (e.subs || []).forEach(s => usados.add(s.id)); });
+  const A = S.aj; A.luQ ??= ""; A.luOff ??= false;
+  const B = estFresca(); A.b = clon(B);
+  const usos = usosLugares(), nReg = n => `${n} ${n === 1 ? "registro" : "registros"}`;
   const ejeTxt = id => { const e = S.ejes[id]; return e && e.puntos ? `Eje · ${Math.round(e.puntos.length / 3).toLocaleString("es-PE")} pts` : "Subir eje"; };
+  const q = sinTilde(A.luQ.trim().toLowerCase()), tiene = s => !q || sinTilde(String(s).toLowerCase()).includes(q);
+  const nOff = B.filter(e => e.activo === false).length + B.reduce((t, e) => t + (e.subs || []).filter(s => s.activo === false).length, 0);
+  const html = B.filter(e => A.luOff || e.activo !== false).map(e => {
+    const estPasa = tiene(e.nombre), subs = (e.subs || []).filter(s => A.luOff || s.activo !== false).filter(s => estPasa || tiene(s.nombre));
+    if (q && !estPasa && !subs.length) return "";
+    const nAct = (e.subs || []).filter(s => s.activo !== false).length, rE = usos ? (e.subs || []).reduce((t, s) => t + (usos[s.id] || 0), 0) : null;
+    return `<div class="card est ed ${e.activo === false ? "off-row" : ""}" data-e="${esc(e.id)}">
+    <div class="est-h"><input value="${esc(e.nombre)}" data-k="enom" aria-label="Nombre de la estructura ${esc(e.nombre)}"><span class="lu-uso muted">${e.activo === false ? "Desactivada · " : ""}${nAct} ${nAct === 1 ? "frente" : "frentes"}${rE != null ? " · " + nReg(rE) : ""}</span><button type="button" class="mini tymas" data-k="emas" aria-haspopup="menu" aria-label="Más acciones de ${esc(e.nombre)}">⋯</button></div>
+    ${subs.length ? `<div class="srow head"><span>Frente</span><span>PK inicio</span><span>PK final</span><span>Eje</span><span>Registros</span><span></span></div>` : ""}
+    ${subs.map(s => `<div class="srow ${s.activo === false ? "off-row" : ""}" data-s="${esc(s.id)}"><input class="sn" value="${esc(s.nombre)}" data-k="snom" aria-label="Nombre del frente ${esc(s.nombre)}"><input class="mono" value="${esc(s.pkMin == null ? "" : fmtPk(s.pkMin))}" data-k="smin" placeholder="—" inputmode="decimal" aria-label="PK inicio de ${esc(s.nombre)}"><input class="mono" value="${esc(s.pkMax == null ? "" : fmtPk(s.pkMax))}" data-k="smax" placeholder="—" inputmode="decimal" aria-label="PK final de ${esc(s.nombre)}"><label class="mini eje ${S.ejes[s.id] ? "tiene" : ""}"><input type="file" accept=".csv,.txt,.xml" data-eje="${esc(s.id)}" aria-label="${S.ejes[s.id] ? "Cambiar" : "Subir"} eje de ${esc(s.nombre)}">${ejeTxt(s.id)}</label><span class="lu-uso muted">${s.activo === false ? "Desactivado" : usos ? (usos[s.id] ? nReg(usos[s.id]) : "Sin registros") : ""}</span><button type="button" class="mini tymas" data-k="smas" aria-haspopup="menu" aria-label="Más acciones de ${esc(s.nombre)}">⋯</button></div>`).join("")}
+    ${e.activo === false ? "" : `<div class="addrow"><input placeholder="Nuevo frente" data-k="snew" aria-label="Nuevo frente de ${esc(e.nombre)}" maxlength="60"><button type="button" class="mini" data-k="sadd">Agregar frente</button></div>`}
+  </div>`;
+  }).join("");
   $("#ajBody").innerHTML = `
-  <p class="muted small" style="margin:0 0 12px">Cada estructura agrupa sus sub-estructuras o frentes; lo que agregues aparece al instante en el formulario de campo, enlazado a su estructura. El rango de PK define el largo del perfil. «Subir eje» recibe el CSV del eje (PK, Este, Norte) o el XML de Civil 3D con el alineamiento y sus secciones. Desactivar oculta un lugar sin borrar sus registros.</p>
-  ${B.map((e, ei) => `<div class="card est ed ${e.activo === false ? "off-row" : ""}" data-e="${ei}">
-    <div class="est-h"><input value="${esc(e.nombre)}" data-k="enom" aria-label="Nombre de la estructura"><button type="button" class="mini" data-k="eact">${e.activo === false ? "Activar" : "Desactivar"}</button></div>
-    <div class="srow head"><span>Sub-estructura / frente</span><span>PK inicio</span><span>PK final</span><span></span><span></span></div>
-    ${(e.subs || []).map((s, si) => `<div class="srow ${s.activo === false ? "off-row" : ""}" data-s="${si}"><input class="sn" value="${esc(s.nombre)}" data-k="snom" aria-label="Nombre"><input class="mono" value="${esc(s.pkMin == null ? "" : fmtPk(s.pkMin))}" data-k="smin" placeholder="0+000" inputmode="decimal" aria-label="PK inicio"><input class="mono" value="${esc(s.pkMax == null ? "" : fmtPk(s.pkMax))}" data-k="smax" placeholder="2+700" inputmode="decimal" aria-label="PK final"><label class="mini eje ${S.ejes[s.id] ? "tiene" : ""}"><input type="file" accept=".csv,.txt,.xml" hidden data-eje="${esc(s.id)}">${ejeTxt(s.id)}</label><button type="button" class="mini" data-k="sact">${s.activo === false ? "Activar" : "Desactivar"}</button></div>`).join("")}
-    <div class="addrow"><input placeholder="Nueva sub-estructura de ${esc(e.nombre)}" data-k="snew" aria-label="Nueva sub-estructura"><button type="button" class="mini ok-btn" data-k="sadd">Agregar</button></div>
-  </div>`).join("")}
+  <p class="muted small" style="margin:0 0 12px">El rango de PK define el largo del perfil y «Subir eje» recibe el CSV (PK, Este, Norte) o el XML de Civil 3D; en «⋯» ordenas, mueves, desactivas o quitas.</p>
+  <div class="ty-bar"><input type="search" class="search" id="luQ" placeholder="Buscar estructura o frente…" value="${esc(A.luQ)}" autocomplete="off" aria-label="Buscar estructura o frente">${nOff ? `<label class="tog"><input type="checkbox" id="luOff" ${A.luOff ? "checked" : ""}>Ver desactivados (${nOff})</label>` : ""}</div>
+  ${html || `<p class="muted" style="margin:8px 0">Nada coincide con «${esc(A.luQ)}».</p>`}
   <div class="card est ed"><div class="flabel" style="font-weight:800;margin-bottom:8px">Nueva estructura</div>
-    <div class="addrow"><input id="eNew" placeholder="Ej. Presa Auxiliar Sur"><button type="button" class="mini ok-btn" id="eAdd">Agregar</button></div>
-    <p class="muted small" style="margin:8px 0 6px">Se crea con una sub-estructura del mismo nombre; puedes renombrarla o agregar más.</p></div>`;
+    <div class="addrow"><input id="eNew" placeholder="Ej.: Presa Auxiliar Sur" maxlength="60" aria-label="Nombre de la estructura nueva"><button type="button" class="mini ok-btn" id="eAdd">Agregar estructura</button></div>
+    <p class="muted small" style="margin:8px 0 6px">Se crea con un frente del mismo nombre; puedes renombrarlo o agregar más.</p></div>`;
   const body = $("#ajBody");
+  const lq = $("#luQ"); if (lq) buscadorDiferido(lq, v => { S.aj.luQ = v; }, () => ajLugares(), () => S.view === "ajustes" && S.aj.tab === "lugares");
+  $("#luOff")?.addEventListener("change", e => { S.aj.luOff = e.target.checked; ajLugares(); });
   body.addEventListener("change", e => {
     const ej = e.target.dataset.eje;
     if (ej) { const f = e.target.files[0]; e.target.value = ""; if (f) subirEje(ej, f); return; }
-    const k = e.target.dataset.k; const ce = e.target.closest("[data-e]"); if (!ce || !k || k === "snew") return;
-    const est = B[+ce.dataset.e]; const cs = e.target.closest("[data-s]"); const sub = cs ? est.subs[+cs.dataset.s] : null;
-    if (k === "enom") est.nombre = e.target.value.trim();
-    if (k === "snom") sub.nombre = e.target.value.trim();
-    if (k === "smin" || k === "smax") { const v = numONull(e.target.value); if (e.target.value.trim() && v == null) { toast("Escribe el PK como 2+700 o 2700.", "bad"); return; } sub[k === "smin" ? "pkMin" : "pkMax"] = v; if (v != null) e.target.value = fmtPk(v); }
-    guardarLista("estructuras", B);
+    const k = e.target.dataset.k, ce = e.target.closest("[data-e]"); if (!ce || !k || k === "snew") return;
+    const items = estFresca(), est = items.find(x => x.id === ce.dataset.e); if (!est) return;
+    const cs = e.target.closest("[data-s]"), sub = cs ? (est.subs || []).find(x => x.id === cs.dataset.s) : null;
+    if (k === "enom" || k === "snom") {
+      const x = k === "enom" ? est : sub, v = e.target.value.trim(); if (!x) return;
+      if (!v) { toast(k === "enom" ? "La estructura necesita un nombre." : "El frente necesita un nombre.", "bad"); e.target.value = x.nombre; return; }
+      x.nombre = v;
+      guardarLug(items, k === "enom" ? "Estructura renombrada" : "Frente renombrado"); return;
+    }
+    if ((k === "smin" || k === "smax") && sub) {
+      const campo = k === "smin" ? "pkMin" : "pkMax", v = numONull(e.target.value);
+      if (e.target.value.trim() && v == null) { toast("Escribe el PK como 2+700 o 2700.", "bad"); e.target.value = sub[campo] == null ? "" : fmtPk(sub[campo]); return; }
+      const ni = k === "smin" ? v : sub.pkMin, nf = k === "smax" ? v : sub.pkMax;
+      if (ni != null && nf != null && nf <= ni) { toast(`En ${sub.nombre} el PK final debe ser mayor que el inicial.`, "bad"); e.target.value = sub[campo] == null ? "" : fmtPk(sub[campo]); return; }
+      sub[campo] = v; if (v != null) e.target.value = fmtPk(v);
+      guardarLug(items, `${sub.nombre}: PK ${k === "smin" ? "inicio" : "final"} ${v == null ? "sin definir" : fmtPk(v)}`);
+    }
   });
   body.addEventListener("click", async e => {
     const b = e.target.closest("button[data-k]"), ce = e.target.closest("[data-e]");
     if (b && ce) {
-      const est = B[+ce.dataset.e], k = b.dataset.k;
-      if (k === "eact") { if (est.activo !== false && !await confirmar("Desactivar estructura", `«${esc(est.nombre)}» y sus frentes dejan de aparecer en el formulario y el panel. Sus registros se quedan; puedes activarla otra vez.`, "Desactivar", true)) return; est.activo = est.activo === false; }
-      else if (k === "sact") { const s = est.subs[+b.closest("[data-s]").dataset.s]; if (s.activo !== false && !await confirmar("Desactivar frente", `«${esc(s.nombre)}» deja de aparecer en el formulario y el panel. Sus registros se quedan; puedes activarlo otra vez.`, "Desactivar", true)) return; s.activo = s.activo === false; }
-      else if (k === "sadd") { const inp = ce.querySelector('[data-k="snew"]'); const n = inp.value.trim(); if (!n) { inp.focus(); return; } (est.subs ||= []).push({ id: nuevoId(n, usados), nombre: n, pkMin: 0, pkMax: null }); }
-      if (guardarLista("estructuras", B, k === "sadd" ? "Sub-estructura agregada" : "Guardado")) ajLugares(); return;
+      const eId = ce.dataset.e, k = b.dataset.k, est = L.est(eId); if (!est) return;
+      if (k === "emas") {
+        const rc = b.getBoundingClientRect(), i = S.listas.estructuras.findIndex(x => x.id === eId);
+        abrirMenu({ titulo: esc(est.nombre), sub: `${(est.subs || []).length} ${(est.subs || []).length === 1 ? "frente" : "frentes"}`, x: rc.right - 8, y: rc.bottom + 2, items: [
+          ...(i > 0 ? [{ t: "Mover arriba", fn: () => moverLugar(eId, "", -1) }] : []),
+          ...(i < S.listas.estructuras.length - 1 ? [{ t: "Mover abajo", fn: () => moverLugar(eId, "", 1) }] : []),
+          { sep: 1 }, est.activo === false ? { t: "Activar", fn: () => activarLugar(eId, "", true) } : { t: "Desactivar", fn: () => activarLugar(eId, "", false), peligro: true },
+          ...(usos && !(est.subs || []).some(x => usos[x.id]) ? [{ t: "Quitar estructura…", fn: () => quitarEstructura(eId), peligro: true }] : [])
+        ] });
+        return;
+      }
+      if (k === "smas") {
+        const sId = b.closest("[data-s]").dataset.s, subs = est.subs || [], i = subs.findIndex(x => x.id === sId), s = subs[i]; if (!s) return;
+        const rc = b.getBoundingClientRect();
+        abrirMenu({ titulo: esc(s.nombre), sub: esc(est.nombre), x: rc.right - 8, y: rc.bottom + 2, items: [
+          ...(i > 0 ? [{ t: "Mover arriba", fn: () => moverLugar(eId, sId, -1) }] : []),
+          ...(i < subs.length - 1 ? [{ t: "Mover abajo", fn: () => moverLugar(eId, sId, 1) }] : []),
+          { t: "Mover a otra estructura…", fn: () => moverFrenteA(eId, sId) },
+          { sep: 1 }, s.activo === false ? { t: "Activar", fn: () => activarLugar(eId, sId, true) } : { t: "Desactivar", fn: () => activarLugar(eId, sId, false), peligro: true },
+          ...(usos && !usos[sId] ? [{ t: "Quitar frente…", fn: () => quitarFrente(eId, sId), peligro: true }] : [])
+        ] });
+        return;
+      }
+      if (k === "sadd") {
+        const inp = ce.querySelector('[data-k="snew"]'), n = inp.value.trim(); if (!n) { inp.focus(); return; }
+        const items = estFresca(), x = items.find(o => o.id === eId); if (!x) return;
+        if ((x.subs || []).some(o => o.nombre.toLowerCase() === n.toLowerCase())) { toast(`«${n}» ya está en ${x.nombre}.`, "bad"); inp.focus(); return; }
+        const usados = new Set(); items.forEach(o => { usados.add(o.id); (o.subs || []).forEach(s => usados.add(s.id)); });
+        (x.subs ||= []).push({ id: nuevoId(n, usados), nombre: n, pkMin: 0, pkMax: null });
+        if (await guardarLug(items, `Frente «${n}» agregado a ${x.nombre}`)) { repintarLug(); $(`#ajBody .est[data-e="${CSS.escape(eId)}"] [data-k="snew"]`)?.focus(); }
+        return;
+      }
     }
     if (e.target.id === "eAdd") {
       const n = $("#eNew").value.trim(); if (!n) { $("#eNew").focus(); return; }
+      const items = estFresca();
+      if (items.some(o => o.nombre.toLowerCase() === n.toLowerCase())) { toast(`Ya existe la estructura «${n}».`, "bad"); $("#eNew").focus(); return; }
+      const usados = new Set(); items.forEach(o => { usados.add(o.id); (o.subs || []).forEach(s => usados.add(s.id)); });
       const id = nuevoId(n, usados); usados.add(id);
-      B.push({ id, nombre: n, subs: [{ id: nuevoId(n + "-1", usados), nombre: n, pkMin: 0, pkMax: null }] });
-      if (guardarLista("estructuras", B, "Estructura agregada")) ajLugares();
+      items.push({ id, nombre: n, subs: [{ id: nuevoId(n, usados), nombre: n, pkMin: 0, pkMax: null }] });
+      if (await guardarLug(items, `Estructura «${n}» agregada`)) { repintarLug(); $(`#ajBody .est[data-e="${CSS.escape(id)}"] [data-k="snom"]`)?.focus(); }
     }
   });
-  body.addEventListener("keydown", e => { if (e.key === "Enter" && (e.target.dataset.k === "snew" || e.target.id === "eNew")) { e.preventDefault(); e.target.nextElementSibling.click(); } else if (e.key === "Enter" && e.target.tagName === "INPUT") e.target.blur(); });
+  body.addEventListener("keydown", e => { if (e.key === "Enter" && (e.target.dataset.k === "snew" || e.target.id === "eNew")) { e.preventDefault(); e.target.nextElementSibling.click(); } else if (e.key === "Enter" && e.target.tagName === "INPUT" && e.target.type !== "search") e.target.blur(); });
 }
 async function subirEje(subId, file) {
   try {
@@ -5730,7 +5996,7 @@ function ajCapas() {
   const A = S.aj, lista = subsConDatos();
   if (!lista.length) { $("#ajBody").innerHTML = '<p class="muted">Primero agrega lugares.</p>'; return; }
   if (!lista.some(x => x.s.id === A.capSub)) { A.capSub = lista[0].s.id; A.capSel = new Set(); }
-  const tipos = S.listas.tipos.filter(t => t.enGrafico);
+  const tipos = S.listas.tipos.filter(t => t.enGrafico && t.activo !== false);
   if (!tipos.some(t => t.id === A.capTipo)) { A.capTipo = (tipos.find(t => t.id === "masivo") || tipos[0] || {}).id || ""; A.capSel = new Set(); }
   A.capSel ||= new Set(); A.capQ ||= "";
   const sub = L.sub(A.capSub), doc0 = clon(S.capasCfg[A.capSub] || { tipos: {} }); doc0.tipos ||= {};
@@ -5820,10 +6086,13 @@ function ajCapas() {
       const c = cfg.capas[i];
       if (k === "sel") { e.target.checked ? A.capSel.add(c.nombre) : A.capSel.delete(c.nombre); ajCapas(); return; }
       if (k === "nom") { const v = e.target.value.trim(); if (!v) { toast("La capa necesita un nombre.", "bad"); e.target.value = c.nombre; return; }
+        if (v !== c.nombre && !navigator.onLine) { toast("Se necesita señal para renombrar una capa: sus registros y superficies pasan al nombre nuevo.", "bad"); e.target.value = c.nombre; return; }
         if (cfg.capas.some((x, j) => j !== i && x.nombre === v)) { toast(`Ya existe «${v}».`, "bad"); e.target.value = c.nombre; return; }
-        cfg.noAplica.forEach(x => { if (x.capa === c.nombre) x.capa = v; }); if (A.capSel.delete(c.nombre)) A.capSel.add(v); c.nombre = v; }
+        const viejo = c.nombre;
+        cfg.noAplica.forEach(x => { if (x.capa === viejo) x.capa = v; }); if (A.capSel.delete(viejo)) A.capSel.add(v); c.nombre = v;
+        guardar(`Capa renombrada a «${v}»`); ajCapas(); renombrarCapa(A.capSub, A.capTipo, viejo, v); return; }
       if (k === "cota") c.cota = e.target.value.trim();
-      guardar(); if (k === "nom") ajCapas(); return;
+      guardar(); return;
     }
     const x = cfg.noAplica[i];
     if (k === "capa") x.capa = e.target.value;
@@ -6128,6 +6397,8 @@ async function unirTipo(viejoId, destinoId, yaConfirmado) {
     // Las capas configuradas del tipo quitado pasan al tipo correcto (si este no tenía) en cada frente
     const ps = Object.entries(S.capasCfg || {}).filter(([, c]) => c?.tipos?.[viejo.id]).map(([sid, c]) => updateDoc(doc(db, "capas", sid), { [`tipos.${viejo.id}`]: deleteField(), ...(c.tipos[dest.id] ? {} : { [`tipos.${dest.id}`]: c.tipos[viejo.id] }) }));
     await Promise.all(ps).catch(e => console.warn("capas al unir", e));
+    // Superficies XML y bases del tipo quitado pasan al tipo correcto (el Modelo 2D las muestra con su nombre)
+    await moverGrupos("tipoId", viejo.id, d => d.tipoId === viejo.id ? { tipoId: dest.id } : null).catch(e => { console.warn("superficies al unir", e); toast("Los registros se unieron, pero sus superficies XML no se pudieron pasar en el modelo: " + e.message + ". Vuelve a unir con señal.", "bad"); });
     guardarLista("tipos", tiposFrescos().filter(t => t.id !== viejo.id), `Unido con «${dest.nombre}» · ${n} ${n === 1 ? "registro" : "registros"}`);
     if (BUS.todos) BUS.todos.forEach(r => { if (r.tipoId === viejo.id) r.tipoId = dest.id; });
   } catch (e) { console.error(e); toast("No se pudo unir: " + (e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); }
@@ -6146,7 +6417,7 @@ async function unirElemento(viejoId, destinoId) {
 }
 // Cuántos registros usa cada tipo (del resumen del panel; se carga una vez y se reutiliza 5 minutos)
 function usosTipos() {
-  if (!BUS.todos) { if (!S.aj._usosPedido) { S.aj._usosPedido = true; cargarTodoResumen().then(() => { if (S.view === "ajustes" && S.aj.tab === "tipos" && !document.activeElement?.closest?.("#ajBody")) ajTipos(); }); } return null; }
+  if (!BUS.todos) { if (!S.aj._usosPedido) { S.aj._usosPedido = true; cargarTodoResumen().then(() => { if (S.view !== "ajustes" || S.aj.tab !== "tipos") return; if (document.activeElement?.closest?.("#ajBody")) S.aj._sucio = true; else ajTipos(); }); } return null; }
   const c = {}; BUS.todos.forEach(r => { if (r.tipoId) c[r.tipoId] = (c[r.tipoId] || 0) + 1; }); return c;
 }
 // Tipos: siempre se edita sobre la lista recién llegada de Firebase (no sobre una copia vieja), por id
@@ -6196,9 +6467,66 @@ function activarTipo(t, si) {
   // El aviso con «Deshacer» va después del «Guardado» (si no, este lo taparía)
   if (!si) Promise.resolve(p).then(ok => { if (ok) toast(`«${t.nombre}» desactivado: ya no aparece al registrar. Sus registros se quedan.`, "", { t: "Deshacer", fn: () => cambiarTipo(t.id, x => { x.activo = antes; }, "Tipo activado") }); });
 }
+// ¿Algún registro usa este valor? (consulta de un solo documento; se usa antes de quitar algo de una lista)
+async function hayRegistros(campo, valor) {
+  return (await getDocsFromServer(query(collection(db, "liberaciones"), where(campo, "==", valor), limit(1)))).size > 0;
+}
+// Quita un tipo o un elemento de su lista, con «Deshacer» (vuelve a su lugar)
+function quitarDeLista(lista, id, nombre, tras) {
+  const items = lista === "tipos" ? tiposFrescos() : clon(S.listas[lista] || []), i = items.findIndex(x => x.id === id); if (i < 0) return;
+  const [x] = items.splice(i, 1);
+  const guardar = (its, msg) => lista === "tipos" ? guardarTipos(its, msg, false) : guardarLista(lista, its, msg);
+  Promise.resolve(guardar(items, `«${nombre}» quitado`)).then(ok => {
+    if (!ok) return; tras?.();
+    toast(`«${nombre}» quitado de la lista.`, "", { t: "Deshacer", fn: () => {
+      const its = lista === "tipos" ? tiposFrescos() : clon(S.listas[lista] || []); if (its.some(o => o.id === id)) return;
+      its.splice(Math.min(i, its.length), 0, x); Promise.resolve(guardar(its, `«${nombre}» restaurado`)).then(() => tras?.());
+    } });
+  });
+}
+async function quitarTipo(t) {
+  if (!navigator.onLine) { toast("Se necesita señal para revisar si tiene registros.", "bad"); return; }
+  try {
+    if (await hayRegistros("tipoId", t.id)) { toast(`«${t.nombre}» tiene registros (también cuentan los de la papelera): desactívalo o únelo con otro tipo.`, "bad"); return; }
+    if ((await getDocsFromServer(query(collection(db, "bases"), where("tipoId", "==", t.id), limit(1)))).size > 0) { toast(`«${t.nombre}» tiene bases en el modelo: desactívalo o únelo con otro tipo.`, "bad"); return; }
+    if ((await getDocsFromServer(query(collection(db, "superficies"), where("tipoId", "==", t.id), limit(1)))).size > 0) { toast(`«${t.nombre}» tiene superficies XML en el modelo: desactívalo o únelo con otro tipo.`, "bad"); return; }
+  } catch (e) { toast("No se pudo revisar: " + e.message, "bad"); return; }
+  quitarDeLista("tipos", t.id, t.nombre, repintarTipos);
+  // Sin registros: su configuración de capas ya no sirve (un tipo nuevo con el mismo nombre no la hereda)
+  for (const [sid, c] of Object.entries(S.capasCfg || {})) if (c?.tipos?.[t.id]) updateDoc(doc(db, "capas", sid), { [`tipos.${t.id}`]: deleteField() }).catch(e => console.warn("capas del tipo", e));
+}
+async function quitarElemento(e) {
+  if (S.listas.tipos.some(t => t.elementoId === e.id)) { toast(`«${e.nombre}» tiene tipos: quítalos o pásalos a otro elemento primero (o únelo con otro elemento).`, "bad"); return; }
+  if (!navigator.onLine) { toast("Se necesita señal para revisar si tiene registros.", "bad"); return; }
+  try { if (await hayRegistros("elementoId", e.id)) { toast(`«${e.nombre}» tiene registros (también cuentan los de la papelera): desactívalo o únelo con otro elemento.`, "bad"); return; } }
+  catch (er) { toast("No se pudo revisar: " + er.message, "bad"); return; }
+  quitarDeLista("elementos", e.id, e.nombre, repintarTipos);
+}
+function cambiarElemento(id, fn, msg) {
+  const items = clon(S.listas.elementos), x = items.find(o => o.id === id); if (!x) return false; fn(x, items);
+  return guardarLista("elementos", items, msg);
+}
+function activarElemento(e, si) {
+  const p = cambiarElemento(e.id, x => { x.activo = si; }, si ? "Elemento activado" : "Elemento desactivado"); if (!p) return;
+  Promise.resolve(p).then(ok => { if (!ok) return; repintarTipos(); if (!si) toast(`«${e.nombre}» desactivado: ya no aparece al registrar. Sus tipos y registros se quedan.`, "", { t: "Deshacer", fn: () => Promise.resolve(cambiarElemento(e.id, x => { x.activo = true; }, "Elemento activado")).then(repintarTipos) }); });
+}
+const vecino = (lst, i, paso, ver) => { let j = i + paso; while (j >= 0 && j < lst.length && !ver(lst[j])) j += paso; return j >= 0 && j < lst.length ? j : -1; };
+function moverElemento(id, paso) {
+  const items = clon(S.listas.elementos), i = items.findIndex(o => o.id === id), j = i < 0 ? -1 : vecino(items, i, paso, o => S.aj.tyOff || o.activo !== false); if (j < 0) return;
+  [items[i], items[j]] = [items[j], items[i]];
+  Promise.resolve(guardarLista("elementos", items, `«${items[j].nombre}» movido ${paso < 0 ? "arriba" : "abajo"}`)).then(() => { repintarTipos(); $(`#tyList .elgrp[data-e="${CSS.escape(id)}"] [data-k="emas"]`)?.focus(); });
+}
+function elegirUnionEle(e) {
+  const otros = S.listas.elementos.filter(o => o.id !== e.id && o.activo !== false);
+  if (!otros.length) { toast("No hay otro elemento con el que unirlo.", "bad"); return; }
+  dialogo(`Unir «${e.nombre}»`, `<p class="dlg-p">Sus tipos y registros pasan al elemento que elijas y «${esc(e.nombre)}» se quita de la lista.</p>
+    <div class="f"><label for="dUnirE">Unir con</label><select id="dUnirE" name="dest" required><option value="">Elige el elemento correcto…</option>${otros.map(o => `<option value="${esc(o.id)}">${esc(o.nombre)}</option>`).join("")}</select></div>`,
+    o => { if (!o.dest) return false; unirElemento(e.id, o.dest).then(repintarTipos); }, "Unir");
+}
+const repintarTipos = () => { if (S.view === "ajustes" && S.aj.tab === "tipos") ajTipos(); };
 function ajTipos() {
   cuerpoAj();
-  const A = S.aj; A.tyVista ||= ls.get("lib.tyVista", "cat"); A.tyQ ??= "";
+  const A = S.aj; A.tyVista ||= ls.get("lib.tyVista", "cat"); A.tyQ ??= ""; A.tyOff ??= false;
   const B = tiposFrescos(); A.b = clon(B);
   const usos = usosTipos();
   const nT = S.listas.tipos.filter(t => t.nuevo && t.activo !== false), nE = S.listas.elementos.filter(e => e.nuevo && e.activo !== false);
@@ -6206,7 +6534,9 @@ function ajTipos() {
   const otrosE = id => S.listas.elementos.filter(e => e.id !== id && e.activo !== false);
   const quien = x => `Agregado por ${esc(x.creadoNombre || x.creadoPor || "")}${x.creadoEn ? " · " + esc(fmtFecha(x.creadoEn)) : ""}`;
   const parecido = (x, lista) => parecidos(x.nombre, lista.filter(o => o.id !== x.id), 0.6)[0]?.o;
-  const regsTxt = id => usos && usos[id] ? `${usos[id]} ${usos[id] === 1 ? "registro" : "registros"}` : usos ? "sin registros" : "";
+  const nReg = n => `${n} ${n === 1 ? "registro" : "registros"}`;
+  const regsTxt = id => usos && usos[id] ? nReg(usos[id]) : usos ? "Sin registros" : "";
+  const regsEle = id => usos ? B.filter(t => t.elementoId === id).reduce((s, t) => s + (usos[t.id] || 0), 0) : null;
   // Agregados desde campo: el parecido se ofrece como botón principal; «Es distinto» lo deja como tipo nuevo
   const nvFila = (x, esTipo) => {
     const p = parecido(x, esTipo ? tiposActivos() : S.listas.elementos), otros = esTipo ? otrosT(x.id) : otrosE(x.id);
@@ -6216,7 +6546,6 @@ function ajTipos() {
   };
   const nuevos = nT.length || nE.length ? `<div class="nuevos" id="nvBox"><h3>Agregados desde campo (${nT.length + nE.length})</h3><p class="muted small" style="margin:0 0 4px">Revisa que no estén repetidos. «Unir» pasa sus registros al nombre correcto y quita el repetido.</p>
     ${nT.map(t => nvFila(t, true)).join("")}${nE.map(e => nvFila(e, false)).join("")}</div>` : "";
-  const selEle = (v, extra) => `<select ${extra}>${S.listas.elementos.filter(e => e.activo !== false).map(e => `<option value="${esc(e.id)}" ${e.id === v ? "selected" : ""}>${esc(e.nombre)}</option>`).join("")}</select>`;
   const seg = `<div class="tabs ty-vistas" role="group" aria-label="Vista"><button type="button" class="tab" data-tyv="cat" aria-pressed="${A.tyVista === "cat"}">Catálogo (${B.length})</button><button type="button" class="tab" data-tyv="ord" aria-pressed="${A.tyVista === "ord"}">Orden en el perfil (${B.filter(t => t.enGrafico && t.activo !== false).length})</button></div>`;
   let cuerpo;
   if (A.tyVista === "ord") {
@@ -6224,55 +6553,58 @@ function ajTipos() {
     cuerpo = `<p class="muted small" style="margin:0 0 10px">Así se apilan las capas en el perfil del Panel: <b>1 es la de abajo</b> (lo primero que se construye). Escribe un número para mover un tipo de una vez, o usa las flechas. Para quitar un tipo del perfil, desmárcalo en «Catálogo».</p>
     <div class="card section ed" id="tyOrd">${vis.map((t, i) => `<div class="tyrow tyord" data-id="${esc(t.id)}"><input type="number" class="typos mono" data-k="pos" min="1" max="${vis.length}" value="${i + 1}" aria-label="Posición de ${esc(t.nombre)}"><div class="tynom"><b>${esc(t.nombre)}</b><small>${esc(nom(L.ele(t.elementoId)))}</small></div><span class="ord"><button type="button" data-k="up" aria-label="Mover ${esc(t.nombre)} a la posición ${i}" ${i ? "" : "disabled"}>↑</button><button type="button" data-k="dn" aria-label="Mover ${esc(t.nombre)} a la posición ${i + 2}" ${i < vis.length - 1 ? "" : "disabled"}>↓</button></span></div>`).join("") || '<p class="muted">Ningún tipo se dibuja en el perfil. Márcalos en «Catálogo».</p>'}</div>`;
   } else {
-    const q = sinTilde(A.tyQ.trim().toLowerCase());
-    const pasa = t => !q || sinTilde(t.nombre.toLowerCase()).includes(q) || sinTilde(nom(L.ele(t.elementoId)).toLowerCase()).includes(q);
-    const grupos = [...S.listas.elementos.map(e => ({ e, ts: B.filter(t => t.elementoId === e.id) })), { e: { id: "", nombre: "Sin elemento" }, ts: B.filter(t => !L.ele(t.elementoId)) }].filter(g => g.ts.length);
-    const filaT = t => `<div class="tyrow ${t.activo === false ? "off-row" : ""}" data-id="${esc(t.id)}"><input value="${esc(t.nombre)}" data-k="nom" aria-label="Nombre del tipo"><span class="tyuso muted small">${t.activo === false ? "Desactivado" : regsTxt(t.id)}</span><label class="tog" title="Se dibuja como capa en el perfil del Panel"><input type="checkbox" data-k="gr" ${t.enGrafico ? "checked" : ""} ${t.activo === false ? "disabled" : ""}>En perfil</label><button type="button" class="mini tymas" data-k="mas" aria-label="Más acciones de ${esc(t.nombre)}">⋯</button></div>`;
-    const html = grupos.map(g => { const ts = g.ts.filter(pasa); return ts.length ? `<div class="tygrp"><b>${esc(g.e.nombre)}</b><span class="muted small">${g.ts.length} ${g.ts.length === 1 ? "tipo" : "tipos"}</span></div>${ts.map(filaT).join("")}` : ""; }).join("");
-    cuerpo = `<div class="ty-bar"><input type="search" class="search" id="tyQ" placeholder="Buscar tipo o elemento…" value="${esc(A.tyQ)}" autocomplete="off" aria-label="Buscar tipo"></div>
-    <div class="card section ed" id="tyList">${html || `<p class="muted" style="margin:8px 0">Ningún tipo coincide con «${esc(A.tyQ)}».</p>`}
-      <div class="flabel" style="font-weight:800;margin:14px 0 8px">Agregar tipo</div>
-      <div class="trow ty-add" style="border-top:0"><input id="tyNom" placeholder="Ej. Relleno filtro 3" aria-label="Nombre del tipo nuevo">${selEle("mt", 'id="tyEle" aria-label="Elemento"')}<button type="button" class="mini ok-btn" id="tyAdd">Agregar</button></div>
+    const q = sinTilde(A.tyQ.trim().toLowerCase()), tiene = s => !q || sinTilde(String(s).toLowerCase()).includes(q);
+    const verT = t => A.tyOff || t.activo !== false;
+    const nOff = B.filter(t => t.activo === false).length + S.listas.elementos.filter(e => e.activo === false).length;
+    const grupos = [...S.listas.elementos.map(e => ({ e, ts: B.filter(t => t.elementoId === e.id) })), { e: { id: "", nombre: "Sin elemento" }, ts: B.filter(t => !L.ele(t.elementoId)), sin: true }]
+      .filter(g => g.sin ? g.ts.length : (A.tyOff || g.e.activo !== false));
+    const filaT = t => `<div class="tyrow ${t.activo === false ? "off-row" : ""}" data-id="${esc(t.id)}"><input value="${esc(t.nombre)}" data-k="nom" aria-label="Nombre del tipo ${esc(t.nombre)}"><span class="tyuso muted small">${t.activo === false ? "Desactivado" : regsTxt(t.id)}</span><label class="tog" title="Se dibuja como capa en el perfil del Panel"><input type="checkbox" data-k="gr" ${t.enGrafico ? "checked" : ""} ${t.activo === false ? "disabled" : ""} aria-label="Dibujar ${esc(t.nombre)} en el perfil">En perfil</label><button type="button" class="mini tymas" data-k="mas" aria-haspopup="menu" aria-label="Más acciones de ${esc(t.nombre)}">⋯</button></div>`;
+    const html = grupos.map(g => {
+      const grpPasa = !q || tiene(g.e.nombre), ts = g.ts.filter(verT).filter(t => grpPasa || tiene(t.nombre));
+      if (q && !grpPasa && !ts.length) return "";
+      const n = g.ts.filter(t => t.activo !== false).length, r = regsEle(g.e.id);
+      const cab = g.sin ? `<div class="elgrp tygrp" data-e=""><b>Sin elemento</b><span class="muted small">${n} ${n === 1 ? "tipo" : "tipos"}</span></div>`
+        : `<div class="elgrp tygrp ${g.e.activo === false ? "off-row" : ""}" data-e="${esc(g.e.id)}"><input value="${esc(g.e.nombre)}" data-k="enom" aria-label="Nombre del elemento ${esc(g.e.nombre)}"><span class="muted small">${g.e.activo === false ? "Desactivado · " : ""}${n} ${n === 1 ? "tipo" : "tipos"}${r != null ? " · " + nReg(r) : ""}</span><button type="button" class="mini tymas" data-k="emas" aria-haspopup="menu" aria-label="Más acciones del elemento ${esc(g.e.nombre)}">⋯</button></div>`;
+      const add = g.sin || g.e.activo === false ? "" : `<div class="ty-add2" data-e="${esc(g.e.id)}"><input data-k="tnew" placeholder="Nuevo tipo" aria-label="Nuevo tipo de ${esc(g.e.nombre)}" maxlength="80"><button type="button" class="mini" data-k="tadd">Agregar tipo</button></div>`;
+      return `<div class="card est ed tycard">${cab}${ts.map(filaT).join("")}${add}</div>`;
+    }).join("");
+    cuerpo = `<div class="ty-bar"><input type="search" class="search" id="tyQ" placeholder="Buscar tipo o elemento…" value="${esc(A.tyQ)}" autocomplete="off" aria-label="Buscar tipo">${nOff ? `<label class="tog"><input type="checkbox" id="tyOff" ${A.tyOff ? "checked" : ""}>Ver desactivados (${nOff})</label>` : ""}</div>
+    <p class="muted small" style="margin:0 0 10px">Escribe encima para cambiar un nombre; en «⋯» unes, ordenas, desactivas o quitas (solo lo que no tiene registros).</p>
+    <div id="tyList">${html || `<p class="muted" style="margin:8px 0">Ningún tipo coincide con «${esc(A.tyQ)}».</p>`}
+      <div class="card est ed"><div class="flabel" style="font-weight:800;margin-bottom:8px">Nuevo elemento</div><div class="addrow"><input id="elNom" placeholder="Ej.: Drenaje" aria-label="Nombre del elemento nuevo" maxlength="60"><button type="button" class="mini ok-btn" id="elAdd">Agregar elemento</button></div></div>
+    </div>
+    <div class="card section ed" id="eqList">
+      <div class="flabel" style="margin:0 0 8px">Equipos <span class="muted small" style="text-transform:none;letter-spacing:0;font-weight:400">· con qué se hizo el levantamiento</span></div>
+      ${(S.listas.equipos || []).map((q2, i) => `<div class="trow ${q2.activo === false ? "off-row" : ""}" data-q="${i}"><input value="${esc(q2.nombre)}" data-k="qnom" aria-label="Nombre del equipo"><button type="button" class="mini" data-k="qact">${q2.activo === false ? "Activar" : "Desactivar"}</button></div>`).join("")}
+      <div class="trow" style="border-top:0"><input id="eqNom" placeholder="Ej.: Escáner láser" aria-label="Nombre del equipo nuevo"><button type="button" class="mini ok-btn" id="eqAdd">Agregar equipo</button></div>
     </div>`;
   }
-  $("#ajBody").innerHTML = `${nuevos}${seg}${cuerpo}
-  <div class="card section ed" id="elList">
-    <div class="flabel" style="margin:0 0 8px">Elementos</div>
-    ${S.listas.elementos.map(e => `<div class="trow" data-e="${esc(e.id)}"><input value="${esc(e.nombre)}" data-k="enom" aria-label="Nombre del elemento">${e.nuevo ? '<span class="nuevo-tag">Nuevo</span>' : ""}<span class="muted small">${(n => `${n} ${n === 1 ? "tipo" : "tipos"}`)(tiposActivos().filter(t => t.elementoId === e.id).length)}</span></div>`).join("")}
-    <div class="trow" style="border-top:0"><input id="elNom" placeholder="Ej. Drenaje"><button type="button" class="mini ok-btn" id="elAdd">Agregar elemento</button></div>
-  </div>
-  <div class="card section ed" id="eqList">
-    <div class="flabel" style="margin:0 0 8px">Equipos <span class="muted small" style="text-transform:none;letter-spacing:0;font-weight:400">· con qué se hizo el levantamiento</span></div>
-    ${(S.listas.equipos || []).map((q, i) => `<div class="trow ${q.activo === false ? "off-row" : ""}" data-q="${i}"><input value="${esc(q.nombre)}" data-k="qnom" aria-label="Nombre del equipo"><button type="button" class="mini" data-k="qact">${q.activo === false ? "Activar" : "Desactivar"}</button></div>`).join("")}
-    <div class="trow" style="border-top:0"><input id="eqNom" placeholder="Ej. Escáner láser"><button type="button" class="mini ok-btn" id="eqAdd">Agregar equipo</button></div>
-  </div>`;
+  $("#ajBody").innerHTML = `${nuevos}${seg}${cuerpo}`;
   const EQ = $("#eqList");
-  EQ.addEventListener("change", e => { if (e.target.dataset.k !== "qnom") return; const items = clon(S.listas.equipos || []), x = items[+e.target.closest("[data-q]").dataset.q], v = capital(e.target.value); if (!x || !v) { ajTipos(); return; } x.nombre = v; guardarLista("equipos", items, "Equipo guardado"); });
-  EQ.addEventListener("click", async e => {
+  EQ?.addEventListener("change", e => { if (e.target.dataset.k !== "qnom") return; const items = clon(S.listas.equipos || []), x = items[+e.target.closest("[data-q]").dataset.q], v = capital(e.target.value); if (!x || !v) { ajTipos(); return; } x.nombre = v; guardarLista("equipos", items, "Equipo guardado"); });
+  EQ?.addEventListener("click", async e => {
     const items = clon(S.listas.equipos || []);
-    if (e.target.dataset.k === "qact") { const x = items[+e.target.closest("[data-q]").dataset.q]; x.activo = x.activo === false; if (guardarLista("equipos", items, x.activo ? "Equipo activado" : "Equipo desactivado")) ajTipos(); return; }
+    if (e.target.dataset.k === "qact") { const x = items[+e.target.closest("[data-q]").dataset.q]; x.activo = x.activo === false; Promise.resolve(guardarLista("equipos", items, x.activo ? "Equipo activado" : "Equipo desactivado")).then(ok => { if (ok) repintarTipos(); }); return; }
     if (e.target.id !== "eqAdd") return; const n = capital($("#eqNom").value); if (n.length < 2) { $("#eqNom").focus(); return; }
     const par = parecidos(n, items, 0.8)[0];
     if (par && !await confirmar("Equipo parecido", `Ya existe «${esc(par.o.nombre)}». ¿Agregar «${esc(n)}» igual?`, "Agregar igual")) return;
-    items.push({ id: nuevoId(n, new Set(items.map(o => o.id))).toUpperCase(), nombre: n }); if (guardarLista("equipos", items, "Equipo agregado")) ajTipos();
+    items.push({ id: nuevoId(n, new Set(items.map(o => o.id))).toUpperCase(), nombre: n }); Promise.resolve(guardarLista("equipos", items, "Equipo agregado")).then(ok => { if (ok) { repintarTipos(); $("#eqNom")?.focus(); } });
   });
-  const trasUnir = () => { if (S.view === "ajustes" && S.aj.tab === "tipos") ajTipos(); };
   $("#nvBox")?.addEventListener("click", e => {
     const b = e.target.closest("[data-k]"), r = e.target.closest(".nv"); if (!b || !r) return;
-    if (b.dataset.k === "unirP") { (r.dataset.nt ? unirTipo(r.dataset.nt, b.dataset.dest) : unirElemento(r.dataset.ne, b.dataset.dest)).then(trasUnir); return; }
+    if (b.dataset.k === "unirP") { (r.dataset.nt ? unirTipo(r.dataset.nt, b.dataset.dest) : unirElemento(r.dataset.ne, b.dataset.dest)).then(repintarTipos); return; }
     if (b.dataset.k !== "rev") return;
-    const [lista, id] = r.dataset.nt ? ["tipos", r.dataset.nt] : ["elementos", r.dataset.ne];
-    if (lista === "tipos") { cambiarTipo(id, x => { x.nuevo = false; }, "Marcado como revisado"); return; }
-    const items = clon(S.listas[lista]); const x = items.find(o => o.id === id); if (!x) return; x.nuevo = false;
-    if (guardarLista(lista, items, "Marcado como revisado")) ajTipos();
+    if (r.dataset.nt) { cambiarTipo(r.dataset.nt, x => { x.nuevo = false; }, "Marcado como revisado"); return; }
+    Promise.resolve(cambiarElemento(r.dataset.ne, x => { x.nuevo = false; }, "Marcado como revisado")).then(ok => { if (ok) repintarTipos(); });
   });
   $("#nvBox")?.addEventListener("change", e => {
     if (e.target.dataset.k !== "unir" || !e.target.value) return; const r = e.target.closest(".nv"), dest = e.target.value; e.target.value = "";
-    (r.dataset.nt ? unirTipo(r.dataset.nt, dest) : unirElemento(r.dataset.ne, dest)).then(trasUnir);
+    (r.dataset.nt ? unirTipo(r.dataset.nt, dest) : unirElemento(r.dataset.ne, dest)).then(repintarTipos);
   });
   document.querySelector(".ty-vistas")?.addEventListener("click", e => { const b = e.target.closest("[data-tyv]"); if (!b) return; S.aj.tyVista = b.dataset.tyv; ls.set("lib.tyVista", S.aj.tyVista); ajTipos(); });
   const tq = $("#tyQ");
   if (tq) buscadorDiferido(tq, v => { S.aj.tyQ = v; }, () => ajTipos(), () => S.view === "ajustes" && S.aj.tab === "tipos");
+  $("#tyOff")?.addEventListener("change", e => { S.aj.tyOff = e.target.checked; ajTipos(); });
   const OR = $("#tyOrd");
   OR?.addEventListener("change", e => { if (e.target.dataset.k === "pos") moverTipo(e.target.closest("[data-id]").dataset.id, +e.target.value); });
   OR?.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.dataset.k === "pos") { e.preventDefault(); e.target.blur(); } });
@@ -6281,40 +6613,64 @@ function ajTipos() {
     const row = b.closest("[data-id]"), pos = +row.querySelector('[data-k="pos"]').value + (b.dataset.k === "up" ? -1 : 1);
     moverTipo(row.dataset.id, pos); $(`#tyOrd [data-id="${CSS.escape(row.dataset.id)}"] [data-k="${b.dataset.k}"]:not([disabled])`)?.focus();
   });
-  const EL = $("#elList");
-  EL.addEventListener("change", e => { if (e.target.dataset.k !== "enom") return; const items = clon(S.listas.elementos), x = items.find(o => o.id === e.target.closest("[data-e]").dataset.e), v = e.target.value.trim(); if (!x || !v) { ajTipos(); return; } x.nombre = v; guardarLista("elementos", items, "Elemento guardado"); });
-  EL.addEventListener("click", async e => {
-    if (e.target.id !== "elAdd") return; const n = capital($("#elNom").value); if (n.length < 2) { $("#elNom").focus(); return; }
-    const p = parecidos(n, S.listas.elementos, 0.8)[0];
-    if (p && !await confirmar("Elemento parecido", `Ya existe «${esc(p.o.nombre)}». ¿Agregar «${esc(n)}» igual?`, "Agregar igual")) return;
-    const items = clon(S.listas.elementos); items.push({ id: nuevoId(n, new Set(items.map(o => o.id))), nombre: n });
-    if (guardarLista("elementos", items, "Elemento agregado")) ajTipos();
-  });
   const L2 = $("#tyList"); if (!L2) return;
   L2.addEventListener("change", e => {
-    const r = e.target.closest(".tyrow[data-id]"); if (!r) return; const id = r.dataset.id, k = e.target.dataset.k;
-    if (k === "nom") { const v = e.target.value.trim(); if (!v) { toast("El tipo necesita un nombre.", "bad"); e.target.value = L.tipo(id)?.nombre || ""; return; } cambiarTipo(id, t => { t.nombre = v; }, "Nombre guardado", false); }
+    const k = e.target.dataset.k;
+    if (k === "enom") {
+      const g = e.target.closest(".elgrp[data-e]"), id = g?.dataset.e, v = capital(e.target.value); if (!id) return;
+      if (!v) { toast("El elemento necesita un nombre.", "bad"); e.target.value = L.ele(id)?.nombre || ""; return; }
+      if (S.listas.elementos.some(o => o.id !== id && o.nombre.toLowerCase() === v.toLowerCase())) { toast(`Ya existe el elemento «${v}».`, "bad"); e.target.value = L.ele(id)?.nombre || ""; return; }
+      cambiarElemento(id, x => { x.nombre = v; }, "Elemento renombrado"); return;
+    }
+    const r = e.target.closest(".tyrow[data-id]"); if (!r) return; const id = r.dataset.id;
+    if (k === "nom") { const v = e.target.value.trim(); if (!v) { toast("El tipo necesita un nombre.", "bad"); e.target.value = L.tipo(id)?.nombre || ""; return; } cambiarTipo(id, t => { t.nombre = v; }, "Tipo renombrado", false); }
     else if (k === "gr") cambiarTipo(id, t => { t.enGrafico = e.target.checked; }, e.target.checked ? "Se dibuja en el perfil" : "Ya no se dibuja en el perfil", false);
   });
-  L2.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); if (e.target.id === "tyNom") $("#tyAdd").click(); else e.target.blur(); } });
+  L2.addEventListener("keydown", e => {
+    if (e.key !== "Enter" || e.target.tagName !== "INPUT") return; e.preventDefault();
+    if (e.target.dataset.k === "tnew") e.target.nextElementSibling.click(); else if (e.target.id === "elNom") $("#elAdd").click(); else e.target.blur();
+  });
   L2.addEventListener("click", async e => {
     const mas = e.target.closest('[data-k="mas"]');
     if (mas) {
-      const t = L.tipo(mas.closest("[data-id]").dataset.id); if (!t) return; const rc = mas.getBoundingClientRect();
+      const t = L.tipo(mas.closest("[data-id]").dataset.id); if (!t) return; const rc = mas.getBoundingClientRect(), u = usos || usosTipos(), sin = u && !u[t.id];
       abrirMenu({ titulo: esc(t.nombre), sub: esc(nom(L.ele(t.elementoId))) + (regsTxt(t.id) ? " · " + regsTxt(t.id) : ""), x: rc.right - 8, y: rc.bottom + 2, items: [
         { t: "Cambiar elemento…", fn: () => cambiarEleTipo(t) },
-        ...(t.activo !== false ? [{ t: "Unir con otro tipo…", fn: () => elegirUnion(t) }] : []),
+        { t: "Unir con otro tipo…", fn: () => elegirUnion(t) },
         ...(t.activo !== false && t.enGrafico ? [{ t: "Mover en el perfil…", fn: () => { S.aj.tyVista = "ord"; ls.set("lib.tyVista", "ord"); ajTipos(); $(`#tyOrd [data-id="${CSS.escape(t.id)}"] [data-k="pos"]`)?.focus(); } }] : []),
-        { sep: 1 }, t.activo === false ? { t: "Activar", fn: () => activarTipo(t, true) } : { t: "Desactivar", fn: () => activarTipo(t, false), peligro: true }
+        { sep: 1 }, t.activo === false ? { t: "Activar", fn: () => activarTipo(t, true) } : { t: "Desactivar", fn: () => activarTipo(t, false), peligro: true },
+        ...(sin ? [{ t: "Quitar de la lista", fn: () => quitarTipo(t), peligro: true }] : [])
       ] });
       return;
     }
-    if (e.target.id === "tyAdd") {
-      const n = capital($("#tyNom").value); if (!n) { $("#tyNom").focus(); return; }
+    const emas = e.target.closest('[data-k="emas"]');
+    if (emas) {
+      const el = L.ele(emas.closest("[data-e]").dataset.e); if (!el) return; const rc = emas.getBoundingClientRect();
+      const i = S.listas.elementos.findIndex(o => o.id === el.id), nt = S.listas.tipos.filter(t => t.elementoId === el.id).length;
+      abrirMenu({ titulo: esc(el.nombre), sub: `${nt} ${nt === 1 ? "tipo" : "tipos"}`, x: rc.right - 8, y: rc.bottom + 2, items: [
+        ...(i > 0 ? [{ t: "Mover arriba", fn: () => moverElemento(el.id, -1) }] : []),
+        ...(i < S.listas.elementos.length - 1 ? [{ t: "Mover abajo", fn: () => moverElemento(el.id, 1) }] : []),
+        { t: "Unir con otro elemento…", fn: () => elegirUnionEle(el) },
+        { sep: 1 }, el.activo === false ? { t: "Activar", fn: () => activarElemento(el, true) } : { t: "Desactivar", fn: () => activarElemento(el, false), peligro: true },
+        ...(!nt ? [{ t: "Quitar de la lista", fn: () => quitarElemento(el), peligro: true }] : [])
+      ] });
+      return;
+    }
+    const add = e.target.closest('[data-k="tadd"]');
+    if (add) {
+      const row = add.closest("[data-e]"), inp = row.querySelector('[data-k="tnew"]'), eleId = row.dataset.e, n = capital(inp.value); if (!n) { inp.focus(); return; }
       const items = tiposFrescos(), p = parecidos(n, items, 0.8)[0];
-      if (p && !await confirmar("Tipo parecido", `Ya existe «${esc(p.o.nombre)}». ¿Agregar «${esc(n)}» igual?`, "Agregar igual")) return;
-      items.push({ id: nuevoId(n, new Set(items.map(t => t.id))), nombre: n, elementoId: $("#tyEle").value, enGrafico: true });
-      S.aj.tyQ = ""; guardarTipos(items, "Tipo agregado");
+      if (p && !await confirmar("Tipo parecido", `Ya existe «${esc(p.o.nombre)}» (${esc(nom(L.ele(p.o.elementoId)))}). ¿Agregar «${esc(n)}» igual?`, "Agregar igual")) return;
+      items.push({ id: nuevoId(n, new Set(items.map(t => t.id))), nombre: n, elementoId: eleId, enGrafico: true });
+      S.aj.tyQ = ""; Promise.resolve(guardarTipos(items, `«${n}» agregado a ${nom(L.ele(eleId))}`)).then(() => $(`#tyList .ty-add2[data-e="${CSS.escape(eleId)}"] [data-k="tnew"]`)?.focus());
+      return;
+    }
+    if (e.target.id === "elAdd") {
+      const n = capital($("#elNom").value); if (n.length < 2) { $("#elNom").focus(); return; }
+      const p = parecidos(n, S.listas.elementos, 0.8)[0];
+      if (p && !await confirmar("Elemento parecido", `Ya existe «${esc(p.o.nombre)}». ¿Agregar «${esc(n)}» igual?`, "Agregar igual")) return;
+      const items = clon(S.listas.elementos), id = nuevoId(n, new Set(items.map(o => o.id))); items.push({ id, nombre: n });
+      Promise.resolve(guardarLista("elementos", items, `Elemento «${n}» agregado`)).then(ok => { if (!ok) return; repintarTipos(); $(`#tyList .ty-add2[data-e="${CSS.escape(id)}"] [data-k="tnew"]`)?.focus(); });
     }
   });
 }

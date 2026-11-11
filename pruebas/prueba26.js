@@ -79,15 +79,16 @@ let b;
   ok(await p.$eval('#sheet a[href^="https://contoso-my.sharepoint.com"]', a => a.textContent === 'Abrir carpeta' && a.rel.includes('noopener')), 'la ficha muestra «Abrir carpeta» con el enlace de OneDrive');
   ok(!!(await p.$('#sheet #fCarpeta')), 'y gabinete puede cambiarla');
   await p.click('#fCarpeta'); await p.waitForSelector('.dlg.on #dCarpeta');
-  await p.fill('#dCarpeta', 'nada'); await p.click('.dlg.on [type=submit]'); await p.waitForTimeout(250);
-  ok(!!(await p.$('.dlg.on #dCarpeta')), 'una carpeta que no es enlace ni ruta no se acepta');
+  await p.fill('#dCarpeta', ''); await p.click('.dlg.on [type=submit]'); await p.waitForTimeout(500);
+  ok((await p.evaluate(() => window.__fakeStore()['liberaciones/e2'].carpeta)) === undefined, 'dejar la carpeta vacía la quita (es opcional)');
+  await p.click('#fCarpeta'); await p.waitForSelector('.dlg.on #dCarpeta');
   await p.fill('#dCarpeta', 'OneDrive\\Liberaciones\\Cargo 13'); await p.click('.dlg.on [type=submit]'); await p.waitForTimeout(500);
   ok((await p.evaluate(() => window.__fakeStore()['liberaciones/e2'].carpeta)) === 'OneDrive\\Liberaciones\\Cargo 13', 'la ruta de la carpeta se guarda');
   await p.keyboard.press('Escape'); await p.waitForTimeout(300);
 
   // Ajustes → Tipos
   await p.click('[data-v="ajustes"]:not([hidden])'); await p.click('[data-tab="tipos"]'); await p.waitForSelector('#tyList');
-  ok(await p.$$eval('#tyList .tygrp b', x => x.map(b => b.textContent).join()) === 'Movimiento de tierras,Drenaje', 'catálogo agrupado por elemento');
+  ok(await p.$$eval('#tyList .elgrp [data-k="enom"]', x => x.map(i => i.value).join()) === 'Movimiento de tierras,Drenaje', 'catálogo agrupado por elemento');
   ok(/Unir con «Relleno masivo»/.test(await p.textContent('#nvBox [data-nt="masivoo"] [data-k="unirP"]')), '«Agregados desde campo» ofrece unir con el parecido en un toque');
   await p.waitForFunction(() => /1 registro/.test(document.querySelector('#nvBox [data-nt="masivoo"]')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
   ok(/1 registro/.test(await p.textContent('#nvBox [data-nt="masivoo"]')), 'y dice cuántos registros tiene');

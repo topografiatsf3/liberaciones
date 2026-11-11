@@ -71,24 +71,23 @@ async function registrar(p, o) {
   await p.click('#bAll2'); await p.waitForSelector('#bBulk.on');
   await p.click('[data-bk="aceptar"]'); await p.waitForTimeout(500);
   ok((await p.textContent('#toast')).includes('1 código generado'), 'aceptar en grupo');
-  // Por entregar
+  // En proceso
   await p.click('[data-bt="EP"]'); await p.waitForSelector('.brow');
   const nums = await p.$$eval('.brow .num', n => n.map(x => x.textContent).sort());
   ok(nums.join() === 'SKT-TOP-02690,SKT-TOP-02691', 'códigos únicos y correlativos: ' + nums.join(', '));
   await p.click('#bAll2'); await p.click('[data-bk="entregar"]'); await p.waitForSelector('.dlg.on');
   await p.fill('#dCargo', 'CARGO-77');
-  // Sin la carpeta de OneDrive no deja entregar
-  await p.click('.dlg button[type=submit]'); await p.waitForTimeout(300);
-  ok(!!(await p.$('.dlg.on #dCarpeta')), 'sin la carpeta de OneDrive no entrega');
-  await p.fill('#dCarpeta', 'https://contoso-my.sharepoint.com/:f:/g/personal/cargo77');
+  // La carpeta de OneDrive es opcional (versión 26): sin ella solo falta el XML
+  ok(!(await p.$eval('.dlg.on #dCarpeta', i => i.required)), 'la carpeta de OneDrive es opcional');
   // Sin el XML de la superficie de cada una tampoco (versión 23)
   await p.click('.dlg button[type=submit]'); await p.waitForTimeout(300);
   ok(!!(await p.$('.dlg.on #dXml')) && /Faltan 2 XML/.test(await p.textContent('#toast')), 'sin el XML de las superficies no entrega');
+  await p.fill('#dCarpeta', 'https://contoso-my.sharepoint.com/:f:/g/personal/cargo77');
   await p.setInputFiles('.dlg.on #dXml', [supXml('SKT-TOP-02690'), supXml('SKT-TOP-02691')]); await p.waitForSelector('.dlg.on .xml-ok >> nth=1');
   await p.screenshot({ path: OUT + '/03-entregar.png' }); await p.click('.dlg button[type=submit]'); await p.waitForTimeout(600);
   ok((await p.textContent('#toast')).includes('2 entregadas'), '2 entregadas a Calidad');
   ok((await p.evaluate(() => Object.values(window.__fakeStore()).filter(x => x.estado === 'EC' && x.carpeta === 'https://contoso-my.sharepoint.com/:f:/g/personal/cargo77').length)) === 2, 'las 2 guardan la carpeta de OneDrive');
-  ok((await p.textContent('#blist')).includes('No hay liberaciones por entregar'), 'bandeja por entregar vacía');
+  ok((await p.textContent('#blist')).includes('No hay liberaciones en proceso'), 'bandeja «En proceso» vacía');
   // Ficha con acciones desde Registros
   await p.click('[data-v="todos"]'); await p.waitForSelector('.item');
   await p.click('.item:has-text("tramo 2")'); await p.waitForSelector('#sheet.on');

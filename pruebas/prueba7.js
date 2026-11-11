@@ -91,9 +91,9 @@ async function preparar(ctx) {
   const r3 = await p.evaluate(() => Object.values((s => Object.assign({}, ...Object.keys(s).filter(k => /^resumen\/pp-oeste(~\d)?$/.test(k)).sort().map(k => s[k].r)))(window.__fakeStore())).filter(a => a[1] === 'Capa 31').map(a => a[4] + ' ' + a[6]).sort());
   ok(r3.every(x => x.startsWith('EP SKT-TOP-0269')), 'el resumen recibe el código y el estado al aceptar: ' + r3.join(', '));
   await p.click('[data-bt="EP"]'); await p.waitForSelector('.brow');
-  ok(await p.$$eval('.brow', r => r.length) === 3, '«Por entregar» muestra solo lo de la app (3), no las 727 del histórico');
+  ok(await p.$$eval('.brow', r => r.length) === 3, '«En proceso» muestra solo lo de la app (3), no las 727 del histórico');
   await p.click('#bHist'); await p.waitForFunction(() => document.querySelectorAll('.brow').length >= 60, null, { timeout: 15000 });
-  ok((await p.textContent('.tabs')).match(/Por entregar\s*(\d+)/)[1] > 700, 'el histórico se carga solo al pedirlo');
+  ok((await p.textContent('.tabs')).match(/En proceso\s*(\d+)/)[1] > 700, 'el histórico se carga solo al pedirlo');
   await p.screenshot({ path: OUT + '/04-bandeja.png' });
   // Copiar código desde la ficha
   await p.click('[data-bt="EP"]'); await p.click('.brow .item >> nth=0'); await p.waitForSelector('#fCopiar');

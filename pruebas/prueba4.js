@@ -27,7 +27,7 @@ const ext = p => p.$$eval('#chart .pk-ext', t => t.map(x => x.textContent));
 
   // 1. Progresiva inicial del frente 0+020
   await p.click('[data-v="ajustes"]:not([hidden])'); await p.click('[data-tab="lugares"]'); await p.waitForSelector('.est');
-  await p.fill('[data-e="0"] [data-s="0"] [data-k="smin"]', '0+020'); await p.press('[data-e="0"] [data-s="0"] [data-k="smin"]', 'Enter'); await p.waitForTimeout(200);
+  await p.fill('[data-e="pp"] [data-s="pp-oeste"] [data-k="smin"]', '0+020'); await p.press('[data-e="pp"] [data-s="pp-oeste"] [data-k="smin"]', 'Enter'); await p.waitForTimeout(200);
   await p.click('[data-v="panel"]'); await p.waitForSelector('#chart svg'); await p.waitForTimeout(400);
   const e1 = await ext(p);
   ok(e1[0] === 'PK 0+020', 'el eje empieza en el PK del frente: ' + e1.join(' → '));

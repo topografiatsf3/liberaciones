@@ -143,10 +143,10 @@ async function registrar(page, o) {
   // Ajustes: lugares
   await page.click('[data-v="ajustes"]:not([hidden])'); await page.waitForSelector('.tabs');
   await page.click('[data-tab="lugares"]'); await page.waitForSelector('.est');
-  await page.fill('[data-e="1"] [data-k="snew"]', 'Presa Auxiliar Norte Este');
-  await page.click('[data-e="1"] [data-k="sadd"]');
-  await page.fill('#eNew', 'Presa Auxiliar Sur'); await page.click('#eAdd');
-  await page.fill('[data-e="0"] [data-s="0"] [data-k="smax"]', '2+750'); await page.press('[data-e="0"] [data-s="0"] [data-k="smax"]', 'Enter');
+  await page.fill('[data-e="pan"] [data-k="snew"]', 'Presa Auxiliar Norte Este');
+  await page.click('[data-e="pan"] [data-k="sadd"]'); await page.waitForSelector('[data-e="pan"] .srow input[value="Presa Auxiliar Norte Este"]');
+  await page.fill('#eNew', 'Presa Auxiliar Sur'); await page.click('#eAdd'); await page.waitForSelector('.est-h input[value="Presa Auxiliar Sur"]');
+  await page.fill('[data-e="pp"] [data-s="pp-oeste"] [data-k="smax"]', '2+750'); await page.press('[data-e="pp"] [data-s="pp-oeste"] [data-k="smax"]', 'Enter');
   await page.screenshot({ path: OUT + '/05-lugares.png' });
   await page.waitForTimeout(250);
   await page.click('[data-v="nueva"]'); await page.waitForSelector('#fLib:not([hidden])');

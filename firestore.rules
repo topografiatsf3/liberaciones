@@ -39,6 +39,11 @@ service cloud.firestore {
     function soloTipo() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tipoId', 'elementoId', 'editadoEn', 'editadoPor']); }
     // Cambiar la clave de un topógrafo (Ajustes → Topógrafos): solo cambia la clave en sus registros
     function soloTopo() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['topografoId', 'editadoEn', 'editadoPor']); }
+    // Renombrar una capa (Ajustes → Capas): solo cambia el nombre de la capa en sus registros
+    function soloCapa() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['capa', 'editadoEn', 'editadoPor'])
+      && request.resource.data.get('capa', '') is string && request.resource.data.get('capa', '').size() <= 80; }
+    // Mover un frente a otra estructura (Ajustes → Lugares): solo cambia la estructura de sus registros
+    function soloEstructura() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estructuraId', 'editadoEn', 'editadoPor']); }
     // Desde campo solo se puede AGREGAR un nombre al final de la lista de tipos o elementos (no cambiar ni borrar los que hay)
     function soloAgrega() {
       let n = resource.data.items.size();
@@ -154,7 +159,7 @@ service cloud.firestore {
       // marcar como procesados los levantamientos de aspas, marcar «Enterado» en los levantamientos y unir tipos o elementos repetidos.
       allow update: if isAdmin()
         || (hasRol(['gabinete']) && sinTocarCampo() && numeroFijo() && entregaConXml() && (!tocaPapelera() || resource.data.get('numero', '') == ''))
-        || (isConf() && (request.resource.data.origen == 'excel' || soloPapelera() || soloArchivos() || soloProcesado() || soloVisto() || soloTipo() || soloTopo()))
+        || (isConf() && ((resource.data.get('origen', '') == 'excel' && request.resource.data.get('origen', '') == 'excel') || soloPapelera() || soloArchivos() || soloProcesado() || soloVisto() || soloTipo() || soloTopo() || soloCapa() || soloEstructura()))
         || (writer()
           && resource.data.creadoPor == email()
           && resource.data.get('numero', '') == ''

@@ -2,3 +2,5 @@
 node_modules/
 # Informes de revisión (pueden traer detalles de seguridad); no se publican
 informes/
+# Registros del emulador de Firebase
+*-debug.log

@@ -17,9 +17,23 @@ Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, admini
 - Topógrafos, operarios y gabinete pueden **agregar** un tipo (y su elemento, si hace falta). Antes de crearlo la app muestra los nombres parecidos que ya existen y ofrece usar ese; si es el mismo nombre escrito distinto, no deja crearlo. Los números cuentan: «filtro 3» es distinto de «filtro 2». Hace falta señal.
 - Lo agregado desde campo se usa al instante y aparece en **Ajustes → Tipos → Agregados desde campo** (el menú lo avisa). Si se parece a uno que ya existe, el botón principal es **«Unir con «…»»** (un toque): sus registros y sus capas pasan al nombre correcto y el repetido se quita. «Es distinto» lo deja como tipo nuevo.
 - **Ajustes → Tipos** tiene dos vistas:
-  - **Catálogo:** los tipos agrupados por elemento, con buscador y cuántos registros tiene cada uno. «En perfil» decide si se dibuja como capa. En «⋯»: cambiar elemento (y pasar sus registros), unir con otro tipo, desactivar (con «Deshacer»).
+  - **Catálogo (versión 26):** cada **elemento** es una tarjeta con sus tipos debajo. El nombre del elemento o del tipo se cambia escribiendo encima (el id no cambia, los registros siguen enlazados). Cada tarjeta tiene su fila **«Nuevo tipo»** (ya con su elemento) y al final está **«Nuevo elemento»**. Buscador, cuántos registros tiene cada uno y «Ver desactivados» (ocultos por defecto).
+    - «⋯» del tipo: cambiar elemento (y pasar sus registros), unir con otro tipo (también uno desactivado), mover en el perfil, desactivar (con «Deshacer») y **quitar de la lista** (solo si no tiene registros ni superficies XML; con «Deshacer»).
+    - «⋯» del elemento: mover arriba o abajo, unir con otro elemento (sus tipos y registros pasan), desactivar (con «Deshacer») y **quitar** (solo si no tiene tipos ni registros).
   - **Orden en el perfil:** solo los que se dibujan, numerados (1 = la capa de abajo). Se escribe la posición y el tipo se mueve de una vez; las flechas siguen sirviendo.
 - Los cambios se guardan sobre la lista recién llegada de Firebase, así un tipo agregado desde campo mientras se ordena ya no se pierde. «Guardado» sale cuando Firebase lo confirma.
+
+## Ajustes → Lugares: estructuras y frentes (versión 26)
+
+- Cada **estructura** es una tarjeta con sus **frentes** (nombre, PK inicio, PK final, eje y cuántos registros tiene). Buscador y «Ver desactivados».
+- «⋯» de la estructura: mover arriba o abajo, desactivar (con «Deshacer», sin confirmar) y **quitar** (solo si ni ella ni sus frentes tienen registros, superficies XML ni bases).
+- «⋯» del frente: mover arriba o abajo, **mover a otra estructura** (sus registros pasan con él), desactivar (con «Deshacer») y **quitar** (si no tiene registros; se borran también su eje y sus capas configuradas, pide confirmar).
+- Las filas se identifican por id y cada cambio parte de la lista recién llegada de Firebase: si otra persona cambió algo mientras tanto, no se pisa.
+
+## Capas: renombrar sin perder la superficie XML (versión 26)
+
+- Al **renombrar una capa** en Ajustes → Capas, sus registros, sus **superficies XML** del Modelo 2D y su base pasan al nombre nuevo (queda en el historial). Lo mismo al unir tipos, y al cambiar la capa o el tipo de un registro entregado con XML.
+- «Superficies (XML)» y «Ver en el modelo» leen la capa actual de la superficie, así siempre muestran el nombre nuevo.
 
 ## Equipo y levantamiento con dron
 
@@ -58,6 +72,8 @@ Registros y Mis registros filtran por **fecha** (hoy, ayer, esta semana de lunes
 
 ## Bandeja: menos clics
 
+- Pestañas de gabinete: **Por aceptar**, **Observadas**, **En proceso** (antes «Por entregar»; mismo nombre que el estado en Registros) y Levantamientos.
+
 - La **ficha pasa sola al siguiente** después de aceptar, observar, rechazar o entregar, y tiene ‹ › («2 de 9») y las flechas ← → del teclado.
 - **Teclado en computadora:** j/k moverse, x marcar, Enter abrir, a aceptar, o observar, e entregar. **Mayús+clic** marca un rango. Al aceptar uno, Enter genera el código.
 - En grupo también se puede **observar, rechazar y devolver** (misma nota para todos). Si al aceptar en grupo alguno falla, los demás siguen y los que fallaron quedan marcados.
@@ -68,8 +84,8 @@ Registros y Mis registros filtran por **fecha** (hoy, ayer, esta semana de lunes
 
 ## Entregar a Calidad: carpeta de OneDrive
 
-- Al **entregar a Calidad** (uno o varios) se pide la **carpeta de OneDrive** donde quedaron los archivos: se pega el vínculo (en OneDrive: clic derecho en la carpeta → «Compartir» → «Copiar vínculo») o la ruta. Sin carpeta no se entrega. Las últimas carpetas usadas se sugieren al escribir.
-- La ficha muestra **«Abrir carpeta»** (o la ruta, con «Copiar»). Gabinete puede ponerla o cambiarla en registros en proceso o entregados («Poner carpeta OneDrive» / «Cambiar carpeta»); en los entregados antiguos sin carpeta la ficha dice «Falta».
+- Al **entregar a Calidad** (uno o varios) se pide la **carpeta de OneDrive** donde quedaron los archivos: se pega el vínculo (en OneDrive: clic derecho en la carpeta → «Compartir» → «Copiar vínculo»), la ruta o cualquier nota. **Es opcional y de texto libre (versión 26):** se puede entregar sin carpeta y ponerla después. Si se entregan varios sin escribir carpeta, cada uno conserva la que ya tenía. Las últimas carpetas usadas se sugieren al escribir.
+- La ficha muestra **«Abrir carpeta»** (o la ruta, con «Copiar»). Gabinete puede ponerla, cambiarla o quitarla (dejando el campo vacío) en registros en proceso o entregados («Poner carpeta OneDrive» / «Cambiar carpeta»).
 - La carpeta sale en el CSV exportado (columna «Carpeta OneDrive») y queda en el historial.
 
 ## Entregar a Calidad: XML de la superficie (obligatorio)
@@ -123,6 +139,8 @@ El administrador y el jefe ven encima del gráfico un recuadro con los registros
 - **iPhone (Safari):** botón Compartir → «Agregar a inicio».
 - **Computadora (Chrome o Edge):** botón «Instalar» de la cabecera o el ícono de instalar en la barra de direcciones.
 
-Ya instalada abre en su propia ventana, sin barra del navegador, y funciona sin señal. Mantener presionado el ícono muestra atajos (Nueva, Mis registros, Bandeja, Panel). El ícono muestra un número con lo pendiente (observados, bandeja y solicitudes de acceso, según el rol). Cuando se publica una versión nueva con la app abierta aparece «Hay una versión nueva · Actualizar». La app pide al teléfono no borrar lo guardado sin señal cuando falta espacio.
+Ya instalada abre en su propia ventana, sin barra del navegador, y funciona sin señal. Mantener presionado el ícono muestra atajos (Nueva, Mis registros, Bandeja, Panel). El ícono muestra un número con lo pendiente (observados, bandeja y solicitudes de acceso, según el rol). Cuando se publica una versión nueva, **la app se actualiza sola** (versión 26): al momento si no hay nada escrito; si se está escribiendo, avisa «Hay una versión nueva · Actualizar» y se actualiza sola la próxima vez que se vuelva a la app sin nada pendiente (lo escrito queda en el borrador).
+
+**Fecha del registro nuevo (versión 26):** si la app quedó abierta desde el día anterior, o el borrador es de ayer, el registro nuevo ya no sale con la fecha de ayer: mientras nadie cambie la fecha a mano, toma la hora actual al abrir «Nueva» y al volver a la app. Una fecha cambiada a mano se respeta. La app pide al teléfono no borrar lo guardado sin señal cuando falta espacio.
 
 - `pruebas/`: pruebas automáticas con Firebase simulado y datos inventados (ver `pruebas/README.md`).

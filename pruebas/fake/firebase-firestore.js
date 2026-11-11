@@ -99,6 +99,7 @@ export function writeBatch() {
   return { set(ref, data, opt) { ops.push({ k: 'set', ref, data, merge: opt && opt.merge }); }, update(ref, data) { ops.push({ k: 'update', ref, data }); }, delete(ref) { ops.push({ k: 'delete', ref }); }, commit: () => apply(ops) };
 }
 export async function getDocs(q) { return runQuery(q); }
+export async function getDocsFromServer(q) { return runQuery(q); }
 
 export async function runTransaction(db, fn) {
   const ops = [];
