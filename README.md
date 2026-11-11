@@ -103,6 +103,14 @@ Registros y Mis registros filtran por **fecha** (hoy, ayer, esta semana de lunes
 - Un Excel del histórico que traiga la clave vieja se importa con la nueva.
 - Se necesita señal. Si una cuenta no se puede actualizar (la propia o la de un administrador), se avisa para cambiarla en Ajustes → Usuarios.
 
+## Etiquetas de estado y seguimiento (versión 27)
+
+- Cada registro muestra su **estado** (Pendiente topografía, En proceso, Entregado a Calidad, Observado, Rechazado o Levantamiento) y, si no lleva código, su **seguimiento**:
+  - **Aspas para vuelo de dron:** «Procesado» (al pasar el mouse dice quién) o «Por procesar» (borde punteado).
+  - **Levantamientos:** «Enterado» o «Por ver».
+- Es una sola regla para la tabla de computadora, la lista del celular, la ficha, el menú «⋯», Ctrl+K y el resumen de WhatsApp.
+- En Registros hay chips para **filtrar** por «Por procesar», «Procesadas», «Por ver» y «Enterados».
+
 ## Aspas para vuelo de dron
 
 Los levantamientos de aspas registrados en campo llegan a la **Bandeja → Aspas** del administrador y del jefe de área (el jefe ve la Bandeja con Aspas y Levantamientos; gabinete no ve Aspas). Desde la ficha se descargan el CSV y las fotos, y se marcan como procesados uno por uno o varios juntos; también se pueden devolver a «Por procesar». El número del menú cuenta los que faltan procesar.

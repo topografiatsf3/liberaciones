@@ -566,6 +566,8 @@ h1,h2,h3{text-wrap:balance}
 @keyframes parpadeo{50%{opacity:.25}}
 @keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .st{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 9px 2px 7px;font-size:12px;font-weight:600;white-space:nowrap}
+.st.seg{margin-left:4px}.st.seg.por{background:var(--surface);color:var(--ink);border:1px dashed var(--line-strong)}
+.rtab .tcod .st.seg{margin-left:0;margin-top:3px}
 .st::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .st.PT{background:var(--pt-bg);color:var(--pt)} .st.EP{background:var(--ep-bg);color:var(--ep)} .st.EC{background:var(--ec-bg);color:var(--ec)} .st.OB{background:var(--ob-bg);color:var(--ob)} .st.NA,.st.X{background:var(--na-bg);color:var(--na)} .st.RE{background:var(--re-bg);color:var(--re)}
 .item .nota.re{background:var(--re-bg);color:var(--re);border-left-color:var(--re)}
@@ -1205,6 +1207,20 @@ const LISTAS_INICIALES = {
 
 const ROLES = { topografo: "Topógrafo", operario: "Operario", gabinete: "Gabinete", jefe: "Jefe de área", admin: "Administrador" };
 const ESTADOS = { PT: "Pendiente topografía", EP: "En proceso", EC: "Entregado a Calidad", OB: "Observado", RE: "Rechazado", X: "Eliminado", NA: "Levantamiento" };
+// Seguimiento de lo que no lleva código: las aspas se «procesan» (jefe/administrador) y los levantamientos se dan por «enterados» (gabinete).
+// Una sola regla para todas las pantallas (tabla, lista, ficha, menú, Ctrl+K) y para los chips de filtro de Registros.
+const SEGUIM = { porproc: ["Por procesar", "Por procesar"], proc: ["Procesado", "Procesadas"], porver: ["Por ver", "Por ver"], ent: ["Enterado", "Enterados"] };
+function seguimientoDe(r) {
+  if (!r || r._res || r.borrado || r.estado === "X") return "";
+  if (r.actividad === "ASP") return r.procesado ? "proc" : "porproc";
+  if (r.estado === "NA") return r.visto ? "ent" : "porver";
+  return "";
+}
+const etqEstado = k => ESTADOS[k] || SEGUIM[k]?.[1] || k;
+const chipEstado = r => `<span class="st ${esc(r.estado)}">${esc(ESTADOS[r.estado] || r.estado)}</span>`;
+const chipSeguim = r => { const k = seguimientoDe(r); if (!k) return ""; const hecho = k === "proc" || k === "ent", quien = hecho ? (k === "proc" ? r.procesadoNombre || r.procesadoPor : r.vistoNombre || r.vistoPor) : "";
+  return `<span class="st seg ${hecho ? "EC" : "por"}"${quien ? ` title="${esc(SEGUIM[k][0] + " por " + quien)}"` : ""}>${SEGUIM[k][0]}</span>`; };
+const chipsReg = r => chipEstado(r) + chipSeguim(r);
 
 /* ---------- Estado ---------- */
 const S = {
@@ -1360,7 +1376,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 26;
+const VERSION_APP = 27;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2391,7 +2407,7 @@ function textoResumen(regs) {
   const frente = r => { const e = nom(L.est(r.estructuraId)), f = nom(L.sub(r.subestructuraId)); return e && f && !f.toLowerCase().startsWith(e.toLowerCase()) ? `${e} – ${f}` : f || e || "Sin frente"; };
   const linea = r => {
     const largo = r.pkInicio != null && r.pkFin != null ? r.pkFin - r.pkInicio : 0;
-    const est = r.numero ? r.numero + masCodigos(r).replace(/<[^>]+>/g, "") + (r.estado === "EC" ? " entregado" : r.estado === "OB" ? " observado" : "") : ESTADOS[r.estado] || r.estado;
+    const est = r.numero ? r.numero + masCodigos(r).replace(/<[^>]+>/g, "") + (r.estado === "EC" ? " entregado" : r.estado === "OB" ? " observado" : "") : (ESTADOS[r.estado] || r.estado) + (seguimientoDe(r) ? " · " + SEGUIM[seguimientoDe(r)][0].toLowerCase() : "");
     if (r.actividad === "LIB") return `• ${[nom(L.tipo(r.tipoId)) || "Liberación", capaDe(r), r.pkInicio != null ? rangoPk(r.pkInicio, r.pkFin) + (largo > 0 ? ` (${mts(largo)})` : "") : "", est].filter(Boolean).join(" · ")}`;
     const d = (r.descripcion || "").replace(/\s+/g, " ").trim();
     return `• ${[nom(L.act(r.actividad), r.actividad), d.length > 70 ? d.slice(0, 68) + "…" : d, r.pkInicio != null ? rangoPk(r.pkInicio, r.pkFin) : "", r.numero ? est : ""].filter(Boolean).join(" · ")}`;
@@ -2505,7 +2521,7 @@ function activosReg(fl, cual) {
   if (fl.act) it.push(["act", nom(L.act(fl.act), fl.act)]);
   if (fl.equipo) it.push(["equipo", fl.equipo === "~" ? "Sin equipo" : nom(L.equipo(fl.equipo), fl.equipo)]);
   if (fl.capa === "~") it.push(["capa", "Sin capa"]);
-  if (fl.st) it.push(["st", fl.st.split(",").map(k => ESTADOS[k] || k).join(" + ")]);
+  if (fl.st) it.push(["st", fl.st.split(",").map(etqEstado).join(" + ")]);
   return it;
 }
 // Registros con filtro de fechas: se escucha solo ese rango en Firebase
@@ -2574,13 +2590,14 @@ function pintarLista(cual) {
   // Los números de los chips cuentan lo que se ve (con la búsqueda y sin los eliminados)
   const ante = datos.filter(r => r.estado !== "X" || esAdmin() || pap).filter(r => coincide(r, qs));
   const cuenta = {}; ante.forEach(r => { cuenta[r.estado] = (cuenta[r.estado] || 0) + 1; });
-  let vis = ante.filter(r => !sts.length || sts.includes(r.estado));
+  ante.forEach(r => { const s = seguimientoDe(r); if (s) cuenta[s] = (cuenta[s] || 0) + 1; });
+  let vis = ante.filter(r => !sts.length || sts.includes(r.estado) || sts.includes(seguimientoDe(r)));
   // En Mis registros, lo observado (lo que hay que corregir) va primero
   if (cual === "mis") vis = [...vis.filter(r => r.estado === "OB"), ...vis.filter(r => r.estado !== "OB")];
   const lim = cual === "todos" ? S.verTodos : (S.verMis ||= 400);
   [...sel].forEach(id => { if (!vis.some(r => r.id === id)) sel.delete(id); });
   const nPend = (cuenta.PT || 0) + (cuenta.OB || 0);
-  const chips = [["", "Todos", ante.length], ...(nPend && (cuenta.OB || 0) && (cuenta.PT || 0) ? [["PT,OB", "Pendientes + observados", nPend]] : []), ...["PT", "EP", "EC", "OB", "RE", "NA"].map(k => [k, ESTADOS[k], cuenta[k] || 0])].filter(c => c[0] === "" || c[2] > 0 || c[0] === fl.st);
+  const chips = [["", "Todos", ante.length], ...(nPend && (cuenta.OB || 0) && (cuenta.PT || 0) ? [["PT,OB", "Pendientes + observados", nPend]] : []), ...["PT", "EP", "EC", "OB", "RE", "NA"].map(k => [k, ESTADOS[k], cuenta[k] || 0]), ...Object.keys(SEGUIM).map(k => [k, SEGUIM[k][1], cuenta[k] || 0])].filter(c => c[0] === "" || c[2] > 0 || c[0] === fl.st);
   const tabla = tablaPC(), ns = sel.size, selRegs = vis.filter(r => sel.has(r.id));
   const parcial = cual === "todos" && !pap && !porFecha && !hist && S.todosLleno && (activos.length || qs.length) && poder();
   const hayFiltro = activos.length || qs.length;
@@ -2590,7 +2607,7 @@ function pintarLista(cual) {
     ? `${selRegs.some(puedeRestaurar) ? '<button type="button" class="mini ok-btn" data-rk="restaurar">Restaurar</button>' : ""}${puedeAjustes() ? '<button type="button" class="mini warn-mini" data-rk="siempre">Borrar para siempre</button>' : ""}`
     : `${esGab() && ns && selRegs.every(r => r.actividad === "LIB" && ["PT", "OB"].includes(r.estado)) ? '<button type="button" class="mini ok-btn" data-rk="aceptar">Aceptar y generar códigos</button>' : ""}${esGab() && ns && selRegs.every(r => r.estado === "EP") ? '<button type="button" class="mini ok-btn" data-rk="entregar">Entregar a Calidad</button>' : ""}<button type="button" class="mini" data-rk="exportar">Exportar CSV</button>${selRegs.some(puedeBorrar) ? '<button type="button" class="mini warn-mini" data-rk="papelera">Mandar a la papelera</button>' : ""}`}<button type="button" class="mini" data-rk="limpiar">Deseleccionar</button></div>`; };
   const filaT = r => `<tr data-id="${esc(r.id)}" class="${sel.has(r.id) ? "sel" : ""}"><td class="ck"><input type="checkbox" data-ck ${sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar ${esc(r.numero || r.descripcion || "")}"></td>
-    <td class="tcod"><span class="mono">${r.numero ? esc(r.numero) + masCodigos(r) : '<span class="muted">—</span>'}</span><span class="st ${esc(r.estado)}">${esc(ESTADOS[r.estado] || r.estado)}</span>${marcaCorr(r)}${r._pend ? '<span class="pend-tag">Por subir</span>' : ""}</td>
+    <td class="tcod"><span class="mono">${r.numero ? esc(r.numero) + masCodigos(r) : '<span class="muted">—</span>'}</span>${chipsReg(r)}${marcaCorr(r)}${r._pend ? '<span class="pend-tag">Por subir</span>' : ""}</td>
     <td class="tdesc"><b>${esc(nom(L.tipo(r.tipoId)) || r.descripcion || "")}${capaDe(r) ? " · " + esc(capaDe(r)) : ""}</b><span>${esc(r.nombreLiberacion || r.descripcion || "")}</span>${r.estado === "OB" && r.notaObservacion ? `<span class="tn">Observación: ${esc(r.notaObservacion)}</span>` : ""}${r.estado === "RE" && r.notaRechazo ? `<span class="tn re">Rechazo: ${esc(r.notaRechazo)}</span>` : ""}${pap ? `<small class="tq">${esc(["Borrado " + fechaCorta(r.borradoEn), r.borradoNombre || r.borradoPor || ""].filter(Boolean).join(" · "))}</small>` : lineaQuien(r, r.fechaCampo)}</td>
     ${tdFrente(r)}<td class="mono nw">${esc(rangoPk(r.pkInicio, r.pkFin))}</td>${tdMas(r)}</tr>`;
   $("#view").innerHTML = `
@@ -2690,7 +2707,7 @@ const conMas = (html, r) => poder() ? `<div class="item-w">${html}${btnMas(r)}</
 function tarjeta(r, i) {
   const sub = nom(L.sub(r.subestructuraId)), tipo = nom(L.tipo(r.tipoId));
   return `<button type="button" class="item" data-id="${esc(r.id)}" style="animation-delay:${Math.min(i, 12) * 25}ms">
-    <div class="r1">${r.numero ? `<span class="num">${esc(r.numero)}${masCodigos(r)}</span>` : '<span class="num sin">Sin número</span>'}<span class="st ${esc(r.estado)}">${esc(ESTADOS[r.estado] || r.estado)}</span>${r.actividad !== "LIB" ? `<span class="act">${esc(nom(L.act(r.actividad), r.actividad))}</span>` : ""}${r.actividad === "ASP" && r.procesado ? '<span class="st EC">Procesado</span>' : ""}${r.visto && r.actividad !== "ASP" ? '<span class="st EC">Enterado</span>' : ""}${r._pend ? '<span class="pend-tag">Por subir</span>' : ""}${(r.solapaCon || []).length && !["EC", "RE"].includes(r.estado) ? '<span class="solapa">Se superpone</span>' : ""}</div>
+    <div class="r1">${r.numero ? `<span class="num">${esc(r.numero)}${masCodigos(r)}</span>` : '<span class="num sin">Sin número</span>'}${chipEstado(r)}${r.actividad !== "LIB" ? `<span class="act">${esc(nom(L.act(r.actividad), r.actividad))}</span>` : ""}${chipSeguim(r)}${r._pend ? '<span class="pend-tag">Por subir</span>' : ""}${(r.solapaCon || []).length && !["EC", "RE"].includes(r.estado) ? '<span class="solapa">Se superpone</span>' : ""}</div>
     <div class="desc">${esc(r.nombreLiberacion || r.descripcion)}</div>
     <div class="meta">${sub ? `<span>${esc(sub)}</span>` : ""}${tipo ? `<span>${esc(tipo)}</span>` : ""}${r.pkInicio != null ? `<span class="pk">${esc(rangoPk(r.pkInicio, r.pkFin))}</span>` : ""}<span>${esc(fmtFecha(r.fechaCampo))}</span>${S.view === "todos" ? `<span>${esc(nom(L.topo(r.topografoId), r.topografoId))}</span>` : ""}${resumenArch(r)}</div>
     ${r.estado === "OB" && r.notaObservacion ? `<div class="nota">Observación: ${esc(r.notaObservacion)}</div>` : ""}${corregido(r) ? `<div class="nota corr">${marcaCorr(r)} Se había pedido: ${esc(r.notaObservacion)}</div>` : ""}${r.estado === "RE" && r.notaRechazo ? `<div class="nota re">Rechazo: ${esc(r.notaRechazo)}</div>` : ""}${r.borrado ? `<div class="nota re">En la papelera · ${esc(r.borradoNombre || r.borradoPor || "")}${r.borradoEn ? " · " + esc(fmtFecha(r.borradoEn)) : ""}</div>` : ""}
@@ -2743,7 +2760,7 @@ function abrirFicha(r) {
   // Solo enlaces http(s): un «javascript:» o «data:» guardado en el registro se muestra como texto, no como enlace
   const links = (arr) => (arr || []).map(l => /^https?:\/\//i.test(String(l)) ? `<div class="link"><a href="${esc(l)}" target="_blank" rel="noopener noreferrer">${esc(String(l).replace(/^https?:\/\//i, ""))}</a></div>` : `<div class="link muted">${esc(l)}</div>`).join("");
   sh.innerHTML = `<div class="grab"></div><button type="button" class="sheet-x" id="fX" aria-label="Cerrar ficha">${ICON_X}</button><div class="wrap">
-    <div class="r1" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${r.numero ? `<span class="mono fnum">${esc(r.numero)}</span><button type="button" class="mini" id="fCopiar" aria-label="Copiar código ${esc(r.numero)}">Copiar</button>` : '<span class="muted">Sin número</span>'}<span class="st ${esc(r.estado)}">${esc(ESTADOS[r.estado] || r.estado)}</span>${r._pend ? '<span class="pend-tag" style="margin-left:0">Por subir</span>' : ""}${navFicha(r)}</div>
+    <div class="r1" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${r.numero ? `<span class="mono fnum">${esc(r.numero)}</span><button type="button" class="mini" id="fCopiar" aria-label="Copiar código ${esc(r.numero)}">Copiar</button>` : '<span class="muted">Sin número</span>'}${chipsReg(r)}${r._pend ? '<span class="pend-tag" style="margin-left:0">Por subir</span>' : ""}${navFicha(r)}</div>
     <h3 id="fTit">${esc(r.nombreLiberacion || r.descripcion)}</h3>
     ${r.nombreLiberacion ? `<p class="muted" style="margin:0">${esc(r.descripcion)}</p>` : ""}
     ${r.estado === "OB" && r.notaObservacion ? `<div class="item nota" style="animation:none">Observación: ${esc(r.notaObservacion)}</div>` : ""}
@@ -2934,7 +2951,7 @@ function accionesReg(r) {
 async function menuRegistro(id, x, y, fila) {
   let r = regsDe([id])[0];
   if (!r) { try { const d = await getDoc(doc(db, "liberaciones", id)); if (!d.exists()) { toast("Ese registro ya no existe.", "bad"); return; } r = fila0(d); } catch (e) { toast("No se pudo leer: " + e.message, "bad"); return; } }
-  abrirMenu({ titulo: esc(r.numero || "Sin número"), sub: `<span class="st ${esc(r.estado)}">${esc(ESTADOS[r.estado] || r.estado)}</span> ${esc(nom(L.tipo(r.tipoId)))}${capaDe(r) ? " · " + esc(capaDe(r)) : ""} · <span class="mono">${esc(rangoPk(r.pkInicio, r.pkFin))}</span>`, items: accionesReg(r), x, y, fila });
+  abrirMenu({ titulo: esc(r.numero || "Sin número"), sub: `${chipsReg(r)} ${esc(nom(L.tipo(r.tipoId)))}${capaDe(r) ? " · " + esc(capaDe(r)) : ""} · <span class="mono">${esc(rangoPk(r.pkInicio, r.pkFin))}</span>`, items: accionesReg(r), x, y, fila });
 }
 const fila0 = d => fila(d);
 function objetivoMenu(t) {
@@ -3011,7 +3028,7 @@ function abrirBuscador() {
     okR.sort((a, b) => (exacto ? (String(b.numero).toLowerCase().endsWith(qs[0]) - String(a.numero).toLowerCase().endsWith(qs[0])) : 0) || (toDate(b.fechaCampo)?.getTime() || 0) - (toDate(a.fechaCampo)?.getTime() || 0));
     const nR = okR.length; okR = okR.slice(0, 40);
     res = [...(qs.length ? okC.slice(0, 5) : okC.slice(0, 8)), ...okR.map(r => ({ r }))]; k = Math.min(k, Math.max(0, res.length - 1));
-    box.innerHTML = res.length ? res.map((x, i) => x.r ? `<button type="button" class="cmdk-i" data-k="${i}" aria-selected="${i === k}"><span class="mono">${esc(x.r.numero || "Sin número")}</span><span class="st ${esc(x.r.estado)}">${esc(ESTADOS[x.r.estado] || x.r.estado)}</span><span class="ct">${esc(nom(L.tipo(x.r.tipoId)))}${x.r.capa ? " · " + esc(x.r.capa) : ""}<small>${esc(nom(L.sub(x.r.subestructuraId)))} · ${esc(fmtFecha(x.r.fechaCampo, false))}</small></span><span class="mono pk">${esc(rangoPk(x.r.pkInicio, x.r.pkFin))}</span></button>`
+    box.innerHTML = res.length ? res.map((x, i) => x.r ? `<button type="button" class="cmdk-i" data-k="${i}" aria-selected="${i === k}"><span class="mono">${esc(x.r.numero || "Sin número")}</span>${chipsReg(x.r)}<span class="ct">${esc(nom(L.tipo(x.r.tipoId)))}${x.r.capa ? " · " + esc(x.r.capa) : ""}<small>${esc(nom(L.sub(x.r.subestructuraId)))} · ${esc(fmtFecha(x.r.fechaCampo, false))}</small></span><span class="mono pk">${esc(rangoPk(x.r.pkInicio, x.r.pkFin))}</span></button>`
       : `<button type="button" class="cmdk-i cmd" data-k="${i}" aria-selected="${i === k}"><span class="ct">${esc(x.t)}</span><small>${esc(x.s)}</small></button>`).join("")
       : `<p class="muted small" style="padding:14px 16px;margin:0">${BUS.cargando ? "Cargando el histórico…" : "Sin resultados."}</p>`;
     d.querySelector("#cmdkN").textContent = qs.length ? `${nR.toLocaleString("es-PE")} ${nR === 1 ? "registro" : "registros"}${nR > 40 ? " (se muestran 40)" : ""}${BUS.cargando ? " · cargando histórico…" : ""}` : "";
