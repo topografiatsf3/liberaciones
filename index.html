@@ -116,6 +116,17 @@ h1.view-title{font-weight:700;font-size:22px;line-height:1.2;letter-spacing:-.01
 #fLib>.card.section{margin:0;border-radius:0;border-bottom:0}
 #fLib>.card.section:first-child{border-radius:8px 8px 0 0}
 #fLib>.card.section:nth-last-child(2){border-radius:0 0 8px 8px;border-bottom:1px solid var(--line);margin-bottom:16px}
+/* Nueva (versión 29): «Guardar» queda siempre a la vista, fijo sobre el menú de abajo; «Limpiar» va arriba, lejos del pulgar */
+#fLib>.actions{position:sticky;bottom:calc(var(--nav-h) - 10px + env(safe-area-inset-bottom,0px));z-index:15;margin:0 0 18px;padding:10px 0;background:var(--bg);box-shadow:0 -1px 0 var(--line)}
+.vt-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.vt-row .view-title{flex:1;min-width:0}
+html:has(#fLib:not([hidden])){scroll-padding-bottom:calc(var(--nav-h) + 96px)}
+body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-area-inset-bottom,0px))}
+@media (min-width:860px){
+  #fLib>.actions{bottom:0}
+  html:has(#fLib:not([hidden])){scroll-padding-bottom:96px}
+  body:has(#fLib:not([hidden])) .toast{bottom:84px}
+}
 
 /* Formulario */
 .grid{display:grid;gap:12px 14px;grid-template-columns:1fr 1fr;margin-bottom:12px}
@@ -236,6 +247,8 @@ h1.view-title{font-weight:700;font-size:22px;line-height:1.2;letter-spacing:-.01
 .cap-bulk.on{display:flex;animation:entra .2s both}
 .cap-bulk .mini{background:var(--ink);color:#fff;border-color:var(--muted)}
 .cap-bulk .warn-mini{background:var(--ob);border-color:var(--ob)}
+/* Lo que rechaza o borra va aparte, a la derecha, lejos de lo que se toca seguido (versión 29) */
+.cap-bulk .aparte{margin-left:auto}
 .warn-mini{color:var(--ob)}
 .cota-serie{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:var(--accent-soft);border-radius:8px;padding:8px 10px;margin-bottom:8px}
 .cota-serie input{width:90px}
@@ -324,6 +337,8 @@ h1.view-title{font-weight:700;font-size:22px;line-height:1.2;letter-spacing:-.01
 }
 @media (max-width:720px){.filters{grid-template-columns:1fr 1fr}.filters .wide{grid-column:1/-1}}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.stats-de{margin:12px 0 6px;font-size:13px;font-weight:600;color:var(--muted)}
+.pmain>.stats-de{margin-top:0}
 @media (max-width:560px){.stats{grid-template-columns:1fr 1fr}}
 .stat{padding:12px 14px;border-radius:8px;background:var(--surface);border:1px solid var(--line)}
 .stat b{display:block;font-size:24px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
@@ -602,6 +617,8 @@ h1,h2,h3{text-wrap:balance}
 .rtab tbody tr.sel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
 .rtab tbody tr.ctx-on{outline:2px solid var(--accent);outline-offset:-2px}
 .rtab .ck{width:38px;text-align:center}
+/* La celda de la casilla es una celda de verdad (versión 29): ocupa todo el alto de la fila y toda ella marca */
+.rtab td.ck,.rtab th.ck{display:table-cell}
 .rtab .ck input,.rtab th.ck input{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
 .rtab .nw,.rtab td.mono{white-space:nowrap}
 .rtab .tdesc b{display:block;font-weight:600}
@@ -830,6 +847,13 @@ body.poder #chart rect.nolib{cursor:pointer}
 .ok-btn{background:var(--accent)!important;color:#fff;border-color:var(--accent)!important}
 .linkdel{display:block;margin:-6px auto 6px;border:0;background:transparent;color:var(--ob);font-weight:600;font-size:13.5px;padding:0 14px;min-height:44px;border-radius:8px}
 .linkdel:hover{background:var(--ob-bg)}
+/* Ficha (versión 29): «Rechazar» y la papelera van juntos al pie, fuera de la fila de botones de todos los días */
+.fdel{display:flex;justify-content:center;gap:4px 12px;flex-wrap:wrap;margin:-6px 0 6px}
+.fdel .linkdel{margin:0}
+/* La fila de arriba deja libre el lugar de la ✕: las flechas «anterior / siguiente» ya no quedan debajo */
+.sheet .r1{padding-right:38px;min-height:44px}
+.mis-obs{display:flex;align-items:center;justify-content:space-between;gap:6px 12px;flex-wrap:wrap}
+.mis-obs .btn-txt{color:inherit;text-decoration:underline;padding:0 4px}
 
 /* Pantalla de entrada */
 .gate{min-height:100vh;display:grid;place-items:center;padding:24px}
@@ -1077,6 +1101,17 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
   .nav button,.nav .badge,.me-aj .badge,.acc-b{font-size:12px}
   #chart .tick,.mlab,#chart .pk-ext,#chart .nolib-t,#mReal .rlab,.norte text{font-size:12px}
   #chart .lab2,#chart .pct,#chart .sum,#chart .grp,#chart .lab-pl{font-size:13px}
+}
+/* Pantallas táctiles anchas (tableta echada, 1024 px o más): se usa el diseño de computadora, pero lo que se toca mide 44 px igual (versión 29).
+   Se decide por si la pantalla es táctil, no por el ancho. */
+@media (min-width:1024px) and (pointer:coarse){
+  :is(.mini,.chip,.cchip,.pill,.fpill,.vis-t,.tabs button,.seg button,.btn-txt,.cgrp-x,.rzoom button,.me button,.qf-mas,.ctx-i,.vernueva button,.nav button){min-height:44px !important}
+  :is(input:not([type=checkbox],[type=radio],[type=range],[type=hidden],[type=file]),select){min-height:44px !important}
+  :is(.x-btn,.ord button,.link button,.arch>button,.mas){width:44px !important;height:44px !important}
+  .rtab .ck{width:48px}
+  .rtab .ck input,.rtab th.ck input,.ck input{width:22px;height:22px}
+  .cchip{padding:0 12px;display:inline-flex;align-items:center}
+  .fpill,.vis-t{display:inline-flex;align-items:center}
 }
 </style>
 </head>
@@ -1387,7 +1422,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 28;
+const VERSION_APP = 29;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -1655,7 +1690,8 @@ function entrarApp() {
   }).catch(() => {});
   pintarCabecera(); cargarFiltros(); cargarBandeja();
   const pedida = location.hash.slice(1), guardada = ls.get("lib.vista", "");
-  const v0 = [pedida, guardada].find(v => vistas().some(x => x.id === v)) || vistas()[0].id;
+  // Sin vista pedida ni guardada, cada rol abre en su tarea diaria (versión 29): gabinete en la Bandeja, el jefe en el Panel, campo en «Nueva»
+  const v0 = [pedida, guardada].find(v => vistas().some(x => x.id === v)) || (rol() === "gabinete" ? "bandeja" : vistas()[0].id);
   ir(v0, true); history.replaceState(null, "", "#" + v0);
 }
 // Si llegan listas o capas nuevas mientras se escribe en «Nueva», el formulario se actualiza al salir del campo
@@ -1739,8 +1775,8 @@ $("#btnAjustes").addEventListener("click", () => ir("ajustes"));
 $("#nav").addEventListener("click", e => {
   if (e.target.closest("[data-buscar]")) { abrirBuscador(); return; }
   const b = e.target.closest("button[data-v]"); if (!b) return;
-  // Con observados por corregir, «Mis registros» abre directo en ellos
-  if (b.dataset.v === "mis" && S.view !== "mis" && S.mis.some(r => r.estado === "OB")) { S.filtro.mis.st = "OB"; S.filtro.mis.q = ""; }
+  // «Mis registros» abre siempre en «Todos» (versión 29): lo recién guardado se ve; los observados van primero y un recuadro los avisa
+  if (b.dataset.v === "mis" && S.view !== "mis" && S.filtro.mis.st === "OB") S.filtro.mis.st = "";
   ir(b.dataset.v);
 });
 $("#btnSalir").addEventListener("click", async () => {
@@ -1959,7 +1995,7 @@ function pintarForm() {
   const listo = S.listas.estructuras.length > 0;
   if (listo) refrescarDesc(f);
   $("#view").innerHTML = `
-  <h1 class="view-title">${E ? "Editar registro" : tituloNuevo(f.actividad)}</h1>
+  ${E ? '<h1 class="view-title">Editar registro</h1>' : `<div class="vt-row"><h1 class="view-title">${tituloNuevo(f.actividad)}</h1>${listo ? '<button type="button" class="btn-txt" id="bLimpiar">Limpiar</button>' : ""}</div>`}
   <p class="lead keep">${E ? `${E.numero ? `<span class="mono">${esc(E.numero)}</span> · ` : ""}<span class="st ${E.estado}">${ESTADOS[E.estado] || E.estado}</span>` : '<span class="solo-pc">Se guarda en el teléfono aunque no haya señal y se sube sola al recuperarla.</span><span class="solo-cel">Se guarda sin señal y se sube sola al recuperarla.</span>'}</p>
   ${E && E.estado === "OB" && E.notaObservacion ? `<div class="pinfo aviso nota-obs" role="note"><b>Gabinete pidió corregir:</b> ${esc(E.notaObservacion)}<span class="small" style="display:block;margin-top:4px">Al guardar vuelve a «Pendiente» y gabinete lo ve como corregido.</span></div>` : ""}
   ${E && E.estado === "EC" ? `<div class="pinfo aviso" role="note"><b>Ya se entregó a Calidad.</b> Al guardar se pide el motivo de la corrección; queda en el historial.</div>` : ""}
@@ -2017,7 +2053,7 @@ function pintarForm() {
     </div>
     <div class="actions">
       <button type="submit" class="btn pri block" id="bGuardar">${E ? "Guardar cambios" : btnGuardar(f.actividad)}</button>
-      <button type="button" class="btn sec" id="bLimpiar">${E ? "Cancelar" : "Limpiar"}</button>
+      ${E ? '<button type="button" class="btn sec" id="bLimpiar">Cancelar</button>' : ""}
     </div>
   </form>`;
   conectarForm();
@@ -2250,7 +2286,7 @@ function conectarForm() {
   });
   $("#fCsv").addEventListener("change", async e => { const fl = await tomarArchivos(e.target); if (fl.length) leerArchivos(fl, "csv"); });
   $("#fFoto").addEventListener("change", async e => { const fl = await tomarArchivos(e.target); if (fl.length) leerArchivos(fl, "foto"); });
-  $("#bLimpiar").addEventListener("click", async () => {
+  $("#bLimpiar")?.addEventListener("click", async () => {
     leerCampos();
     if (S.editando) { const r = S.editando, a = formDesde(r), cambio = Object.keys(a).some(k => JSON.stringify(a[k]) !== JSON.stringify(f[k]));
       if (cambio && !await confirmar("Cancelar edición", "Los cambios que hiciste no se guardan.", "Descartar cambios", true)) return;
@@ -2676,8 +2712,8 @@ function pintarLista(cual) {
   const vacio = `<div class="empty card"><b>${pap ? (S.papelera ? "La papelera está vacía" : "Cargando papelera…") : datos.length ? "Nada coincide con el filtro" : cargandoFecha ? "Buscando…" : activos.length ? "No hay registros con esos filtros" : "Aún no hay registros"}</b>${pap ? (S.papelera ? "Lo que se borre aparecerá aquí y se podrá restaurar." : "") : datos.length ? "Prueba con otra búsqueda." : cual === "mis" ? "Lo que guardes en «Nueva» aparecerá aquí." : "Los registros de campo aparecerán aquí al instante."}</div>`;
   // La barra de acciones en grupo se arma aparte para actualizarla al marcar sin redibujar toda la lista
   const bulkHtml = () => { const ns = sel.size, selRegs = vis.filter(r => sel.has(r.id)); return !tabla ? "" : `<div class="cap-bulk ${ns ? "on" : ""}" id="rBulk"><span><b>${ns}</b> ${ns === 1 ? "seleccionado" : "seleccionados"}</span>${pap
-    ? `${selRegs.some(puedeRestaurar) ? '<button type="button" class="mini ok-btn" data-rk="restaurar">Restaurar</button>' : ""}${puedeAjustes() ? '<button type="button" class="mini warn-mini" data-rk="siempre">Borrar para siempre</button>' : ""}`
-    : `${esGab() && ns && selRegs.every(r => r.actividad === "LIB" && ["PT", "OB"].includes(r.estado)) ? '<button type="button" class="mini ok-btn" data-rk="aceptar">Aceptar y generar códigos</button>' : ""}${esGab() && ns && selRegs.every(r => r.estado === "EP") ? '<button type="button" class="mini ok-btn" data-rk="entregar">Entregar a Calidad</button>' : ""}<button type="button" class="mini" data-rk="exportar">Exportar CSV</button>${selRegs.some(puedeBorrar) ? '<button type="button" class="mini warn-mini" data-rk="papelera">Mandar a la papelera</button>' : ""}`}<button type="button" class="mini" data-rk="limpiar">Deseleccionar</button></div>`; };
+    ? `${selRegs.some(puedeRestaurar) ? '<button type="button" class="mini ok-btn" data-rk="restaurar">Restaurar</button>' : ""}`
+    : `${esGab() && ns && selRegs.every(r => r.actividad === "LIB" && ["PT", "OB"].includes(r.estado)) ? '<button type="button" class="mini ok-btn" data-rk="aceptar">Aceptar y generar códigos</button>' : ""}${esGab() && ns && selRegs.every(r => r.estado === "EP") ? '<button type="button" class="mini ok-btn" data-rk="entregar">Entregar a Calidad</button>' : ""}<button type="button" class="mini" data-rk="exportar">Exportar CSV</button>`}<button type="button" class="mini" data-rk="limpiar">Deseleccionar</button>${pap ? (puedeAjustes() ? '<button type="button" class="mini warn-mini aparte" data-rk="siempre">Borrar para siempre</button>' : "") : selRegs.some(puedeBorrar) ? '<button type="button" class="mini warn-mini aparte" data-rk="papelera">Mandar a la papelera</button>' : ""}</div>`; };
   const filaT = r => `<tr data-id="${esc(r.id)}" class="${sel.has(r.id) ? "sel" : ""}"><td class="ck"><input type="checkbox" data-ck ${sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar ${esc(r.numero || r.descripcion || "")}"></td>
     <td class="tcod"><span class="mono">${r.numero ? esc(r.numero) + masCodigos(r) : '<span class="muted">—</span>'}</span>${chipsReg(r)}${marcaCorr(r)}${r._pend ? '<span class="pend-tag">Por subir</span>' : ""}</td>
     <td class="tdesc"><b>${esc(nom(L.tipo(r.tipoId)) || r.descripcion || "")}${capaDe(r) ? " · " + esc(capaDe(r)) : ""}</b><span>${esc(r.nombreLiberacion || r.descripcion || "")}</span>${r.estado === "OB" && r.notaObservacion ? `<span class="tn">Observación: ${esc(r.notaObservacion)}</span>` : ""}${r.estado === "RE" && r.notaRechazo ? `<span class="tn re">Rechazo: ${esc(r.notaRechazo)}</span>` : ""}${pap ? `<small class="tq">${esc(["Borrado " + fechaCorta(r.borradoEn), r.borradoNombre || r.borradoPor || ""].filter(Boolean).join(" · "))}</small>` : lineaQuien(r, r.fechaCampo)}</td>
@@ -2693,6 +2729,7 @@ function pintarLista(cual) {
   ${fl.fecha === "rango" && fl.f1 && fl.f2 && fl.f1 > fl.f2 ? '<p class="rf-nota">«Desde» era posterior a «Hasta»: se tomaron al revés.</p>' : ""}
   ${parcial ? `<p class="rf-nota" id="rParcial">Estos filtros revisan solo los últimos ${S.todos.length} registros. <button type="button" class="btn-txt" id="rHist">Buscar en todo el historial</button></p>` : ""}
   ${hist ? `<p class="rf-nota">Buscando en todo el historial (datos resumidos: código, tipo, capa, PK, estado y fecha). <button type="button" class="btn-txt" id="rHistX">Volver a los últimos</button></p>` : ""}
+  ${cual === "mis" && (cuenta.OB || 0) && !sts.includes("OB") ? `<div class="pinfo aviso mis-obs" role="note"><span><b>Tienes ${cuenta.OB === 1 ? "1 observado" : cuenta.OB + " observados"} por corregir.</b> ${cuenta.OB === 1 ? "Está primero" : "Están primero"} en la lista.</span><button type="button" class="btn-txt" id="rVerObs">Ver solo ${cuenta.OB === 1 ? "ese" : "esos"}</button></div>` : ""}
   ${pap ? "" : `<div class="chips" id="rSt" role="group" aria-label="Filtrar por estado (Ctrl o Mayús + clic para elegir varios)">${chips.map(([k, t, n]) => `<button type="button" class="chip" data-st="${k}" aria-pressed="${fl.st === k}">${esc(t)}<span class="c">${n}</span></button>`).join("")}</div>`}
   ${bulkHtml()}
   ${!vis.length ? vacio : tabla ? `<div class="card twrap"><table class="rtab" id="lista"><thead><tr><th class="ck"><input type="checkbox" id="rAll" ${vis.slice(0, lim).every(r => sel.has(r.id)) ? "checked" : ""} aria-label="Seleccionar todos"></th><th>Código y estado</th><th>Liberación</th><th>Frente</th><th>Progresiva</th>${thMas()}</tr></thead><tbody>${vis.slice(0, lim).map(filaT).join("")}</tbody></table></div><p class="nota-g">Clic derecho sobre una fila para ver sus acciones. Marca varias para trabajarlas juntas.</p>`
@@ -2706,6 +2743,7 @@ function pintarLista(cual) {
   $("#rSup")?.addEventListener("click", () => irSuperficies());
   $("#rHist")?.addEventListener("click", () => { fl.hist = true; pintarLista(cual); });
   $("#rHistX")?.addEventListener("click", () => { fl.hist = false; pintarLista(cual); });
+  $("#rVerObs")?.addEventListener("click", () => { fl.st = "OB"; pintarLista(cual); });
   // Estado: un clic elige uno; con Ctrl o Mayús se suman varios
   $("#rSt")?.addEventListener("click", e => {
     const c = e.target.closest("[data-st]"); if (!c) return; const k = c.dataset.st;
@@ -2764,6 +2802,8 @@ function resumenArch(r) {
 // Filas de tabla compactas: fecha y topógrafo en una línea pequeña, frente en una línea con su nombre completo al pasar
 const fechaCorta = v => { const d = toDate(v); if (!d) return ""; const z = n => String(n).padStart(2, "0"); return `${z(d.getDate())}/${z(d.getMonth() + 1)} ${z(d.getHours())}:${z(d.getMinutes())}`; };
 const topoCorto = id => { const n = String(nom(L.topo(id), id) || "").trim(), p = n.split(/\s+/); return p.length > 1 ? `${p[0][0]}. ${p[1]}` : n; };
+// «Registrado por» (versión 29): el nombre si se conoce (la propia cuenta, o la lista de usuarios que ven jefe y administrador); si no, el correo
+const quienRegistro = c => !c ? "" : c === S.email ? S.perfil?.nombre || S.user?.displayName || c : (S.usuarios || []).find(u => u.id === c)?.nombre || c;
 const lineaQuien = (r, f, conTopo = true) => { const t = [fechaCorta(f), conTopo ? topoCorto(r.topografoId) : ""].filter(Boolean).join(" · "); return t ? `<small class="tq">${esc(t)}</small>` : ""; };
 // Volvió corregido: está pendiente y aún guarda la nota de la observación (el topógrafo no puede borrarla; se limpia al aceptar)
 const corregido = r => r.estado === "PT" && !!r.notaObservacion;
@@ -2855,7 +2895,7 @@ function abrirFicha(r) {
       ${fila("Topógrafo", esc(nom(L.topo(r.topografoId), r.topografoId)))}
       ${r.equipo ? fila("Equipo", esc(nom(L.equipo(r.equipo), r.equipo))) : ""}
       ${(r.protocolos || []).length ? fila("Protocolos", r.protocolos.map(x => `<div>${x.numero ? `<span class="mono">${esc(x.numero)}</span> · ` : ""}${esc(x.nombre)}</div>`).join("")) : ""}
-      ${fila("Registrado por", esc(r.creadoPor))}
+      ${fila("Registrado por", esc(quienRegistro(r.creadoPor)))}
       ${fila("Fecha de entrega", esc(fmtFecha(r.fechaLiberacion, false)))}
       ${fila("Entrega a Calidad", esc(fmtFecha(r.fechaEntrega, false)))}
       ${r.carpeta ? fila("Carpeta OneDrive", verCarpeta(r.carpeta)) : ""}
@@ -2870,7 +2910,7 @@ function abrirFicha(r) {
     <div class="sub">Historial</div><div class="hist" id="hist"><span class="muted small">Cargando…</span></div>
     <div class="actions">
       ${r.borrado ? `${puedeRestaurar(r) ? '<button type="button" class="btn pri block" id="fRestaurar">Restaurar</button>' : ""}${puedeAjustes() ? '<button type="button" class="btn warn" id="fBorrarSiempre">Borrar para siempre</button>' : ""}<button type="button" class="btn sec" id="fCerrar">Cerrar</button>` : `
-      ${esGab() && conCodigo(r.actividad) && ["PT", "OB"].includes(r.estado) ? '<button type="button" class="btn pri block" id="fAceptar">' + (r.actividad === "DRN" ? "Aceptar y generar protocolos" : "Aceptar y generar código") + '</button><button type="button" class="btn sec" id="fObservar">Observar</button><button type="button" class="btn warn" id="fRechazar">Rechazar</button>' : ""}
+      ${esGab() && conCodigo(r.actividad) && ["PT", "OB"].includes(r.estado) ? '<button type="button" class="btn pri block" id="fAceptar">' + (r.actividad === "DRN" ? "Aceptar y generar protocolos" : "Aceptar y generar código") + '</button><button type="button" class="btn sec" id="fObservar">Observar</button>' : ""}
       ${esGab() && r.estado === "EP" ? '<button type="button" class="btn pri block" id="fEntregar">Entregar a Calidad</button><button type="button" class="btn sec" id="fObservar">Observar</button>' : ""}
       ${esGab() && r.estado === "RE" ? '<button type="button" class="btn pri block" id="fReabrir">Devolver a pendientes</button>' : ""}
       ${esGab() && r.estado === "OB" ? '<button type="button" class="btn sec" id="fReabrir">Devolver a pendientes</button>' : ""}
@@ -2882,7 +2922,8 @@ function abrirFicha(r) {
       ${esGab() && ["EP", "EC"].includes(r.estado) && !r.borrado ? `<button type="button" class="btn sec" id="fCarpeta">${r.carpeta ? "Cambiar carpeta" : "Poner carpeta OneDrive"}</button>` : ""}
       <button type="button" class="btn sec ${puedeEditar(r) ? "" : "block"}" id="fCerrar">Cerrar</button>`}
     </div>
-    ${puedeBorrar(r) ? `<button type="button" class="linkdel" id="fBorrar">Mandar a la papelera</button>` : ""}
+    ${(() => { const rech = !r.borrado && esGab() && conCodigo(r.actividad) && ["PT", "OB"].includes(r.estado), borr = puedeBorrar(r);
+      return rech || borr ? `<div class="fdel">${rech ? '<button type="button" class="linkdel" id="fRechazar">Rechazar</button>' : ""}${borr ? '<button type="button" class="linkdel" id="fBorrar">Mandar a la papelera</button>' : ""}</div>` : ""; })()}
   </div>`;
   const yaAbierta = !sh.hidden;
   sh.hidden = false; sc.hidden = false; sh.setAttribute("aria-labelledby", "fTit"); S._ficha = r; document.body.classList.add("ficha-on");
@@ -3437,15 +3478,16 @@ function pintarPanel() {
     <div class="pinfo" id="pInfo" hidden></div>
     <p class="nota-g" id="pNota"></p>
   </div>`;
+  // Los números van arriba en todos los tamaños (versión 29) y dicen de qué frente o estructura son
+  const numeros = '<p class="stats-de" id="pStatsDe"></p><div class="stats" id="pStats"></div>';
   const abajo = `${planta ? "" : `<div class="card section falta-box" id="pFalta" hidden></div>`}
-  ${movilP ? '<div class="stats" id="pStats" style="margin-top:12px"></div>' : ""}
   <h2 class="sub" id="pListaT" style="font-size:16px;margin:18px 0 10px"></h2>
   <div class="list" id="pLista"></div>`;
   $("#view").innerHTML = `
   <h1 class="view-title">Panel</h1>
   <p class="lead" ${movilP ? "hidden" : ""}>Lo liberado y lo que falta liberar, capa por capa y por progresiva. Se actualiza al instante.</p>
-  ${pc ? `<div class="pgrid"><aside class="pside">${frente}</aside><div class="pmain"><div class="stats" id="pStats"></div>${grafico}${abajo}</div></div>`
-    : `${frente}${movilP ? "" : '<div class="stats" id="pStats"></div>'}${grafico}${abajo}`}`;
+  ${pc ? `<div class="pgrid"><aside class="pside">${frente}</aside><div class="pmain">${numeros}${grafico}${abajo}</div></div>`
+    : `${frente}${numeros}${grafico}${abajo}`}`;
   $("#pSub").addEventListener("change", e => { P.subId = e.target.value; P.capa = ""; P.pkDesde = ""; P.pkHasta = ""; ls.set("lib.panelSub", P.subId); suscribirPanel(estDeSub(P.subId).id); pintarPanel(); });
   $(".chart-h .tabs").addEventListener("click", e => { const b = e.target.closest("[data-vista]"); if (b) { P.vista = b.dataset.vista; ls.set("lib.panelVista", P.vista); pintarPanel(); } });
   $(".ley-d")?.addEventListener("toggle", e => { P._leyAbierta = e.target.open; });
@@ -3651,6 +3693,7 @@ function actualizarPanel() {
   const base = filtrarPanel(false, planta ? "" : P.subId);
   const hoy = base.filter(r => toDate(r.fechaCampo)?.toDateString() === hoyStr()).length;
   const cnt = k => base.filter(r => r.estado === k).length;
+  const pDe = $("#pStatsDe"); if (pDe) pDe.textContent = planta ? `Toda la estructura ${nom(est)} (todos sus frentes)` : `Solo el frente ${sub.nombre}`;
   $("#pStats").innerHTML = `<div class="stat"><b>${hoy}</b><span>Registradas hoy</span></div><div class="stat PT"><b>${cnt("PT") + cnt("OB")}</b><span>Pendientes${cnt("OB") ? ` (${cnt("OB")} ${cnt("OB") === 1 ? "observada" : "observadas"})` : ""}</span></div><div class="stat EP"><b>${cnt("EP")}</b><span>En proceso</span></div><div class="stat EC"><b>${cnt("EC")}</b><span>Entregadas a Calidad</span></div>`;
   const recs = filtrarPanel(true, planta ? "" : P.subId);
   let lst;
@@ -5383,7 +5426,7 @@ function entregar(ids) {
   const n = ids.length, regs = regsDe(ids);
   const comun = regs.length && regs.every(r => r.carpeta && r.carpeta === regs[0].carpeta) ? regs[0].carpeta : "";
   const xmls = new Map(), ej = (regs[0] && codigosDe(regs[0])[0]) || fmtNumero(123);
-  const d = dialogo(n === 1 ? "Entregar a Calidad" : `Entregar ${n} a Calidad`, `<div class="grid"><div class="f"><label for="dFe">Fecha de entrega</label><input id="dFe" name="fecha" type="date" value="${hoyISO()}" required></div><div class="f"><label for="dCargo">N° de cargo <span class="opt">(opcional)</span></label><input id="dCargo" name="cargo" placeholder="Ej. 2025-11-06-01"></div></div>${campoCarpeta(comun)}
+  const d = dialogo(n === 1 ? "Entregar a Calidad" : `Entregar ${n} a Calidad`, `<div class="grid"><div class="f"><label for="dFe">Fecha de entrega a Calidad</label><input id="dFe" name="fecha" type="date" value="${hoyISO()}" required></div><div class="f"><label for="dCargo">N° de cargo <span class="opt">(opcional)</span></label><input id="dCargo" name="cargo" placeholder="Ej. 2025-11-06-01"></div></div>${campoCarpeta(comun)}
     <div class="f xml-ent"><span class="flabel">Superficie liberada (XML)</span>
       <label class="upbtn"><input type="file" id="dXml" accept=".xml,text/xml,application/xml" multiple hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>Subir XML</label>
       <div class="hint">Exporta de Civil 3D la superficie ${n === 1 ? "de la liberación" : "de cada liberación (puedes elegir varios XML a la vez)"} con su código en el nombre, por ejemplo <span class="mono">${esc(ej)}</span>. Si no tiene el mismo código, no se acepta.</div>
@@ -5612,7 +5655,6 @@ addEventListener("keydown", e => {
   else if (k === "o" && ["PT", "OB", "EP"].includes(r.estado)) { e.preventDefault(); observar(r); }
   else if (k === "e" && r.estado === "EP") { e.preventDefault(); entregar([r.id]); }
 });
-const btnEdCapa = r => puedeEditar(r) ? '<button type="button" class="mini" data-a="editar">Editar</button>' : puedeCapa(r) ? `<button type="button" class="mini" data-a="capa">${r.capa ? "Cambiar capa" : "Poner capa"}</button>` : "";
 function pintarBandeja() {
   const B = S.bandeja;
   // El jefe de área solo ve la pestaña Aspas; gabinete no la ve
@@ -5640,9 +5682,9 @@ function pintarBandeja() {
   ${(B.fr || B.topo) && fuente.length !== vis.length ? `<p class="rf-nota">${vis.length} de ${fuente.length} con estos filtros.</p>` : ""}
   ${t === "EP" && B.errEP ? `<p class="pinfo" style="margin:0 0 12px">${esc(B.errEP)}</p>` : ""}
   <div class="cap-bulk ${ns ? "on" : ""}" id="bBulk"><label class="ck" style="margin-right:4px"><input type="checkbox" id="bAll" ${vis.length && vis.slice(0, lim).every(r => B.sel.has(r.id)) ? "checked" : ""} aria-label="Seleccionar todo"></label><span><b>${ns}</b> ${ns === 1 ? "seleccionada" : "seleccionadas"}</span>
-    ${t === "EP" ? `<button type="button" class="mini ok-btn" data-bk="entregar">Entregar a Calidad</button><button type="button" class="mini" data-bk="exportar">Exportar CSV</button>` : `<button type="button" class="mini ok-btn" data-bk="aceptar">Aceptar y generar códigos</button><button type="button" class="mini" data-bk="observar">Observar</button>${t === "OB" ? '<button type="button" class="mini" data-bk="reabrir">Devolver a pendientes</button>' : ""}<button type="button" class="mini warn-mini" data-bk="rechazar">Rechazar</button><button type="button" class="mini" data-bk="exportar">Exportar CSV</button><button type="button" class="mini warn-mini" data-bk="papelera">Mandar a la papelera</button>`}<button type="button" class="mini" data-bk="limpiar">Deseleccionar</button></div>
+    ${t === "EP" ? `<button type="button" class="mini ok-btn" data-bk="entregar">Entregar a Calidad</button><button type="button" class="mini" data-bk="exportar">Exportar CSV</button>` : `<button type="button" class="mini ok-btn" data-bk="aceptar">Aceptar y generar códigos</button><button type="button" class="mini" data-bk="observar">Observar</button>${t === "OB" ? '<button type="button" class="mini" data-bk="reabrir">Devolver a pendientes</button>' : ""}<button type="button" class="mini" data-bk="exportar">Exportar CSV</button>`}<button type="button" class="mini" data-bk="limpiar">Deseleccionar</button>${t === "EP" ? "" : '<button type="button" class="mini warn-mini aparte" data-bk="rechazar">Rechazar</button><button type="button" class="mini warn-mini" data-bk="papelera">Mandar a la papelera</button>'}</div>
   ${!ns && vis.length ? `<label class="check small muted" style="padding:0 0 8px"><input type="checkbox" id="bAll2" aria-label="Seleccionar todo">Seleccionar ${Math.min(vis.length, lim)} para ${t === "EP" ? "entregar" : "aceptar"} en grupo</label>` : ""}
-  ${tablaPC() && vis.length ? `<div class="card twrap"><table class="rtab btab" id="blist"><thead><tr><th class="ck"></th>${t === "EP" ? "<th>Código</th>" : ""}<th>Liberación</th><th>Frente</th><th>Progresiva</th><th class="tacc">Acciones</th></tr></thead><tbody>${vis.slice(0, lim).map(r => `<tr data-rid="${esc(r.id)}" class="${B.sel.has(r.id) ? "sel" : ""}"><td class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></td>${t === "EP" ? `<td class="mono nw">${r.numero ? esc(r.numero) + masCodigos(r) : '<span class="muted">—</span>'}</td>` : ""}<td class="tdesc"><b>${esc(nom(L.tipo(r.tipoId)) || (r.actividad !== "LIB" ? nom(L.act(r.actividad), r.actividad) : ""))}${capaDe(r) ? " · " + esc(capaDe(r)) : ""}</b><span>${esc(r.nombreLiberacion || r.descripcion || "")}</span>${r.estado === "OB" && r.notaObservacion ? `<span class="tn">Observación: ${esc(r.notaObservacion)}</span>` : ""}${marcasFila(r)}${lineaQuien(r, t === "EP" ? r.fechaLiberacion || r.fechaCampo : r.fechaCampo)}</td>${tdFrente(r)}<td class="mono nw">${esc(rangoPk(r.pkInicio, r.pkFin))}</td><td class="tacc"><div class="bact">${t === "EP" ? '<button type="button" class="mini ok-btn" data-a="entregar" title="Entregar a Calidad" aria-label="Entregar a Calidad">Entregar</button>' : '<button type="button" class="mini ok-btn" data-a="aceptar" title="Aceptar y generar código" aria-label="Aceptar y generar código">Aceptar</button>'}${btnMas(r)}</div></td></tr>`).join("")}</tbody></table></div><p class="nota-g">Usa ⋯ o el clic derecho para ver todas las acciones. Teclado: <kbd>j</kbd>/<kbd>k</kbd> moverse · <kbd>x</kbd> marcar (Mayús+clic marca un rango) · <kbd>Enter</kbd> abrir · <kbd>a</kbd> aceptar · <kbd>o</kbd> observar · <kbd>e</kbd> entregar · <kbd>←</kbd>/<kbd>→</kbd> en la ficha.</p>` : `<div class="list" id="blist">${vis.length ? vis.slice(0, lim).map((r, i) => `<div class="brow ${B.sel.has(r.id) ? "sel" : ""}" data-rid="${esc(r.id)}"><label class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></label><div class="bcard">${conMas(tarjeta(r, i), r)}<div class="bact">${t === "EP" ? `<button type="button" class="mini ok-btn" data-a="entregar">Entregar a Calidad</button><button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini ok-btn" data-a="aceptar">Aceptar y generar código</button>${t === "PT" ? `<button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini" data-a="reabrir">Devolver a pendientes</button>`}<button type="button" class="mini warn-mini" data-a="rechazar">Rechazar</button>`}${btnEdCapa(r)}</div></div></div>`).join("") : `<div class="empty card"><b>${fuente.length ? "Nada coincide con la búsqueda" : t === "PT" ? "No hay registros por aceptar" : t === "OB" ? "No hay observadas" : "No hay liberaciones en proceso"}</b>${fuente.length ? "" : "Cuando lleguen de campo aparecerán aquí al instante."}</div>`}</div>`}
+  ${tablaPC() && vis.length ? `<div class="card twrap"><table class="rtab btab" id="blist"><thead><tr><th class="ck"></th>${t === "EP" ? "<th>Código</th>" : ""}<th>Liberación</th><th>Frente</th><th>Progresiva</th><th class="tacc">Acciones</th></tr></thead><tbody>${vis.slice(0, lim).map(r => `<tr data-rid="${esc(r.id)}" class="${B.sel.has(r.id) ? "sel" : ""}"><td class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></td>${t === "EP" ? `<td class="mono nw">${r.numero ? esc(r.numero) + masCodigos(r) : '<span class="muted">—</span>'}</td>` : ""}<td class="tdesc"><b>${esc(nom(L.tipo(r.tipoId)) || (r.actividad !== "LIB" ? nom(L.act(r.actividad), r.actividad) : ""))}${capaDe(r) ? " · " + esc(capaDe(r)) : ""}</b><span>${esc(r.nombreLiberacion || r.descripcion || "")}</span>${r.estado === "OB" && r.notaObservacion ? `<span class="tn">Observación: ${esc(r.notaObservacion)}</span>` : ""}${marcasFila(r)}${lineaQuien(r, t === "EP" ? r.fechaLiberacion || r.fechaCampo : r.fechaCampo)}</td>${tdFrente(r)}<td class="mono nw">${esc(rangoPk(r.pkInicio, r.pkFin))}</td><td class="tacc"><div class="bact">${t === "EP" ? '<button type="button" class="mini ok-btn" data-a="entregar" title="Entregar a Calidad" aria-label="Entregar a Calidad">Entregar</button>' : '<button type="button" class="mini ok-btn" data-a="aceptar" title="Aceptar y generar código" aria-label="Aceptar y generar código">Aceptar</button>'}${btnMas(r)}</div></td></tr>`).join("")}</tbody></table></div><p class="nota-g">Usa ⋯ o el clic derecho para ver todas las acciones. Teclado: <kbd>j</kbd>/<kbd>k</kbd> moverse · <kbd>x</kbd> marcar (Mayús+clic marca un rango) · <kbd>Enter</kbd> abrir · <kbd>a</kbd> aceptar · <kbd>o</kbd> observar · <kbd>e</kbd> entregar · <kbd>←</kbd>/<kbd>→</kbd> en la ficha.</p>` : `<div class="list" id="blist">${vis.length ? vis.slice(0, lim).map((r, i) => `<div class="brow ${B.sel.has(r.id) ? "sel" : ""}" data-rid="${esc(r.id)}"><label class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></label><div class="bcard">${conMas(tarjeta(r, i), r)}<div class="bact">${t === "EP" ? `<button type="button" class="mini ok-btn" data-a="entregar">Entregar a Calidad</button><button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini ok-btn" data-a="aceptar">Aceptar y generar código</button>${t === "PT" ? `<button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini" data-a="reabrir">Devolver a pendientes</button>`}`}</div></div></div>`).join("") : `<div class="empty card"><b>${fuente.length ? "Nada coincide con la búsqueda" : t === "PT" ? "No hay registros por aceptar" : t === "OB" ? "No hay observadas" : "No hay liberaciones en proceso"}</b>${fuente.length ? "" : "Cuando lleguen de campo aparecerán aquí al instante."}</div>`}</div>`}
   ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : ""}
   ${t === "EP" && !B.epHistOk ? `<button class="btn sec more" id="bHist" type="button">Cargar también las del histórico sin entregar</button>` : ""}`;
   $("#bHist")?.addEventListener("click", async e => { e.target.disabled = true; e.target.textContent = "Cargando…";
@@ -5684,6 +5726,8 @@ function pintarBandeja() {
   if (S._ficha && !$("#sheet").hidden) marcarFilaAbierta(S._ficha.id);
   $("#blist")?.addEventListener("click", e => {
     const row = e.target.closest("[data-rid]"); if (!row) return;
+    // Toda la celda de la casilla marca la fila, no solo el cuadrito (versión 29)
+    const ckTd = e.target.closest("td.ck"); if (ckTd && !e.target.matches("[data-sel]")) { const c = ckTd.querySelector("[data-sel]"); if (c) { B._shift = e.shiftKey; c.checked = !c.checked; c.dispatchEvent(new Event("change", { bubbles: true })); } return; }
     const r = fuente.find(x => x.id === row.dataset.rid); if (!r) return;
     const a = e.target.closest("[data-a]");
     if (a) { ({ aceptar: () => aceptarUno(r), observar: () => observar(r), rechazar: () => rechazar(r), entregar: () => entregar([r.id]), reabrir: () => reabrir(r), capa: () => ponerCapa(r), editar: () => { editarRegistro(r); } })[a.dataset.a]?.(); return; }

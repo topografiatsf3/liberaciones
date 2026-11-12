@@ -98,8 +98,10 @@ async function registrar(p, o) {
   // Operario ve observación y código
   await login(p, OPER); await p.waitForSelector('#nav button'); await p.click('[data-v="mis"]'); await p.waitForSelector('.item');
   ok((await p.textContent('.list')).includes('Observación: Falta la foto'), 'operario ve la observación');
-  // Con observados por corregir, «Mis registros» abre directo en ellos; «Todos» muestra el resto
-  ok(await p.getAttribute('[data-st="OB"]', 'aria-pressed') === 'true' && await p.$$eval('#lista .item', i => i.length) === 1, 'Mis registros abre en «Observado» cuando hay algo por corregir');
+  // Versión 29: «Mis registros» abre en «Todos»; lo observado va primero y un recuadro lo avisa («Ver solo…» deja solo eso)
+  ok(await p.getAttribute('[data-st=""]', 'aria-pressed') === 'true' && (await p.textContent('#lista .item')).includes('Observación: Falta la foto') && /por corregir/.test(await p.textContent('.mis-obs')), 'Mis registros abre en «Todos», con el observado primero y su aviso');
+  await p.click('#rVerObs'); await p.waitForTimeout(200);
+  ok(await p.getAttribute('[data-st="OB"]', 'aria-pressed') === 'true' && await p.$$eval('#lista .item', i => i.length) === 1, '«Ver solo ese» deja solo lo observado');
   await p.click('[data-st=""]'); await p.waitForTimeout(200);
   ok((await p.textContent('.list')).includes('SKT-TOP-02690'), 'operario ve el código asignado');
   ok(await p.$$eval('.item .st.EC', s => s.length) === 2, 'dos entregadas a Calidad');

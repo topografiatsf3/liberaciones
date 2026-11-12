@@ -119,6 +119,7 @@ Trazo de 2 px, 20 px en el menú y 18 px en botones, color del texto que acompa�
 ## 7. Textos
 
 - Verbos directos en los botones: «Guardar liberación», «Restaurar», «Generar código».
+- **Acción principal de un formulario largo:** queda fija sobre el menú de abajo, siempre a la vista («Guardar liberación»). Lo que borra o rechaza no va junto a ella: «Limpiar» va arriba como botón de texto, y «Rechazar» y «Mandar a la papelera» van juntos al pie de la ficha y al final de la barra de grupo, separados a la derecha.
 - Mensajes de error dicen qué pasó y qué hacer: «Sin señal. Se subirá cuando vuelva», no «Error de red».
 - Fechas como 07/11/2026 y horas 14:35; progresivas como 2+140; áreas con separador de miles «1 250 m²».
 - Nada de signos de exclamación ni frases de relleno («¡Listo!», «Genial»).
@@ -146,7 +147,7 @@ Trazo de 2 px, 20 px en el menú y 18 px en botones, color del texto que acompa�
 
 Se usan en campo, con sol y a veces con guantes. Toda pantalla nueva las cumple.
 
-- **Alturas.** En computadora: `--h-btn` 44 px (acción principal), `--h-mini` 40 px (secundaria) y `--h-tag` 32 px (etiqueta). En celular y tableta (hasta 1023 px), todo lo que se toca mide al menos 44 px; los botones cuadrados, 44 × 44 px.
+- **Alturas.** En computadora: `--h-btn` 44 px (acción principal), `--h-mini` 40 px (secundaria) y `--h-tag` 32 px (etiqueta). En celular y tableta (hasta 1023 px), todo lo que se toca mide al menos 44 px; los botones cuadrados, 44 × 44 px. Una pantalla táctil más ancha (tableta echada) usa el diseño de computadora pero conserva los 44 px: se decide por si la pantalla es táctil (`pointer:coarse`), no por el ancho.
 - **Letra mínima en celular:** 13 px; 12 px solo en el menú inferior. En los gráficos, 12 px para escalas y 13 px para nombres y porcentajes. Sin mayúsculas forzadas en las etiquetas de campo.
 - **Esquinas:** 6 a 8 px. La cápsula (999 px) solo para estados, globos y contadores.
 - **Estados:** cada uno con su color, y «Observado» además con rayado (patrón `obs`), para que se distinga en gris o con daltonismo.

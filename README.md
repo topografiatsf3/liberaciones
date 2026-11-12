@@ -11,6 +11,21 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 29: roces del trabajo diario (etapa 1 del análisis desde cero)
+
+Sale del informe `analisis/informe.md` (hallazgos H6 a H13). No cambia las reglas de Firebase.
+
+- **«Guardar» siempre a la vista:** en «Nueva» y al editar, el botón queda fijo sobre el menú de abajo (en computadora, al pie de la ventana); ya no hay que bajar todo el formulario. **«Limpiar»** pasó arriba, junto al título, lejos del pulgar; al editar, «Cancelar» sigue junto a «Guardar cambios».
+- **«Mis registros» abre en «Todos»:** lo recién guardado se ve siempre. Los observados van primero y un recuadro los avisa, con «Ver solo esos».
+- **Ficha:** la ✕ ya no queda encima de las flechas «anterior / siguiente». **«Rechazar»** salió de la fila de botones y va al pie, junto a «Mandar a la papelera».
+- **Bandeja en celular:** cada tarjeta deja «Aceptar» y «Observar» (o «Devolver a pendientes»); «Rechazar», «Editar» y la capa están en «⋯». En la barra de grupo, «Rechazar» y la papelera van al final, separados a la derecha. Toda la celda de la casilla marca la fila.
+- **Gabinete entra a la Bandeja** la primera vez (después se recuerda la última pantalla, como siempre).
+- **Panel:** los cuatro números van arriba también en celular y dicen de qué son («Solo el frente …» o, en Planta, «Toda la estructura …»).
+- **«Registrado por»** muestra el nombre cuando se conoce (el propio, o cualquiera para jefe y administrador); si no, el correo.
+- **Al entregar,** la fecha de la ventana dice **«Fecha de entrega a Calidad»** (en la ficha, «Fecha de entrega» sigue siendo la del código).
+- **Tableta echada:** una pantalla táctil ancha usa el diseño de computadora con botones de 44 px.
+- No se cambiaron los nombres de los estados («Pendiente topografía», «En proceso», «Entregado a Calidad»): es una decisión del equipo, pendiente.
+
 ## Tipos de liberación y elementos
 
 - En «Nueva», Elemento y Tipo son un solo buscador **«Qué se liberó»**: arriba salen los tipos **usados en el frente elegido** (versión 28, del resumen del frente y sus capas configuradas) y luego los que más usa cada persona; en «Ver todos» y al buscar, los del frente van primero con la marca «usado aquí». Al escribir encuentra el tipo aunque tenga tildes, mayúsculas, plurales, letras cambiadas, palabras en otro orden o abreviaturas («rell trans» → Relleno de transición). El elemento se pone solo.
@@ -64,7 +79,7 @@ Registros y Mis registros filtran por **fecha** (hoy, ayer, esta semana de lunes
 
 ## Observados y correcciones
 
-- Gabinete **observa** con una nota (uno o varios a la vez, también un «En proceso» desde su ficha). Si hay observados, **Mis registros abre directo en ellos** y van primero en la lista.
+- Gabinete **observa** con una nota (uno o varios a la vez, también un «En proceso» desde su ficha). Si hay observados, van primero en **Mis registros** y un recuadro lo avisa («Tienes 1 observado por corregir · Ver solo ese»); la lista abre siempre en «Todos» (versión 29).
 - Al **editar** un observado, la nota de gabinete se ve arriba del formulario. Al guardar vuelve a «Pendiente» y el historial dice **qué cambió** («PK 3+000 – 3+040 → 3+000 – 3+035»).
 - En la Bandeja, lo que volvió corregido lleva la marca **«Corregido»** con lo que se había pedido.
 - Si un registro **ya tenía código** (se observó o devolvió estando En proceso), al aceptarlo de nuevo vuelve a «En proceso» **con su mismo código** (antes quedaba trabado).

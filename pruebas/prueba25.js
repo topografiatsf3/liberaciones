@@ -57,7 +57,8 @@ const estadoDe = (p, desc) => p.evaluate(d => { const s = window.__fakeStore(); 
   await p.keyboard.press('Enter'); await p.waitForTimeout(450);
   const codA = (await estadoDe(p, 'Tramo A')).numero;
   ok(/SKT-TOP-\d+/.test(codA) && (await toastTxt(p)).includes(codA), 'Tramo A aceptado con código ' + codA);
-  await p.click('.brow:has-text("Tramo C") [data-a="rechazar"]'); await p.waitForSelector('.dlg.on');
+  // Versión 29: en la tarjeta quedan «Aceptar» y «Observar»; «Rechazar» está en «⋯»
+  await p.click('.brow:has-text("Tramo C") [data-mas]'); await p.waitForSelector('#ctx'); await p.click('#ctx .ctx-i:has-text("Rechazar")'); await p.waitForSelector('.dlg.on');
   await p.fill('#dRech', 'Tramo mal medido'); await p.click('.dlg button[type=submit]'); await p.waitForTimeout(400);
   ok((await estadoDe(p, 'Tramo C')).estado === 'RE', 'Tramo C rechazado');
   await p.click('[data-bt="EP"]'); await p.waitForSelector('.brow');
@@ -69,10 +70,10 @@ const estadoDe = (p, desc) => p.evaluate(d => { const s = window.__fakeStore(); 
   await p.waitForTimeout(400); if (await p.$('#sheet.on')) { await p.click('#fCerrar'); await p.waitForTimeout(350); }
   await salir(p);
 
-  // Operario: Mis registros abre en Observados, ve la nota al editar y corrige
+  // Operario: Mis registros abre en «Todos» con el observado primero y su aviso (versión 29), ve la nota al editar y corrige
   await login(p, OPER);
   await p.click('[data-v="mis"]'); await p.waitForSelector('.item');
-  ok(await p.getAttribute('[data-st="OB"]', 'aria-pressed') === 'true', 'Mis registros abre en «Observado» porque hay algo que corregir');
+  ok(await p.getAttribute('[data-st=""]', 'aria-pressed') === 'true' && /observado/.test(await p.textContent('.mis-obs')) && /Tramo A/.test(await p.textContent('#lista .item')), 'Mis registros abre en «Todos», con el observado primero y un aviso');
   await p.click('.item:has-text("Tramo A")'); await p.waitForSelector('#sheet.on'); await p.click('#fEditar'); await p.waitForSelector('#fLib:not([hidden])');
   ok((await p.textContent('.nota-obs')).includes('Corregir PK final'), 'al editar se ve lo que gabinete pidió corregir');
   ok(await p.evaluate(() => location.hash) === '#nueva', 'Editar deja la dirección en #nueva');
