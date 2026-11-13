@@ -11,6 +11,16 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 34: Panel en computadora y listas desplegables en Ajustes
+
+No cambia las reglas de Firebase. El celular queda igual.
+
+- **Perfil:** rueda del ratón para acercar un tramo (queda como filtro de «Progresiva» a la izquierda, con su % y su «Qué falta liberar»), arrastrar para moverse y doble clic o «Ver todo el frente» para volver. La regla de progresivas se queda arriba al bajar. **Filas compactas** para ver más capas a la vez (se recuerda).
+- **Planta:** más alta en computadora; rueda para acercar sin deformar, arrastrar, botones + − y «Todo». Los nombres y progresivas no se agrandan.
+- **Qué falta:** las capas en dos columnas (tres en pantallas muy anchas).
+- **Abajo del perfil:** «Qué falta liberar» y la lista de liberaciones lado a lado.
+- **Ajustes, listas desplegables:** cada grupo de Tipos muestra 8 y «Ver todos (N)»; cada estructura de Lugares, 6 frentes; Capas, 12; Topógrafos, 10; Equipos, 6. La flecha de la cabecera pliega el grupo entero. Al buscar se ve todo lo que coincide. Lo plegado se recuerda.
+
 ## Versión 33: computadora para gabinete y jefe de área
 
 No cambia las reglas de Firebase. El celular queda igual.

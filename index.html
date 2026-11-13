@@ -855,6 +855,46 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
 @media (min-width:1700px){
   .ajgrid #ajBody[data-aj="tipos"]>#tyList{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+/* Listas desplegables de Ajustes (versión 34): cada grupo muestra unas pocas filas, «Ver todos» y se pliega entero */
+#ajBody [hidden]{display:none!important}
+.plg-x{flex:none;width:30px;height:30px;border:0;background:transparent;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;margin-right:2px}
+.plg-x:hover{background:var(--surface-2);color:var(--ink)}
+@media (max-width:1023px),(pointer:coarse){.plg-x{width:44px;height:44px}}
+.plg-x svg{transition:transform .15s}
+.plg-cerrado .plg-x svg{transform:rotate(-90deg)}
+.plg-mas{display:block;margin:8px 0 2px;font-size:13px}
+.elgrp:has(>.plg-x){grid-template-columns:auto minmax(0,1fr) auto auto}
+@media (max-width:560px){.elgrp:has(>.plg-x){grid-template-columns:auto minmax(0,1fr) auto}}
+.plg-cerrado{padding-bottom:10px}
+.plg-cerrado>.tygrp,.plg-cerrado>.est-h{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.plg-h{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-weight:800;font-size:13px}
+/* Panel en computadora (versión 34): rueda para acercar, regla fija, filas compactas y columnas */
+.pf-bar{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin:4px 0 6px;font-size:12.5px;color:var(--muted)}
+.pf-bar .seg button{min-height:30px;font-size:12.5px;padding:0 10px}
+.pf-bar .pf-rg{font:600 12.5px var(--f-mono);color:var(--ink)}
+.pf-bar .mini{min-height:30px;font-size:12.5px;padding:0 10px}
+.pf-bar .pf-ayuda{margin-left:auto}
+.pf-regla{position:sticky;top:0;z-index:3;background:var(--surface);box-shadow:0 6px 6px -6px rgba(0,0,0,.12)}
+.pf-regla svg{display:block;width:100%}
+#chart.pf-on{cursor:grab;touch-action:pan-y}
+#chart.pf-on.arr{cursor:grabbing;user-select:none}
+#chart.pf-on .lab2,#chart.pf-on .pct{user-select:none}
+#chart.pf-comp .lab2{font-size:11.5px}
+#chart.pf-comp .pct{font-size:11px}
+.plwrap{position:relative}
+.plwrap>svg{cursor:grab;touch-action:pan-y;user-select:none}
+.plwrap>svg:active{cursor:grabbing}
+.plwrap .rzoom{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:4px}
+@media (min-width:1500px){
+  .qflist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+  .pabajo{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+  .pabajo>.falta-box{margin:0;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+  .pabajo>.falta-box .ftwrap{max-height:none}
+  .pabajo:not(:has(>.falta-box:not([hidden]))){display:block}
+  .pabajo:not(:has(>.falta-box:not([hidden]))) #pLista{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pabajo>.plist>h2{margin-top:0!important}
+}
+@media (min-width:2200px){.qflist{grid-template-columns:repeat(3,minmax(0,1fr))}}
 /* Mesa de trabajo del Modelo 2D: rueda para acercar, lectura de coordenadas, medir y superficies editables */
 .mcoord{position:absolute;left:48px;bottom:10px;font:600 11.5px var(--f-mono);color:var(--ink);background:rgba(255,255,255,.92);border-radius:6px;padding:3px 8px;pointer-events:none;white-space:nowrap}
 .msec .mcoord{left:54px;bottom:auto;top:8px;white-space:normal;max-width:calc(100% - 190px);line-height:1.5}
@@ -1583,7 +1623,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 33;
+const VERSION_APP = 34;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -3753,9 +3793,9 @@ function pintarPanel() {
   </div>`;
   // Los números van arriba en todos los tamaños (versión 29) y dicen de qué frente o estructura son
   const numeros = '<p class="stats-de" id="pStatsDe"></p><div class="stats" id="pStats"></div>';
-  const abajo = `${planta ? "" : `<div class="card section falta-box" id="pFalta" hidden></div>`}
-  <h2 class="sub" id="pListaT" style="font-size:16px;margin:18px 0 10px"></h2>
-  <div class="list" id="pLista"></div>`;
+  const abajo = `<div class="pabajo">${planta ? "" : `<div class="card section falta-box" id="pFalta" hidden></div>`}
+  <div class="plist"><h2 class="sub" id="pListaT" style="font-size:16px;margin:18px 0 10px"></h2>
+  <div class="list" id="pLista"></div></div></div>`;
   $("#view").innerHTML = `
   <h1 class="view-title">Panel</h1>
   <p class="lead" ${movilP ? "hidden" : ""}>Lo liberado y lo que falta liberar, capa por capa y por progresiva. Se actualiza al instante.</p>
@@ -3959,6 +3999,7 @@ function pintarChips(bandas) {
 }
 function actualizarPanel() {
   const P = S.panel, sub = L.sub(P.subId);
+  P.pfComp ??= ls.get("lib.pfComp", false);
   if (P.vista === "modelo") { if ($("#mBody")) dibujarModelo(); return; }
   if (!sub || !$("#chart")) return;
   const planta = P.vista === "planta";
@@ -3991,7 +4032,7 @@ function actualizarPanel() {
     const ocultasUlt = ultimasPorDefecto() ? bandas.filter(b => !b.oculta && !ultimas5().has(b.key)).length : 0;
     $("#pUlt").innerHTML = ocultasUlt ? `<p class="pult">Últimas 5 capas de cada tipo · <button type="button" class="linkbtn" id="pVerTodas">Ver todas (${bandas.filter(b => !b.oculta).length})</button></p>` : "";
     $("#pVerTodas")?.addEventListener("click", () => accionCapas("todas"));
-    if (P.vista === "lista") dibujarLista(sub, recs, visibles, bandas.length); else dibujarPerfil(sub, recs, visibles, bandas.length);
+    if (P.vista === "lista") { $("#chart").classList.remove("pf-on", "pf-comp"); dibujarLista(sub, recs, visibles, bandas.length); } else dibujarPerfil(sub, recs, visibles, bandas.length);
     const claves = new Set(visibles.map(b => b.key));
     lst = recs.filter(r => r.pkInicio == null || claves.has(bandaKey(r.tipoId, capaDe(r))) || claves.has(bandaKey(r.tipoId, "")) && !capaDe(r));
   }
@@ -4078,25 +4119,27 @@ function dibujarPerfil(sub, recs, bandas, totalBandas) {
     $("#pNota").textContent = sinPk ? `+${sinPk} sin progresiva.` : ""; if (fueraInfo) fueraInfo.hidden = true; $("#pInfo").hidden = true; return;
   }
   // En el celular cada capa va en dos líneas: arriba el ojo, el nombre y el %; abajo la franja a todo lo ancho
-  const OJO = 28, LH = movil ? 22 : 0, labW = movil ? 4 : 230 + OJO, pctW = movil ? 4 : 54, top = 34, bh = movil ? 22 : 28, gap = movil ? 8 : 5;
+  // Computadora: regla de progresivas fija arriba (aparte), filas compactas a elección y rueda para acercar
+  const pcP = enPC() && !movil, comp = pcP && !!P.pfComp;
+  const OJO = 28, LH = movil ? 22 : 0, labW = movil ? 4 : 230 + OJO, pctW = movil ? 4 : 54, top = pcP ? 8 : 34, bh = movil ? 22 : comp ? 18 : 28, gap = movil ? 8 : comp ? 3 : 5;
   const gx0 = labW, gx1 = W - pctW, X = v => gx0 + (v - x0) / (x1 - x0) * (gx1 - gx0);
   const largoVis = x1 - x0;
   // filas de arriba hacia abajo (la última capa construida arriba); un encabezado por tipo con varias capas
   const filasP = []; let yy = top + 4, prevT = null;
   bandas.slice().reverse().forEach(b => {
     const grupo = bandas.filter(x => x.t.id === b.t.id).length > 1 || !!b.capa;
-    if (grupo && prevT !== b.t.id) { filasP.push({ head: true, t: b.t, y: yy }); yy += 20; }
+    if (grupo && prevT !== b.t.id) { filasP.push({ head: true, t: b.t, y: yy }); yy += comp ? 18 : 20; }
     filasP.push({ b, y: yy, grupo }); yy += LH + bh + gap; prevT = b.t.id;
   });
   const fondo = yy, H = fondo + 26;
   const hoy = hoyStr(), out = [HATCH], huecosT = [];
   const animar = P._animado !== sub.id; P._animado = sub.id;
   const st = paso(largoVis, gx1 - gx0), ticks = []; for (let v = Math.ceil(x0 / st) * st; v <= x1 + 1e-6; v += st) ticks.push(v);
-  ticks.forEach(v => out.push(`${movil ? "" : `<line class="grid" x1="${X(v).toFixed(1)}" x2="${X(v).toFixed(1)}" y1="${top - 4}" y2="${fondo}"/>`}<text class="tick" x="${X(v).toFixed(1)}" y="${top - 10}" text-anchor="middle">${fmtPk(v)}</text>`));
+  ticks.forEach(v => out.push(`${movil ? "" : `<line class="grid" x1="${X(v).toFixed(1)}" x2="${X(v).toFixed(1)}" y1="${top - 4}" y2="${fondo}"/>`}${pcP ? "" : `<text class="tick" x="${X(v).toFixed(1)}" y="${top - 10}" text-anchor="middle">${fmtPk(v)}</text>`}`));
   out.push(`<text class="pk-ext" x="${gx0}" y="${H - 6}">PK ${fmtPk(x0)}</text><text class="pk-ext" x="${gx1}" y="${H - 6}" text-anchor="end">PK ${fmtPk(x1)}</text>`);
   filasP.forEach((fp, i) => {
     if (fp.head) {
-      out.push(`<rect x="0" y="${fp.y}" width="${W}" height="18" rx="6" fill="${TOK.surface2}"/><text class="grp" x="8" y="${fp.y + 13}">${esc(fp.t.nombre)}</text>`);
+      out.push(`<rect x="0" y="${fp.y}" width="${W}" height="${comp ? 16 : 18}" rx="6" fill="${TOK.surface2}"/><text class="grp" x="8" y="${fp.y + (comp ? 12 : 13)}">${esc(fp.t.nombre)}</text>`);
       return;
     }
     const b = fp.b, y0 = fp.y, y = y0 + LH;
@@ -4127,7 +4170,13 @@ function dibujarPerfil(sub, recs, bandas, totalBandas) {
     out.push(`<text class="pct ${pct >= 100 ? "full" : ""}" x="${W - 2}" y="${movil ? y0 + LH / 2 + 3 : y + bh / 2 + 4}" text-anchor="end">${b.rs.length || lib ? pct + "%" : baseLen <= 0.2 ? "N/A" : "0%"}</text>`);
   });
   if (!movil) out.push(`<line x1="${gx0}" x2="${gx0}" y1="${top}" y2="${fondo - gap}" stroke="${TOK.ink}" stroke-width="1.8"/><line x1="${gx1}" x2="${gx1}" y1="${top}" y2="${fondo - gap}" stroke="${TOK.ink}" stroke-width="1.8"/>`);
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="Perfil de capas liberadas en ${esc(sub.nombre)}">${out.join("")}</svg>`;
+  const acercado = pcP && (P.pkDesde || P.pkHasta);
+  const barra = !pcP ? "" : `<div class="pf-bar"><div class="seg" role="group" aria-label="Alto de las filas"><button type="button" data-pfc="0" aria-pressed="${!comp}">Filas normales</button><button type="button" data-pfc="1" aria-pressed="${comp}">Compactas</button></div>${acercado ? `<span class="pf-rg">PK ${fmtPk(x0)} a ${fmtPk(x1)}</span><button type="button" class="mini" data-pftodo>Ver todo el frente</button>` : ""}<span class="pf-ayuda">Rueda del ratón para acercar · arrastra para moverte · doble clic: todo el frente</span></div>`;
+  const regla = !pcP ? "" : `<div class="pf-regla"><svg viewBox="0 0 ${W} 24" height="24" aria-hidden="true">${ticks.map(v => `<text class="tick" x="${X(v).toFixed(1)}" y="16" text-anchor="middle">${fmtPk(v)}</text>`).join("")}<line x1="${gx0}" x2="${gx1}" y1="23.5" y2="23.5" stroke="${TOK.line}"/></svg></div>`;
+  box.classList.toggle("pf-on", pcP); box.classList.toggle("pf-comp", comp);
+  box.innerHTML = `${barra}${regla}<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="Perfil de capas liberadas en ${esc(sub.nombre)}">${out.join("")}</svg>`;
+  box._pf = { gx0, gx1, x0, x1, fr0, fr1 };
+  if (pcP) conectarZoomPerfil(box);
   P._huecos = huecosT;
   $("#pInfo").hidden = true;
   const notas = [], enRecuadro = !!$("#pAvisos")?.firstElementChild;
@@ -4136,9 +4185,46 @@ function dibujarPerfil(sub, recs, bandas, totalBandas) {
   if (ocultosTipo && !enRecuadro) notas.push(`${ocultosTipo} de tipos que no se dibujan (Ajustes → Tipos)`);
   notas.push(`El % es lo liberado entre PK ${fmtPk(x0)} y ${fmtPk(x1)}, sin contar lo que no se libera. Toca el ojo junto a una capa para ocultarla y un tramo para ver su ficha.`);
   $("#pNota").textContent = notas.join(" · ");
-  conectarTramos(box.querySelector("svg"), "rect.seg");
+  conectarTramos(box.querySelector("svg[role=img]"), "rect.seg");
   // Tabla «Qué falta liberar»: ordenar por columna, filtrar por capa y agrupar por capa
   if (fueraInfo) { P._ftBandas = bandas; P._ftRango = [x0, x1]; pintarFalta(); }
+}
+/* Rueda, arrastre y doble clic en el perfil (computadora). Acercar es lo mismo que filtrar la progresiva: el % y
+   «Qué falta liberar» quedan para ese tramo y el filtro «Progresiva» de la izquierda lo muestra. */
+function conectarZoomPerfil(box) {
+  if (box._zoomOk) return; box._zoomOk = true;
+  const P = S.panel; let raf = 0, tAcc = 0, arr = null;
+  const aplicar = (a, b) => {
+    const z = box._pf; if (!z) return;
+    const fr0 = z.fr0, fr1 = z.fr1, full = fr1 - fr0;
+    let w = Math.max(10, Math.min(full, b - a)); a = Math.max(fr0, Math.min(fr1 - w, a)); b = a + w;
+    if (w >= full - 0.5) { P.pkDesde = ""; P.pkHasta = ""; } else { P.pkDesde = fmtPk(Math.round(a)); P.pkHasta = fmtPk(Math.round(b)); }
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; actualizarPanel(); });
+    clearTimeout(tAcc); tAcc = setTimeout(() => { const ac = $("#pAcc"); if (ac) pintarAcc(ac, filtrosDe(), true); }, 250);
+  };
+  const pkEn = e => { const z = box._pf, sv = box.querySelector(":scope > svg[role=img]"); if (!z || !sv) return null; const r = sv.getBoundingClientRect(), x = (e.clientX - r.left) * sv.viewBox.baseVal.width / r.width; return { pk: z.x0 + (x - z.gx0) / (z.gx1 - z.gx0) * (z.x1 - z.x0), x, r, sv }; };
+  box.addEventListener("wheel", e => {
+    if (S.panel.vista !== "perfil" || !box.classList.contains("pf-on") || !box._pf) return;
+    const m = pkEn(e); if (!m || m.x < box._pf.gx0 - 4) return; e.preventDefault();
+    const z = box._pf, f = Math.exp(e.deltaY * (e.deltaMode ? 0.05 : 0.0015)), pk = Math.max(z.x0, Math.min(z.x1, m.pk));
+    aplicar(pk - (pk - z.x0) * f, pk + (z.x1 - pk) * f);
+  }, { passive: false });
+  box.addEventListener("pointerdown", e => { if (!box.classList.contains("pf-on") || e.button || e.target.closest(".pf-bar,.ojo,[data-oculta]") || !(P.pkDesde || P.pkHasta)) { arr = null; return; } const m = pkEn(e); arr = m && { cx: e.clientX, z: { ...box._pf }, k: (box._pf.x1 - box._pf.x0) / ((box._pf.gx1 - box._pf.gx0) * m.r.width / m.sv.viewBox.baseVal.width), movio: false }; });
+  box.addEventListener("pointermove", e => {
+    if (!arr || !(e.buttons & 1)) { arr = null; box.classList.remove("arr"); return; }
+    const dx = e.clientX - arr.cx; if (!arr.movio && Math.abs(dx) < 5) return;
+    if (!arr.movio) { arr.movio = true; box.classList.add("arr"); try { box.setPointerCapture(e.pointerId); } catch (_) {} }
+    const d = -dx * arr.k; aplicar(arr.z.x0 + d, arr.z.x1 + d);
+  });
+  const fin = () => { box.classList.remove("arr"); if (arr?.movio) box._recien = Date.now(); arr = null; };
+  box.addEventListener("pointerup", fin); box.addEventListener("pointercancel", fin);
+  // Tras arrastrar no se abre la ficha del tramo que quedó debajo
+  box.addEventListener("click", e => {
+    if (box._recien && Date.now() - box._recien < 300) { e.stopPropagation(); e.preventDefault(); box._recien = 0; return; }
+    const c = e.target.closest("[data-pfc]"); if (c) { e.stopPropagation(); P.pfComp = c.dataset.pfc === "1"; ls.set("lib.pfComp", P.pfComp); actualizarPanel(); return; }
+    if (e.target.closest("[data-pftodo]")) { e.stopPropagation(); aplicar(-Infinity, Infinity); }
+  }, true);
+  box.addEventListener("dblclick", e => { if (S.panel.vista === "perfil" && box.classList.contains("pf-on") && !e.target.closest(".pf-bar,.seg,[data-id],[data-gap],[data-na]")) aplicar(-Infinity, Infinity); });
 }
 function pintarFalta() {
   const P = S.panel, box = $("#pFalta"), huecosT = P._huecos || [], bandas = P._ftBandas || [], [x0, x1] = P._ftRango || [0, 0];
@@ -4198,8 +4284,9 @@ function dibujarPlanta(est, recs, conPct = true) {
   }
   let minE = Infinity, maxE = -Infinity, minN = Infinity, maxN = -Infinity;
   subs.forEach(x => x.p.forEach(q => { minE = Math.min(minE, q[1]); maxE = Math.max(maxE, q[1]); minN = Math.min(minN, q[2]); maxN = Math.max(maxN, q[2]); }));
-  const dx = Math.max(maxE - minE, 1), dy = Math.max(maxN - minN, 1), pad = 34;
-  const H = Math.round(Math.min(640, Math.max(260, (W - 2 * pad) * dy / dx + 2 * pad)));
+  const dx = Math.max(maxE - minE, 1), dy = Math.max(maxN - minN, 1), pad = 34, pcPl = enPC() && W >= 560;
+  // En computadora la planta puede usar casi todo el alto de la ventana
+  const H = Math.round(Math.min(pcPl ? Math.max(640, innerHeight - 260) : 640, Math.max(260, (W - 2 * pad) * dy / dx + 2 * pad)));
   const s = Math.min((W - 2 * pad) / dx, (H - 2 * pad) / dy);
   const ox = (W - dx * s) / 2, oy = (H - dy * s) / 2;
   const P = (e, n) => [(ox + (e - minE) * s).toFixed(1), (oy + (maxN - n) * s).toFixed(1)];
@@ -4232,10 +4319,34 @@ function dibujarPlanta(est, recs, conPct = true) {
     out.push(`<text class="lab-pl" x="${x}" y="${(+y + sw + 12).toFixed(1)}" text-anchor="middle">${esc(sb.nombre)}${pctTxt}</text>`);
   });
   out.push(`<g transform="translate(${W - 26},28)"><path d="M0,-14 L6,6 L0,2 L-6,6 Z" fill="${TOK.ink}"/><text class="tick" y="18" text-anchor="middle">N</text></g>`);
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="Planta de ${esc(est.nombre)}">${HATCH}${out.join("")}</svg>`;
+  const SP = S.panel, clave = est.id + "|" + W + "|" + H; if (SP._plClave !== clave) { SP._plClave = clave; SP.plVB = null; }
+  const vb = SP.plVB || [0, 0, W, H];
+  box.innerHTML = `<div class="plwrap"><svg viewBox="${vb.join(" ")}" height="${H}" role="img" aria-label="Planta de ${esc(est.nombre)}">${HATCH}${out.join("").replace(/<path /g, '<path vector-effect="non-scaling-stroke" ')}</svg>${pcPl ? '<div class="rzoom" role="group" aria-label="Acercar o alejar la planta"><button type="button" data-pz="+" aria-label="Acercar">+</button><button type="button" data-pz="-" aria-label="Alejar">−</button><button type="button" data-pz="0" aria-label="Ver todo">Todo</button></div>' : ""}</div>`;
   const faltan = (est.subs || []).filter(x => x.activo !== false && !puntosEje(x.id)).map(x => x.nombre);
-  $("#pNota").textContent = `Norte arriba. Toca un tramo para ver su ficha.${faltan.length ? " Sin eje: " + faltan.join(", ") + "." : ""}`;
-  conectarTramos(box.querySelector("svg"), "path.tramo");
+  $("#pNota").textContent = `Norte arriba.${pcPl ? " Rueda del ratón para acercar, arrastra para moverte y doble clic para ver todo." : ""} Toca un tramo para ver su ficha.${faltan.length ? " Sin eje: " + faltan.join(", ") + "." : ""}`;
+  const svg = box.querySelector(".plwrap>svg");
+  conectarTramos(svg, "path.tramo");
+  if (pcPl) conectarZoomPlanta(svg, W, H);
+}
+// Planta: acercar con la rueda (sin deformar), arrastrar y botones; textos y marcas del mismo tamaño en pantalla
+function conectarZoomPlanta(svg, W, H) {
+  const P = S.panel, wrap = svg.parentElement;
+  const poner = () => { const v = P.plVB || [0, 0, W, H], f = v[2] / W; svg.setAttribute("viewBox", v.join(" ")); svg.querySelectorAll("text").forEach(t => { t.dataset.fs ??= parseFloat(getComputedStyle(t).fontSize) || 11; t.style.fontSize = (t.dataset.fs * f).toFixed(3) + "px"; t.style.strokeWidth = (4 * f).toFixed(3); }); svg.querySelectorAll("circle").forEach(c => c.setAttribute("r", (2.6 * f).toFixed(3))); };
+  const zoom = (g, cx, cy) => { const v = P.plVB || [0, 0, W, H], nw = Math.min(W, Math.max(W / 200, v[2] * g)), k = nw / v[2], mx = cx ?? v[0] + v[2] / 2, my = cy ?? v[1] + v[3] / 2; P.plVB = nw >= W ? null : [mx - (mx - v[0]) * k, my - (my - v[1]) * k, nw, nw * H / W]; poner(); };
+  const mundo = e => { const r = svg.getBoundingClientRect(), v = P.plVB || [0, 0, W, H]; return [v[0] + (e.clientX - r.left) / r.width * v[2], v[1] + (e.clientY - r.top) / r.height * v[3]]; };
+  svg.addEventListener("wheel", e => { e.preventDefault(); const [x, y] = mundo(e); zoom(Math.exp(e.deltaY * (e.deltaMode ? 0.05 : 0.0015)), x, y); }, { passive: false });
+  let ini = null;
+  svg.addEventListener("pointerdown", e => { ini = e.button ? null : { x: e.clientX, y: e.clientY, v: (P.plVB || [0, 0, W, H]).slice(), movio: false }; });
+  svg.addEventListener("pointermove", e => {
+    if (!ini || !(e.buttons & 1) || !P.plVB) return; const dx = e.clientX - ini.x, dy = e.clientY - ini.y;
+    if (!ini.movio && Math.hypot(dx, dy) < 5) return; if (!ini.movio) { ini.movio = true; try { svg.setPointerCapture(e.pointerId); } catch (_) {} }
+    const f = ini.v[2] / svg.getBoundingClientRect().width; P.plVB = [ini.v[0] - dx * f, ini.v[1] - dy * f, ini.v[2], ini.v[3]]; svg.setAttribute("viewBox", P.plVB.join(" "));
+  });
+  svg.addEventListener("pointerup", () => { if (ini?.movio) svg._recien = Date.now(); ini = null; });
+  svg.addEventListener("click", e => { if (svg._recien && Date.now() - svg._recien < 300) { e.stopPropagation(); svg._recien = 0; } }, true);
+  svg.addEventListener("dblclick", e => { if (!e.target.closest("path.tramo")) { P.plVB = null; poner(); } });
+  wrap.querySelector(".rzoom")?.addEventListener("click", e => { const b = e.target.closest("[data-pz]"); if (!b) return; if (b.dataset.pz === "0") { P.plVB = null; poner(); } else zoom(b.dataset.pz === "+" ? 1 / 1.6 : 1.6); });
+  if (P.plVB) poner();
 }
 DESK.addEventListener("change", () => { if (!S.dentro) return; if (S.view === "nueva") leerCampos(); pintarNav(); render(); });
 let rzT; addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(() => { if (S.view === "panel" && ($("#chart") || $("#mBody"))) actualizarPanel(); }, 150); });
@@ -6550,6 +6661,7 @@ function ajLugares() {
     <div class="addrow"><input id="eNew" placeholder="Ej.: Presa Auxiliar Sur" maxlength="60" aria-label="Nombre de la estructura nueva"><button type="button" class="mini ok-btn" id="eAdd">Agregar estructura</button></div>
     <p class="muted small" style="margin:8px 0 6px">Se crea con un frente del mismo nombre; puedes renombrarlo o agregar más.</p></div>`;
   const body = $("#ajBody");
+  body.querySelectorAll(".card.est[data-e]").forEach(c => plegarLista(c, { clave: "lu:" + c.dataset.e, cab: ".est-h", filas: ":scope > .srow:not(.head)", extra: ":scope > .srow.head, :scope > .addrow", n: 6, buscando: !!A.luQ.trim(), nombre: c.querySelector(".est-h input")?.value }));
   const lq = $("#luQ"); if (lq) buscadorDiferido(lq, v => { S.aj.luQ = v; }, () => ajLugares(), () => S.view === "ajustes" && S.aj.tab === "lugares");
   $("#luOff")?.addEventListener("change", e => { S.aj.luOff = e.target.checked; ajLugares(); });
   body.addEventListener("change", e => {
@@ -6708,6 +6820,7 @@ function ajCapas() {
       .catch(e => toast("No se guardó: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"));
     toast(navigator.onLine ? msg : msg + " en el teléfono; se subirá con señal.");
   };
+  plegarLista($("#cCapas .ctab"), { clave: "capas", filas: ":scope > .ct-row:not(.head)", n: 12, buscando: !!q });
   const reabrir = (foco) => { ajCapas(); if (foco) { const el = $(foco); if (el) { el.focus(); try { el.select(); } catch (e) {} } } };
   $("#cSub").addEventListener("change", e => { A.capSub = e.target.value; A.capSel = new Set(); A.capQ = ""; ajCapas(); });
   $("#cTipo").addEventListener("change", e => { A.capTipo = e.target.value; A.capSel = new Set(); A.capQ = ""; ajCapas(); });
@@ -7400,6 +7513,7 @@ function ajTopografos() {
     <div class="prow" style="border-top:0"><input id="tpId" class="mono" placeholder="Clave" maxlength="5" aria-label="Clave" style="text-transform:uppercase"><input id="tpNom" placeholder="Nombre y apellidos" aria-label="Nombre"><button type="button" class="mini ok-btn" id="tpAdd">Agregar</button></div>
   </div>`;
   const L2 = $("#tpList");
+  plegarLista(L2, { clave: "topos", filas: ":scope > .prow[data-i]", n: 10 });
   L2.addEventListener("change", e => { const r = e.target.closest("[data-i]"); if (r && e.target.dataset.k === "nom") { B[+r.dataset.i].nombre = e.target.value.trim(); guardarLista("topografos", B); } });
   L2.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); if (e.target.id === "tpId" || e.target.id === "tpNom") $("#tpAdd").click(); else e.target.blur(); } });
   L2.addEventListener("click", async e => {
@@ -7682,6 +7796,31 @@ function moverElemento(id, paso) {
 }
 const elegirUnionEle = e => elegirDestino(e, false);
 const repintarTipos = () => { if (S.view === "ajustes" && S.aj.tab === "tipos") ajTipos(); };
+/* Listas desplegables: muestra las primeras «n» filas con «Ver todos (N)», y el botón de la cabecera pliega el grupo.
+   Al buscar se ve todo lo que coincide. Lo plegado y lo abierto se recuerdan (lib.plg). */
+const CHEV_D = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+function plegarLista(card, o) {
+  if (!card) return;
+  const U = ls.get("lib.plg", {}), n = o.n || 6, filas0 = card.querySelectorAll(o.filas).length;
+  // Si se acaba de agregar algo, el grupo se abre entero para que se vea lo nuevo
+  const N = U._n ||= {}; if (!o.buscando) { if (N[o.clave] != null && filas0 > N[o.clave]) U[o.clave] = "todo"; N[o.clave] = filas0; ls.set("lib.plg", U); }
+  const st = U[o.clave] || (o.cerrado0 ? "cerrado" : "");
+  const filas = [...card.querySelectorAll(o.filas)], cerrado = st === "cerrado" && !o.buscando, todo = st === "todo" || o.buscando;
+  filas.forEach((f, i) => { f.hidden = cerrado || (!todo && i >= n); });
+  (o.extra ? [...card.querySelectorAll(o.extra)] : []).forEach(x => { x.hidden = cerrado; });
+  card.classList.toggle("plg-cerrado", cerrado);
+  const cab = o.cab ? card.querySelector(o.cab) : null;
+  if (cab) { let b = cab.querySelector(".plg-x"); if (!b) { cab.insertAdjacentHTML("afterbegin", `<button type="button" class="plg-x">${CHEV_D}</button>`); b = cab.querySelector(".plg-x"); } b.setAttribute("aria-expanded", !cerrado); b.setAttribute("aria-label", (cerrado ? "Desplegar " : "Plegar ") + (o.nombre || "")); b.title = cerrado ? "Desplegar" : "Plegar"; }
+  card.querySelector(":scope .plg-mas")?.remove();
+  if (!cerrado && !o.buscando && filas.length > n) filas[filas.length - 1].insertAdjacentHTML("afterend", `<button type="button" class="btn-txt plg-mas">${todo ? "Ver menos" : `Ver todos (${filas.length})`}</button>`);
+  card._plg = o;
+  if (card._plgOk) return; card._plgOk = true;
+  card.addEventListener("click", e => {
+    const x = e.target.closest(".plg-x"), m = e.target.closest(".plg-mas"); if (!x && !m) return;
+    e.stopPropagation(); const U2 = ls.get("lib.plg", {}), o2 = card._plg, act = U2[o2.clave] || (o2.cerrado0 ? "cerrado" : "");
+    U2[o2.clave] = x ? (act === "cerrado" ? "" : "cerrado") : (act === "todo" ? "" : "todo"); ls.set("lib.plg", U2); plegarLista(card, o2);
+  }, true);
+}
 function ajTipos() {
   cuerpoAj();
   const A = S.aj; A.tyVista ||= ls.get("lib.tyVista", "cat"); A.tyQ ??= ""; A.tyOff ??= false;
@@ -7743,6 +7882,9 @@ function ajTipos() {
     </div>`;
   }
   $("#ajBody").innerHTML = `${nuevos}${seg}${cuerpo}`;
+  const buscTy = !!A.tyQ.trim();
+  document.querySelectorAll("#tyList > .tycard").forEach(c => { const g = c.querySelector(".tygrp"); plegarLista(c, { clave: "ty:" + (g?.dataset.e || ""), cab: ".tygrp", filas: ":scope > .tyrow", extra: ":scope > .ty-add2", n: 8, buscando: buscTy, nombre: g?.querySelector("input")?.value || "Sin elemento" }); });
+  plegarLista($("#eqList"), { clave: "equipos", filas: ':scope > .trow[data-q]', n: 6 });
   const EQ = $("#eqList");
   EQ?.addEventListener("change", e => { if (e.target.dataset.k !== "qnom") return; const items = clon(S.listas.equipos || []), x = items[+e.target.closest("[data-q]").dataset.q], v = capital(e.target.value); if (!x || !v) { ajTipos(); return; } x.nombre = v; guardarLista("equipos", items, "Equipo guardado"); });
   EQ?.addEventListener("click", async e => {
