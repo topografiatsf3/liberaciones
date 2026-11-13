@@ -99,6 +99,7 @@ async function abrir(b, opts) {
   ok(await p.$eval('.plwrap svg', s => s.getAttribute('viewBox')) === vb0, '«Todo» vuelve a ver toda la planta');
 
   // --- Ajustes: listas desplegables
+  await p.setViewportSize({ width: 1100, height: 900 }); // los desplegables son de media pantalla; en ancha va lista y detalle
   await p.click('#nav [data-v="ajustes"]'); await p.click('[data-tab="tipos"]'); await p.waitForSelector('#tyList .tycard');
   const mt = await p.$('#tyList .tycard:has(.tygrp[data-e="mt"])');
   const vis = async c => c.$$eval(':scope > .tyrow', x => x.filter(r => !r.hidden).length);

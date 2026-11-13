@@ -113,8 +113,7 @@ const filas = (p, sel = '#lista tbody tr[data-id]') => p.$$eval(sel, x => x.leng
   const cards = await p.$$eval('#ajBody > .card', x => x.map(c => c.getBoundingClientRect().left));
   ok(cards.length === 3 && cards[2] > cards[0] + 300, 'Usuarios en dos columnas: solicitudes y agregar a la izquierda, «Con acceso» a la derecha');
   await p.click('[data-tab="tipos"]'); await p.waitForTimeout(400);
-  const tc = await p.$$eval('#tyList > .tycard', x => [...new Set(x.slice(0, 3).map(c => Math.round(c.getBoundingClientRect().top)))].length);
-  ok(tc === 1, 'Tipos: los grupos uno al lado del otro');
+  ok(!!(await p.$('.md-wrap .md-idx')) && await p.$$eval('.md-det > .tycard', x => x.filter(c => !c.hidden).length) === 1, 'Tipos: lista de elementos y el elegido al lado');
   await p.screenshot({ path: OUT + '/04-ajustes-tipos.png' });
   await p.click('[data-tab="lugares"]'); await p.waitForTimeout(400);
   ok(await p.$$eval('#ajBody .srow', x => x.every(r => r.scrollWidth <= r.clientWidth + 2)), 'Lugares: las filas de frentes caben sin cortarse');

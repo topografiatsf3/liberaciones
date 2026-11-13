@@ -94,6 +94,7 @@ let b;
   await p.screenshot({ path: path.join(OUT, '1-modelo-capa-nueva.png') });
 
   // 3. Ajustes → Tipos: elementos dentro del catálogo, agregar tipo en su grupo, quitar con «Deshacer»
+  await p.setViewportSize({ width: 1100, height: 900 }); // Ajustes apilado (la lista y detalle de pantalla ancha va en prueba41)
   await p.click('[data-v="ajustes"]:not([hidden])'); await p.click('[data-tab="tipos"]'); await p.waitForSelector('#tyList');
   await p.click('[data-tyv="cat"]').catch(() => {}); await p.waitForSelector('#tyList .elgrp');
   ok(!(await p.$('#elList')), 'los elementos ya no van en una tarjeta aparte');

@@ -764,8 +764,8 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
 .rzoom button[data-rz="0"]{font-size:12px}
 .rzoom button:hover{background:var(--surface-2)}
 /* Computadora (versión 33): ancho completo, columna de filtros con conteos, tabla compacta y Ajustes con menú lateral */
-@media (min-width:1024px){
-  body.v-todos #view,body.v-bandeja #view,body.v-panel #view,body.v-ajustes #view{max-width:none}
+@media (min-width:1024px){body.v-todos #view,body.v-bandeja #view,body.v-panel #view,body.v-ajustes #view{max-width:none}}
+@media (min-width:860px){
   .rtab.compacta td{padding:7px 10px;vertical-align:middle}
   .rtab.compacta td.ck{vertical-align:middle}
   .rtab.compacta td.tcod>*{display:inline-block;width:auto;margin:0 6px 0 0;vertical-align:middle}
@@ -784,9 +784,17 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
   .rtab th.hc.filt .hcb{color:var(--accent-strong)}
 }
 .rmain #rSt{flex-wrap:wrap;overflow:visible}
-@media (min-width:1024px) and (max-width:1199px){.rtab.compacta td.tqd .tq{white-space:normal;min-width:84px}.rtab.compacta .hcb{white-space:normal;padding:8px 7px}}
+.fact{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
+.fact-n{font-size:12.5px;font-weight:700;color:var(--muted);margin-right:2px}
+/* Tabla con cabecera fija al bajar (la tabla ya cabe a lo ancho, no necesita su propio desplazamiento) */
+@media (min-width:1200px){
+  .twrap:has(>.rtab.compacta){overflow:visible}
+  .rtab.compacta thead th{position:sticky;top:0;z-index:4;box-shadow:inset 0 -1px 0 var(--line)}
+  .rtab.compacta thead th:first-child{border-top-left-radius:8px}.rtab.compacta thead th:last-child{border-top-right-radius:8px}
+}
+@media (min-width:860px) and (max-width:1199px){.rtab.compacta td.tqd .tq{white-space:normal;min-width:84px}.rtab.compacta .hcb{white-space:normal;padding:8px 7px}}
 /* Pantallas de 1200 a 1499 px (laptop): código y estado en dos líneas y sin la descripción al lado, para que quepa todo */
-@media (min-width:1024px) and (max-width:1499px){
+@media (min-width:860px) and (max-width:1499px){
   .rtab.compacta td.tcod>*{display:block;margin:0}
   .rtab.compacta td.tcod .st,.rtab.compacta td.tcod .pend-tag{margin:3px 0 0}
   .rtab.compacta .tl>span{display:none}
@@ -866,6 +874,28 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
 .elgrp:has(>.plg-x){grid-template-columns:auto minmax(0,1fr) auto auto}
 @media (max-width:560px){.elgrp:has(>.plg-x){grid-template-columns:auto minmax(0,1fr) auto}}
 .plg-cerrado{padding-bottom:10px}
+.plg-in{animation:plgIn .22s cubic-bezier(.2,.8,.2,1) both}
+@keyframes plgIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.plg-in{animation:none}}
+/* Pantalla ancha: lista de grupos a la izquierda y el grupo elegido a la derecha (Tipos y Lugares) */
+.ajgrid #ajBody[data-aj="tipos"]>#tyList:has(>.md-wrap){display:block!important}
+.md-wrap{display:grid;grid-template-columns:270px minmax(0,1fr);gap:16px;align-items:start;grid-column:1/-1}
+.md-idx{position:sticky;top:12px;display:flex;flex-direction:column;gap:2px;padding:6px;max-height:calc(100vh - 24px);overflow:auto}
+.md-i{display:grid;grid-template-columns:1fr auto;gap:0 8px;align-items:center;width:100%;text-align:left;border:0;background:transparent;border-radius:6px;padding:8px 10px;min-height:44px;cursor:pointer;color:var(--ink)}
+.md-i:hover{background:var(--surface-2)}
+.md-i[aria-current="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.md-i b{font-size:13.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.md-i small{grid-column:1/-1;font-size:11.5px;color:var(--muted);font-weight:600}
+.md-i .c{font:600 12px var(--f-mono);color:var(--muted)}
+.md-i.off b{color:var(--muted);text-decoration:line-through}
+.md-sep{height:1px;background:var(--line);margin:6px 4px}
+.md-det>*{margin:0 0 16px}
+.md-det>.card{animation:plgIn .18s ease both}
+@media (prefers-reduced-motion:reduce){.md-det>.card{animation:none}}
+@media (min-width:1600px){
+  .md-det .tycard{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
+  .md-det .tycard>.tygrp,.md-det .tycard>.ty-add2,.md-det .tycard>.plg-mas{grid-column:1/-1}
+}
 .plg-cerrado>.tygrp,.plg-cerrado>.est-h{border-bottom:0;margin-bottom:0;padding-bottom:0}
 .plg-h{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-weight:800;font-size:13px}
 /* Panel en computadora (versión 34): rueda para acercar, regla fija, filas compactas y columnas */
@@ -939,7 +969,9 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
   body.m-full:has(#mRoot) .view-title,body.m-full:has(#mRoot) .lead,body.m-full:has(#mRoot) .mws .nota-g{display:none}
   body.m-full:has(#mRoot) .mdiv{display:block}
   body.m-full:has(#mRoot) .chartbox{margin-bottom:8px}
-  body.m-full:has(#mRoot) .pgrid{grid-template-columns:260px minmax(0,1fr);gap:12px}
+  body.m-full:has(#mRoot) .pgrid{grid-template-columns:270px minmax(0,1fr);gap:12px}
+  body.m-full.m-sinlat:has(#mRoot) .pgrid{grid-template-columns:minmax(0,1fr)}
+  body.m-full.m-sinlat:has(#mRoot) .pside{display:none}
 }
 /* Leyenda, medición y tabla al costado: en pantalla completa desde 1400 px; con el menú a la vista, desde 1800 px */
 @media (min-width:1400px){
@@ -968,6 +1000,7 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
 .avc-w{margin:0 0 8px;background:var(--ep-bg);color:var(--ep)}
 .capl h2{font-size:16px}
 .capf{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 8px}
+.pside .capf{grid-template-columns:1fr}
 .capf input{grid-column:1/-1}
 .capf input,.capf select{border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-height:38px;font-size:13.5px;background:var(--surface);min-width:0}
 .capr{display:flex;flex-direction:column;gap:4px;max-height:520px;overflow:auto;margin:0 -4px;padding:0 4px}
@@ -1623,7 +1656,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 34;
+const VERSION_APP = 35;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2776,8 +2809,10 @@ function buscadorDiferido(inp, guardar, repintar, sigue = () => true) {
 const poder = () => esGab() || puedeAjustes();
 const veModelo = () => esGab() || puedeAjustes();
 const DESK = matchMedia("(min-width:1024px)");
+// Media pantalla (ventana partida en una computadora): tabla y filtros de computadora, con el menú arriba
+const MEDIO = matchMedia("(min-width:860px)");
 const enPC = () => DESK.matches;
-const tablaPC = () => enPC() && poder();
+const tablaPC = () => (enPC() || MEDIO.matches) && poder();
 /* ---------- Filtros de Registros y Mis registros: fechas, tipo, frente, topógrafo, actividad y equipo ----------
    Con un filtro de fechas, Registros pide a Firebase justo ese rango (así encuentra también registros antiguos). */
 const CAMPOS_RF = ["fecha", "f1", "f2", "fc", "tipo", "sub", "topo", "act", "equipo", "capa"];
@@ -2988,7 +3023,7 @@ function pintarLista(cual) {
   if (hist) cargarTodoResumen();
   const base = pap ? S.papelera || [] : cual === "mis" ? S.mis : loteF ? S.loteRegs || [] : porFecha ? S.todosFecha || [] : hist ? mezclarHist() : S.todos;
   const datos = pap ? base : base.filter(r => pasaFiltrosReg(fl, r));
-  const activos = pap ? [] : activosReg(fl, cual), pcFil = enPC();
+  const activos = pap ? [] : activosReg(fl, cual), pcFil = enPC() || tablaPC();
   const sel = S.selReg ||= new Set();
   const qs = terminos(fl.q), sts = fl.st ? fl.st.split(",") : [];
   // Los números de los chips cuentan lo que se ve (con la búsqueda y sin los eliminados)
@@ -3004,7 +3039,7 @@ function pintarLista(cual) {
   const chips = [["", "Todos", ante.length], ...(nPend && (cuenta.OB || 0) && (cuenta.PT || 0) ? [["PT,OB", "Pendientes + observados", nPend]] : []), ...["PT", "EP", "EC", "OB", "RE", "NA"].map(k => [k, ESTADOS[k], cuenta[k] || 0]), ...Object.keys(SEGUIM).map(k => [k, SEGUIM[k][1], cuenta[k] || 0])].filter(c => c[0] === "" || c[2] > 0 || c[0] === fl.st);
   const tabla = tablaPC(), ns = sel.size, selRegs = vis.filter(r => sel.has(r.id));
   // Computadora: columna de filtros con conteos y cabeceras que ordenan y filtran
-  const colFil = tabla && !pap && innerWidth >= 1200, keysF = cual === "todos" ? ["sub", "tipo", "capa", "topo", "act", "equipo"] : ["sub", "tipo", "capa", "act"];
+  const facOff = ls.get("lib.facOff", false), colFil = tabla && !pap && innerWidth >= 1200 && !facOff, puedeCol = tabla && !pap && innerWidth >= 1200, keysF = cual === "todos" ? ["sub", "tipo", "capa", "topo", "act", "equipo"] : ["sub", "tipo", "capa", "act"];
   const pre = tabla && !pap ? base.filter(r => pasaFechaReg(fl, r) && (r.estado !== "X" || esAdmin()) && coincide(r, qs) && (!sts.length || sts.includes(r.estado) || sts.includes(seguimientoDe(r)))) : [];
   const C = tabla && !pap ? contarFac(pre, fl, keysF) : {};
   const fechaDe = r => r[campoFecha(fl)] || r.fechaCampo;
@@ -3028,9 +3063,10 @@ function pintarLista(cual) {
   <p class="lead">${cual === "mis" ? "Lo que registraste. Puedes editar lo que está pendiente u observado, y mandar a la papelera lo que aún no tiene código." : pap ? `Lo borrado no sale en las listas ni en el panel. ${puedeAjustes() ? "Restaura o borra para siempre." : "Puedes restaurar lo que no tiene código."}` : porFecha ? `${datos.length} ${datos.length === 1 ? "registro" : "registros"} · ${esc(textoFecha(fl))}.` : hist ? `${BUS.todos ? `${datos.length.toLocaleString("es-PE")} de ${base.length.toLocaleString("es-PE")} registros de todo el historial.` : "Cargando todo el historial…"}` : `${activos.length ? datos.length + " de los" : "Los"} últimos ${base.length} registros de todos. Para ver más antiguos filtra por fechas.${poder() ? " Busca en todo el histórico con Ctrl+K." : ""}`}</p>
   ${cual === "todos" && poder() ? `<div class="tabs" role="group" aria-label="Registros o papelera"><button type="button" data-pap="0" aria-pressed="${!pap}">Registros</button><button type="button" data-pap="1" aria-pressed="${pap}">Papelera${S.papelera ? ` <span class="cnt">${S.papelera.length}</span>` : ""}</button></div>` : ""}
   ${colFil ? `<div class="rgrid"><aside class="card fcol" id="rFil" aria-label="Filtros">${colFiltros(fl, C, keysF, cual === "todos")}</aside><div class="rmain">` : ""}
-  <div class="tools"><input class="search" id="q" type="search" placeholder="Buscar N°, PK, tipo, frente…" value="${esc(fl.q)}" aria-label="Buscar">${cual === "mis" ? `<button type="button" class="mini wsp-btn" id="rWsp">${ICON_WSP}Resumen WhatsApp</button>` : ""}${pap && puedeAjustes() && datos.length ? '<button type="button" class="mini warn-mini" id="rVaciar">Vaciar papelera</button>' : ""}${!pap && vis.length ? `<button type="button" class="mini" id="rExp" title="Exporta a CSV lo que se ve con estos filtros">Exportar ${hayFiltro || sts.length ? "lo filtrado" : "lista"} (${vis.length})</button>` : ""}${cual === "todos" && !pap && puedeAjustes() ? `<button type="button" class="mini sup-btn" id="rSup" title="Abre Panel → Modelo 2D, donde se ven las superficies XML de las liberaciones">${ICON_SUP}Superficies (XML)</button>` : ""}</div>
+  <div class="tools"><input class="search" id="q" type="search" placeholder="Buscar N°, PK, tipo, frente…" value="${esc(fl.q)}" aria-label="Buscar">${cual === "mis" ? `<button type="button" class="mini wsp-btn" id="rWsp">${ICON_WSP}Resumen WhatsApp</button>` : ""}${pap && puedeAjustes() && datos.length ? '<button type="button" class="mini warn-mini" id="rVaciar">Vaciar papelera</button>' : ""}${!pap && vis.length ? `<button type="button" class="mini" id="rExp" title="Exporta a CSV lo que se ve con estos filtros">Exportar ${hayFiltro || sts.length ? "lo filtrado" : "lista"} (${vis.length})</button>` : ""}${puedeCol ? `<button type="button" class="mini" id="rFacT" aria-pressed="${colFil}" title="Muestra u oculta la columna de filtros">${colFil ? "Ocultar filtros" : `Filtros${activos.length ? ` (${activos.length})` : ""}`}</button>` : ""}${cual === "todos" && !pap && puedeAjustes() ? `<button type="button" class="mini sup-btn" id="rSup" title="Abre Panel → Modelo 2D, donde se ven las superficies XML de las liberaciones">${ICON_SUP}Superficies (XML)</button>` : ""}</div>
   ${pap || colFil ? "" : pcFil ? `<div class="rfil" id="rFil">${controlesReg(fl, cual, false)}${hayFiltro ? '<button type="button" class="btn-txt" id="rfX">Limpiar filtros</button>' : ""}</div>`
     : `<button type="button" class="fil-btn" id="rFilBtn" style="margin:0 0 8px;border-top:0;padding-top:0"><span class="fil-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg></span><b>${activos.length ? `${activos.length} ${activos.length === 1 ? "filtro" : "filtros"}` : "Filtrar por fecha, tipo, frente…"}</b>${CHEV}</button>${activos.length ? `<div class="fchips" id="rChips" style="margin-top:0">${activos.map(([k, t]) => `<button type="button" class="chip on" data-quitar="${k}" aria-label="Quitar filtro ${esc(t)}">${esc(t)}<span class="x" aria-hidden="true">✕</span></button>`).join("")}</div>` : ""}`}
+  ${puedeCol && activos.length ? `<div class="fchips fact" id="rChips"><span class="fact-n">${vis.length.toLocaleString("es-PE")} ${vis.length === 1 ? "registro" : "registros"} con</span>${activos.map(([k, t]) => `<button type="button" class="chip on" data-quitar="${k}" aria-label="Quitar filtro ${esc(t)}">${esc(t)}<span class="x" aria-hidden="true">✕</span></button>`).join("")}<button type="button" class="btn-txt" id="rfX2">Limpiar todo</button></div>` : ""}
   ${cargandoFecha ? '<p class="rf-nota">Buscando los registros de esas fechas…</p>' : porFecha && S.todosFechaLleno ? '<p class="rf-nota">Hay muchos registros en esas fechas; se muestran los 3000 más recientes. Acorta el rango para verlos todos.</p>' : ""}
   ${fl.fecha === "rango" && fl.f1 && fl.f2 && fl.f1 > fl.f2 ? '<p class="rf-nota">«Desde» era posterior a «Hasta»: se tomaron al revés.</p>' : ""}
   ${parcial ? `<p class="rf-nota" id="rParcial">Estos filtros revisan solo los últimos ${S.todos.length} registros. <button type="button" class="btn-txt" id="rHist">Buscar en todo el historial</button></p>` : ""}
@@ -3068,7 +3104,9 @@ function pintarLista(cual) {
   $("#rVaciar")?.addEventListener("click", () => borrarSiempre(datos, "Vaciar papelera"));
   // Filtros: en computadora se aplican al cambiar; en el celular, desde la hoja con «Aplicar»
   $("#rFil")?.addEventListener("change", e => { const k = e.target.dataset.rf; if (!k) return; fl[k] = e.target.value; if (k === "fecha") { if (fl.fecha === "dia" || fl.fecha === "rango") fl.f1 ||= hoyISO(); else { fl.f1 = ""; fl.f2 = ""; } } pintarLista(cual); });
-  $("#rfX")?.addEventListener("click", () => { CAMPOS_RF.forEach(k => { fl[k] = ""; }); fl.st = ""; fl.q = ""; fl.hist = false; fl.lote = ""; fl.ord = ""; S._loteId = ""; pintarLista(cual); });
+  const limpiarR = () => { CAMPOS_RF.forEach(k => { fl[k] = ""; }); fl.st = ""; fl.q = ""; fl.hist = false; fl.lote = ""; fl.ord = ""; S._loteId = ""; pintarLista(cual); };
+  $("#rfX")?.addEventListener("click", limpiarR); $("#rfX2")?.addEventListener("click", limpiarR);
+  $("#rFacT")?.addEventListener("click", () => { ls.set("lib.facOff", !ls.get("lib.facOff", false)); pintarLista(cual); });
   $("#rFilBtn")?.addEventListener("click", () => abrirFiltrosReg(cual));
   $("#rChips")?.addEventListener("click", e => { const c = e.target.closest("[data-quitar]"); if (!c) return; const k = c.dataset.quitar; if (k === "fecha") { fl.fecha = ""; fl.f1 = ""; fl.f2 = ""; fl.fc = ""; } else fl[k] = ""; pintarLista(cual); });
   const lista = $("#lista");
@@ -4349,6 +4387,7 @@ function conectarZoomPlanta(svg, W, H) {
   if (P.plVB) poner();
 }
 DESK.addEventListener("change", () => { if (!S.dentro) return; if (S.view === "nueva") leerCampos(); pintarNav(); render(); });
+MEDIO.addEventListener("change", () => { if (S.dentro && ["todos", "bandeja"].includes(S.view)) render(); });
 let rzT; addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(() => { if (S.view === "panel" && ($("#chart") || $("#mBody"))) actualizarPanel(); }, 150); });
 
 /* ---------- Modelo 2D (solo gabinete): eje y secciones de Civil 3D + la superficie de cada liberación ----------
@@ -5234,7 +5273,7 @@ function colorSup(x) { const r = registroDe(x.codigo); return r ? COLOR[r.estado
 function rellenoSup(x) { const r = registroDe(x.codigo); return r?.estado === "OB" ? "url(#obs)" : colorSup(x); }
 function pintarModelo() {
   const P = S.panel, lista = subsConDatos();
-  P.mFull ??= ls.get("lib.mFull", false); document.body.classList.toggle("m-full", !!P.mFull && enPC());
+  P.mFull ??= ls.get("lib.mFull", false); P.mSinLat ??= ls.get("lib.mSinLat", false); document.body.classList.toggle("m-full", !!P.mFull && enPC()); document.body.classList.toggle("m-sinlat", !!P.mSinLat);
   const grupos = S.listas.estructuras.filter(e => e.activo !== false).map(e => `<optgroup label="${esc(e.nombre)}">${(e.subs || []).filter(s => s.activo !== false).map(s => `<option value="${esc(s.id)}" ${s.id === P.subId ? "selected" : ""}>${esc(s.nombre)}</option>`).join("")}</optgroup>`).join("");
   $("#view").innerHTML = `<div id="mRoot">
   <h1 class="view-title">Panel</h1>
@@ -5244,7 +5283,7 @@ function pintarModelo() {
   <div class="card chartbox">
     <div class="chart-h">
       <div class="tabs" style="margin:0" role="group" aria-label="Vista">${tabsPanel()}</div>
-      <div class="pl-ctl">${enPC() ? `<button type="button" class="mini" data-full aria-pressed="${!!P.mFull}" title="Tecla F">${P.mFull ? "Salir de pantalla completa" : "Pantalla completa"}</button>` : ""}<label class="mini eje"><input type="file" id="mFile" accept=".xml" multiple hidden>Subir XML</label><input type="file" id="mBaseFile" accept=".xml" hidden></div>
+      <div class="pl-ctl">${enPC() && P.mFull ? `<button type="button" class="mini" data-lat aria-pressed="${!P.mSinLat}" title="Muestra u oculta el frente, la capa y la lista de capas (tecla C)">${P.mSinLat ? "Mostrar capas" : "Ocultar capas"}</button>` : ""}${enPC() ? `<button type="button" class="mini" data-full aria-pressed="${!!P.mFull}" title="Tecla F">${P.mFull ? "Salir de pantalla completa" : "Pantalla completa"}</button>` : ""}<label class="mini eje"><input type="file" id="mFile" accept=".xml" multiple hidden>Subir XML</label><input type="file" id="mBaseFile" accept=".xml" hidden></div>
     </div>
     <div id="mBody"><div class="empty"><b>Cargando modelo…</b></div></div>
   </div>
@@ -5264,6 +5303,7 @@ function pintarModelo() {
     if (e.target.closest("#mSec")) return;
     const mo = e.target.closest("[data-modo]"); if (mo) { P.mModo = mo.dataset.modo; ls.set("lib.mModo", P.mModo); P.mVB = null; dibujarModelo(); return; }
     if (e.target.closest("[data-full]")) { pantallaCompleta(!P.mFull); return; }
+    if (e.target.closest("[data-lat]")) { alternarLateral(); return; }
     const ch = e.target.closest("[data-dis]"); if (ch) { alternarSupDiseno(+ch.dataset.dis); return; }
     if (e.target.closest("[data-supcfg]")) { editarSupsDiseno(); return; }
     if (e.target.closest("[data-medir]")) { herramientaMedir(P.sHerr !== "medir"); return; }
@@ -5448,10 +5488,11 @@ function redibujarGraficos() {
   if (P.mModo === "real") { P.mVB = null; dibujarPlantaReal(); } else { const a = $("#mPlan")?._a; if (a) dibujarPlanModelo(...a); }
   dibujarSeccion();
 }
+function alternarLateral() { const P = S.panel; P.mSinLat = !P.mSinLat; ls.set("lib.mSinLat", P.mSinLat); document.body.classList.toggle("m-sinlat", P.mSinLat); P.mVB = null; pintarModelo(); }
 function pantallaCompleta(on) {
   const P = S.panel; P.mFull = !!on; ls.set("lib.mFull", P.mFull); document.body.classList.toggle("m-full", P.mFull && enPC());
   const b = document.querySelector("#mRoot [data-full]"); if (b) { b.textContent = P.mFull ? "Salir de pantalla completa" : "Pantalla completa"; b.setAttribute("aria-pressed", P.mFull); }
-  P.mVB = null; scrollTo(0, 0); dibujarModelo();
+  P.mVB = null; scrollTo(0, 0); pintarModelo();
 }
 function conectarDivisor(el) {
   if (!el) return; const P = S.panel;
@@ -5621,6 +5662,7 @@ addEventListener("keydown", e => {
   const P = S.panel, k = e.key.toLowerCase();
   if (e.key === "ArrowLeft" || e.key === "ArrowRight") { const b = document.querySelector(`#mBody [data-mst="${e.key === "ArrowLeft" ? "-" : "+"}"]`); if (b) { e.preventDefault(); b.click(); } }
   else if (k === "f" && enPC()) pantallaCompleta(!P.mFull);
+  else if (k === "c" && enPC() && P.mFull) alternarLateral();
   else if (k === "m" && $("#mSec")) herramientaMedir(P.sHerr !== "medir");
   else if (e.key === "Escape") { if (P.sHerr === "medir") herramientaMedir(false); else if (P.mFull && enPC()) pantallaCompleta(false); }
 });
@@ -6278,7 +6320,7 @@ function pintarBandeja() {
   const pasaB = r => KB.every(k => pasaFac(F, k, r));
   let vis = fuente.filter(r => pasaB(r) && coincide(r, q))
     .sort((a, b) => (toDate(t === "EP" ? fB(b) : fB(a))?.getTime() || 0) - (toDate(t === "EP" ? fB(a) : fB(b))?.getTime() || 0));
-  const pcB = tablaPC(), colFil = pcB && innerWidth >= 1200, C = pcB ? contarFac(fuente.filter(r => coincide(r, q)), F, KB) : {}, nFil = KB.filter(k => lstF(F[k]).length).length;
+  const pcB = tablaPC(), puedeCol = pcB && innerWidth >= 1200, colFil = puedeCol && !ls.get("lib.facOff", false), C = pcB ? contarFac(fuente.filter(r => coincide(r, q)), F, KB) : {}, nFil = KB.filter(k => lstF(F[k]).length).length;
   const COLB = { ...(t === "EP" ? { cod: { t: "Código", k: r => numDe(r.numero) } } : {}), lib: { t: "Liberación", az: true, k: r => `${nom(L.tipo(r.tipoId)) || nom(L.act(r.actividad), r.actividad) || ""} ${capaDe(r)}`, fk: ["tipo", "capa"] },
     fr: { t: "Frente", az: true, k: r => nom(L.sub(r.subestructuraId)) || "", fk: ["sub"] }, pk: { t: "Progresiva", k: r => r.pkInicio ?? 1e12 },
     fe: { t: t === "EP" ? "Aceptada y topógrafo" : "Fecha y topógrafo", k: r => toDate(fB(r))?.getTime() || 0, fk: ["topo"] } };
@@ -6294,8 +6336,8 @@ function pintarBandeja() {
   <div class="tools"><input class="search" id="bq" type="search" placeholder="Buscar N°, PK, tipo, frente, topógrafo…" value="${esc(B.q)}" aria-label="Buscar">
     ${colFil ? "" : `<select id="bFr" aria-label="Frente" class="bsel">${opcionesFrente(lstF(F.sub).length === 1 ? F.sub : "", lstF(F.sub).length > 1 ? `${lstF(F.sub).length} frentes` : "Todos los frentes")}</select>
     <select id="bTopo" aria-label="Topógrafo" class="bsel"><option value="">${lstF(F.topo).length > 1 ? `${lstF(F.topo).length} topógrafos` : "Todos los topógrafos"}</option>${S.listas.topografos.filter(x => x.activo !== false).map(x => `<option value="${esc(x.id)}" ${F.topo === x.id ? "selected" : ""}>${esc(x.id)} · ${esc(x.nombre)}</option>`).join("")}</select>`}
-    ${nFil || B.q ? '<button type="button" class="btn-txt" id="bLimpiar">Limpiar</button>' : ""}</div>
-  ${nFil && fuente.length !== vis.length ? `<p class="rf-nota">${vis.length} de ${fuente.length} con estos filtros.</p>` : ""}
+    ${puedeCol ? `<button type="button" class="mini" id="bFacT" aria-pressed="${colFil}">${colFil ? "Ocultar filtros" : `Filtros${nFil ? ` (${nFil})` : ""}`}</button>` : ""}${nFil || B.q ? '<button type="button" class="btn-txt" id="bLimpiar">Limpiar</button>' : ""}</div>
+  ${nFil && puedeCol ? `<div class="fchips fact" id="bChips"><span class="fact-n">${vis.length} de ${fuente.length} con</span>${KB.filter(k => lstF(F[k]).length).map(k => `<button type="button" class="chip on" data-bquitar="${k}" aria-label="Quitar filtro ${esc(FAC[k].t)}">${esc(FAC[k].t)}: ${esc(lstF(F[k]).map(v => FAC[k].n(v) || v).join(" o "))}<span class="x" aria-hidden="true">✕</span></button>`).join("")}</div>` : nFil && fuente.length !== vis.length ? `<p class="rf-nota">${vis.length} de ${fuente.length} con estos filtros.</p>` : ""}
   ${t === "EP" && B.errEP ? `<p class="pinfo" style="margin:0 0 12px">${esc(B.errEP)}</p>` : ""}
   <div class="cap-bulk ${ns ? "on" : ""}" id="bBulk"><label class="ck" style="margin-right:4px"><input type="checkbox" id="bAll" ${vis.length && vis.slice(0, lim).every(r => B.sel.has(r.id)) ? "checked" : ""} aria-label="Seleccionar todo"></label><span><b>${ns}</b> ${ns === 1 ? "seleccionada" : "seleccionadas"}</span>
     ${t === "EP" ? `<button type="button" class="mini ok-btn" data-bk="entregar">Entregar a Calidad</button><button type="button" class="mini" data-bk="exportar">Exportar CSV</button>` : `<button type="button" class="mini ok-btn" data-bk="aceptar">Aceptar y generar códigos</button><button type="button" class="mini" data-bk="observar">Observar</button>${t === "OB" ? '<button type="button" class="mini" data-bk="reabrir">Devolver a pendientes</button>' : ""}<button type="button" class="mini" data-bk="exportar">Exportar CSV</button>`}<button type="button" class="mini" data-bk="limpiar">Deseleccionar</button>${t === "EP" ? "" : '<button type="button" class="mini warn-mini aparte" data-bk="rechazar">Rechazar</button><button type="button" class="mini warn-mini" data-bk="papelera">Mandar a la papelera</button>'}</div>
@@ -6315,6 +6357,8 @@ function pintarBandeja() {
   $(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-bt]"); if (b) { B.tab = b.dataset.bt; B.sel.clear(); B.ver = 60; B.cur = ""; guardarBandeja(); pintarBandeja(); } });
   buscadorDiferido($("#bq"), v => { B.q = v; }, pintarBandeja, () => S.view === "bandeja");
   $("#bFr")?.addEventListener("change", e => { F.sub = e.target.value; guardarBandeja(); pintarBandeja(); });
+  $("#bFacT")?.addEventListener("click", () => { ls.set("lib.facOff", !ls.get("lib.facOff", false)); pintarBandeja(); });
+  $("#bChips")?.addEventListener("click", e => { const c = e.target.closest("[data-bquitar]"); if (c) { F[c.dataset.bquitar] = ""; guardarBandeja(); pintarBandeja(); } });
   $("#bTopo")?.addEventListener("change", e => { F.topo = e.target.value; guardarBandeja(); pintarBandeja(); });
   $("#bLimpiar")?.addEventListener("click", () => { KB.forEach(k => { F[k] = ""; }); F.ord = ""; B.q = ""; guardarBandeja(); pintarBandeja(); });
   const visLim = vis.slice(0, lim);
@@ -6661,7 +6705,8 @@ function ajLugares() {
     <div class="addrow"><input id="eNew" placeholder="Ej.: Presa Auxiliar Sur" maxlength="60" aria-label="Nombre de la estructura nueva"><button type="button" class="mini ok-btn" id="eAdd">Agregar estructura</button></div>
     <p class="muted small" style="margin:8px 0 6px">Se crea con un frente del mismo nombre; puedes renombrarlo o agregar más.</p></div>`;
   const body = $("#ajBody");
-  body.querySelectorAll(".card.est[data-e]").forEach(c => plegarLista(c, { clave: "lu:" + c.dataset.e, cab: ".est-h", filas: ":scope > .srow:not(.head)", extra: ":scope > .srow.head, :scope > .addrow", n: 6, buscando: !!A.luQ.trim(), nombre: c.querySelector(".est-h input")?.value }));
+  if (!A.luQ.trim() && innerWidth >= 1200) maestroDetalle(body, ":scope > .card.est[data-e]", c => c.dataset.e, c => ({ nombre: c.querySelector(".est-h input")?.value || "", sub: c.querySelector(".est-h .lu-uso")?.textContent || "", n: c.querySelectorAll(":scope > .srow:not(.head)").length, off: c.classList.contains("off-row") }), "luSel", "Nueva estructura");
+  else body.querySelectorAll(".card.est[data-e]").forEach(c => plegarLista(c, { clave: "lu:" + c.dataset.e, cab: ".est-h", filas: ":scope > .srow:not(.head)", extra: ":scope > .srow.head, :scope > .addrow", n: 6, buscando: !!A.luQ.trim(), nombre: c.querySelector(".est-h input")?.value }));
   const lq = $("#luQ"); if (lq) buscadorDiferido(lq, v => { S.aj.luQ = v; }, () => ajLugares(), () => S.view === "ajustes" && S.aj.tab === "lugares");
   $("#luOff")?.addEventListener("change", e => { S.aj.luOff = e.target.checked; ajLugares(); });
   body.addEventListener("change", e => {
@@ -7806,7 +7851,8 @@ function plegarLista(card, o) {
   const N = U._n ||= {}; if (!o.buscando) { if (N[o.clave] != null && filas0 > N[o.clave]) U[o.clave] = "todo"; N[o.clave] = filas0; ls.set("lib.plg", U); }
   const st = U[o.clave] || (o.cerrado0 ? "cerrado" : "");
   const filas = [...card.querySelectorAll(o.filas)], cerrado = st === "cerrado" && !o.buscando, todo = st === "todo" || o.buscando;
-  filas.forEach((f, i) => { f.hidden = cerrado || (!todo && i >= n); });
+  filas.forEach((f, i) => { const h = cerrado || (!todo && i >= n); if (f.hidden && !h && card._plgVisto) { f.classList.remove("plg-in"); void f.offsetWidth; f.classList.add("plg-in"); } f.hidden = h; });
+  card._plgVisto = true;
   (o.extra ? [...card.querySelectorAll(o.extra)] : []).forEach(x => { x.hidden = cerrado; });
   card.classList.toggle("plg-cerrado", cerrado);
   const cab = o.cab ? card.querySelector(o.cab) : null;
@@ -7820,6 +7866,31 @@ function plegarLista(card, o) {
     e.stopPropagation(); const U2 = ls.get("lib.plg", {}), o2 = card._plg, act = U2[o2.clave] || (o2.cerrado0 ? "cerrado" : "");
     U2[o2.clave] = x ? (act === "cerrado" ? "" : "cerrado") : (act === "todo" ? "" : "todo"); ls.set("lib.plg", U2); plegarLista(card, o2);
   }, true);
+}
+/* Pantalla ancha: arma una lista de grupos a la izquierda y deja a la derecha solo el grupo elegido (completo).
+   «nuevo»: título de la tarjeta para crear un grupo (va al final de la lista); «extra»/«extraT»: otra tarjeta suelta. */
+function maestroDetalle(cont, selCards, idDe, info, clave, nuevo, extra, extraT) {
+  if (!cont) return;
+  const A = S.aj, cards = [...cont.querySelectorAll(selCards)]; if (!cards.length) return;
+  const todas = [...cont.querySelectorAll(":scope > .card")], nueva = todas.find(c => !cards.includes(c) && c.textContent.includes(nuevo)), ex = extra ? $(extra) : null;
+  const ids = cards.map(idDe), item = (id, i) => { const x = info(cards[i]); return `<button type="button" class="md-i ${x.off ? "off" : ""}" data-md="${esc(id)}"><b title="${esc(x.nombre)}">${esc(x.nombre)}</b><span class="c">${x.n}</span><small>${esc(x.sub)}</small></button>`; };
+  // Un grupo recién creado (que no estaba la vez anterior) queda elegido para que se vea
+  const antes = A[clave + "Ids"]; A[clave + "Ids"] = ids;
+  const recien = antes ? ids.filter(id => !antes.includes(id)) : []; if (recien.length === 1) A[clave] = recien[0];
+  if (!ids.includes(A[clave]) && !["_nuevo", "_extra"].includes(A[clave])) A[clave] = ids[0];
+  const wrap = document.createElement("div"); wrap.className = "md-wrap";
+  wrap.innerHTML = `<nav class="card md-idx" aria-label="Grupos">${ids.map(item).join("")}<div class="md-sep"></div>${nueva ? `<button type="button" class="md-i" data-md="_nuevo"><b>+ ${esc(nuevo)}</b></button>` : ""}${ex ? `<button type="button" class="md-i" data-md="_extra"><b>${esc(extraT)}</b></button>` : ""}</nav><div class="md-det"></div>`;
+  cards[0].before(wrap); const det = wrap.querySelector(".md-det");
+  [...cards, nueva, ex].filter(Boolean).forEach(c => det.appendChild(c));
+  const mostrar = () => {
+    const sel = A[clave];
+    cards.forEach((c, i) => { c.hidden = ids[i] !== sel; });
+    if (nueva) nueva.hidden = sel !== "_nuevo"; if (ex) ex.hidden = sel !== "_extra";
+    wrap.querySelectorAll("[data-md]").forEach(b => b.setAttribute("aria-current", b.dataset.md === sel));
+    const vis = [...det.children].find(c => !c.hidden); if (vis) { vis.style.animation = "none"; void vis.offsetWidth; vis.style.animation = ""; }
+  };
+  wrap.querySelector(".md-idx").addEventListener("click", e => { const b = e.target.closest("[data-md]"); if (!b) return; A[clave] = b.dataset.md; mostrar(); if (b.dataset.md === "_nuevo") nueva?.querySelector("input")?.focus(); });
+  mostrar();
 }
 function ajTipos() {
   cuerpoAj();
@@ -7883,7 +7954,8 @@ function ajTipos() {
   }
   $("#ajBody").innerHTML = `${nuevos}${seg}${cuerpo}`;
   const buscTy = !!A.tyQ.trim();
-  document.querySelectorAll("#tyList > .tycard").forEach(c => { const g = c.querySelector(".tygrp"); plegarLista(c, { clave: "ty:" + (g?.dataset.e || ""), cab: ".tygrp", filas: ":scope > .tyrow", extra: ":scope > .ty-add2", n: 8, buscando: buscTy, nombre: g?.querySelector("input")?.value || "Sin elemento" }); });
+  if (A.tyVista !== "ord" && !buscTy && innerWidth >= 1200) maestroDetalle($("#tyList"), ":scope > .tycard", c => c.querySelector(".tygrp")?.dataset.e ?? "", c => { const g = c.querySelector(".tygrp"); return { nombre: g?.querySelector("input")?.value || "Sin elemento", sub: g?.querySelector(".muted")?.textContent || "", n: c.querySelectorAll(":scope > .tyrow").length, off: g?.classList.contains("off-row") }; }, "tySel", "Nuevo elemento", "#eqList", "Equipos");
+  else document.querySelectorAll("#tyList > .tycard").forEach(c => { const g = c.querySelector(".tygrp"); plegarLista(c, { clave: "ty:" + (g?.dataset.e || ""), cab: ".tygrp", filas: ":scope > .tyrow", extra: ":scope > .ty-add2", n: 8, buscando: buscTy, nombre: g?.querySelector("input")?.value || "Sin elemento" }); });
   plegarLista($("#eqList"), { clave: "equipos", filas: ':scope > .trow[data-q]', n: 6 });
   const EQ = $("#eqList");
   EQ?.addEventListener("change", e => { if (e.target.dataset.k !== "qnom") return; const items = clon(S.listas.equipos || []), x = items[+e.target.closest("[data-q]").dataset.q], v = capital(e.target.value); if (!x || !v) { ajTipos(); return; } x.nombre = v; guardarLista("equipos", items, "Equipo guardado"); });

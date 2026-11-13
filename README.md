@@ -11,6 +11,19 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 35: revisión de computadora (media pantalla y pantalla completa)
+
+No cambia las reglas de Firebase. El celular y «Mis registros» quedan igual.
+
+- **Media pantalla** (ventana partida, desde 860 px): Registros y Bandeja ya no se ven como en el celular. Tabla compacta con los filtros de siempre en una fila (fecha, tipo, frente, topógrafo, actividad, equipo, capa).
+- **Registros y Bandeja en pantalla completa:**
+  - Los filtros puestos se ven sobre la tabla, con cuántos registros quedan, y cada uno se quita con su ✕.
+  - «Ocultar filtros» deja la tabla a todo lo ancho (se recuerda) y «Filtros (N)» la vuelve a mostrar.
+  - La cabecera de la tabla queda fija al bajar por la lista.
+- **Ajustes en pantalla ancha:** Tipos y Lugares pasan a lista y detalle. A la izquierda los elementos (o estructuras) con su número; a la derecha el elegido completo, sin desplegables. «+ Nuevo elemento», «+ Nueva estructura» y «Equipos» están en la misma lista. Al buscar se ven todos los grupos que coinciden.
+- **Ajustes a media pantalla:** siguen los desplegables, ahora con una animación suave al abrir.
+- **Modelo 2D:** los filtros de la lista de capas se leen completos. En pantalla completa, «Ocultar capas» (tecla C) quita la columna izquierda y el modelo usa todo el ancho.
+
 ## Versión 34: Panel en computadora y listas desplegables en Ajustes
 
 No cambia las reglas de Firebase. El celular queda igual.
