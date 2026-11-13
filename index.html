@@ -1432,7 +1432,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 30;
+const VERSION_APP = 31;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -6520,7 +6520,9 @@ function emparejarImp(I) {
     const x = { raw, n, sug, ele: eleRaw }; I.lect.tipo.push(x); if (!t && !I.pares.tipo[raw]) I.faltan.tipo.push(x); });
   // Registros finales, con los ids de las listas (lo elegido a mano gana a lo emparejado solo)
   const usados = new Set(S.listas.tipos.map(t => t.id)); I.tiposNuevos = [];
+  // «Crear el tipo»: si ya existe uno con ese nombre en el mismo elemento (por ejemplo, creado en la importación anterior), se usa ese
   const tipoNuevo = raw => { let t = I.tiposNuevos.find(x => x.nombre === raw); if (!t) { const ej = I.crudos.find(r => r._tipo === raw), el = S.listas.elementos.find(e => igual(e.nombre, ej?._ele || "")) || S.listas.elementos[0];
+    const ya = S.listas.tipos.find(x => igual(x.nombre, raw) && x.elementoId === (el?.id || "")); if (ya) return ya;
     t = { id: nuevoId(raw, usados), nombre: raw, elementoId: el?.id || "", enGrafico: false }; usados.add(t.id); I.tiposNuevos.push(t); } return t; };
   I.subDe = raw => I.pares.sub[raw] || I.auto.sub[raw] || ""; I.tipoDe = raw => I.pares.tipo[raw] || I.auto.tipo[raw] || "";
   I.regs = I.crudos.map(r => {

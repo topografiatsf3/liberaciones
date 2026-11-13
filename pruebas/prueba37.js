@@ -88,6 +88,9 @@ const viejo = (n, extra = {}) => ({ numero: 'SKT-TOP-0' + n, actividad: 'LIB', e
   await p.click('#hImp');
   await p.waitForFunction(() => /Listo/.test(document.querySelector('#hEst').textContent), null, { timeout: 30000 });
   ok(true, (await p.textContent('#hEst')).trim());
+  await p.waitForSelector('#hCuenta');
+  const tras = (await p.textContent('#hCuenta')).replace(/\s+/g, ' ');
+  ok(/0 nuevos/.test(tras) && /0 se actualizan/.test(tras), 'después de importar, el mismo archivo ya no tiene nada que escribir (el tipo creado no se vuelve a crear): ' + tras.trim());
   const s1 = await st(), L1 = s1['config/importaciones'].items;
   ok(L1.length === 1 && L1[0].nombre === 'Mes de prueba 1' && L1[0].n === 9, 'queda la importación «Mes de prueba 1» con 9 registros');
   const lote1 = L1[0].id, r = id => s1['liberaciones/' + id];
