@@ -321,6 +321,16 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
   .up .upbtn{min-height:50px;font-size:14px}
 }
 .hist-box{display:flex;flex-direction:column;gap:10px}
+.imp-par{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:6px 12px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.imp-par b{overflow-wrap:anywhere}.imp-par select{width:100%;min-width:0}
+@media (max-width:560px){.imp-par{grid-template-columns:1fr}}
+.imp-notas{margin:0;padding-left:18px;font-size:13px;line-height:1.5}.imp-notas li{margin:2px 0}
+.imp-dif summary{cursor:pointer;font-weight:600;font-size:13.5px;min-height:32px;display:flex;align-items:center}
+.imp-dif .twrap{max-height:320px;overflow:auto}
+.imp-lote{display:flex;gap:8px 12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)}
+.imp-lote>div:first-child{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 260px}.imp-lote .small{overflow-wrap:anywhere}
+.imp-acc{display:flex;gap:6px;flex-wrap:wrap}
+#view > .pinfo.imp-ver{display:flex;gap:8px 12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .prog{height:10px;border-radius:4px;background:var(--surface-2);overflow:hidden}
 .prog i{display:block;height:100%;width:0;background:var(--accent);border-radius:4px;transition:width .3s}
 .kpis{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13.5px}
@@ -1152,7 +1162,7 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, getDoc, getDocs, getDocsFromServer, runTransaction, setDoc, deleteField, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit, writeBatch, serverTimestamp, Timestamp, waitForPendingWrites } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, getDoc, getDocs, getDocsFromServer, getDocFromServer, runTransaction, setDoc, deleteField, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit, writeBatch, serverTimestamp, Timestamp, waitForPendingWrites } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
 window.__arranco = true;
 // Colores leídos de las variables de DESIGN.md (así el gráfico y el plano usan los mismos que el CSS)
@@ -1422,7 +1432,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 29;
+const VERSION_APP = 30;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2585,7 +2595,7 @@ const FECHAS_RF = [["", "Todas"], ["hoy", "Hoy"], ["ayer", "Ayer"], ["sem", "Est
 const FECHA_CAMPO = { "": ["fechaCampo", "Fecha de liberación"], lib: ["fechaLiberacion", "Fecha de entrega"], ent: ["fechaEntrega", "Entrega a Calidad"] };
 const campoFecha = fl => (FECHA_CAMPO[fl.fc || ""] || FECHA_CAMPO[""])[0];
 // Filtros de Registros y Mis registros que se recuerdan al recargar (por persona; la búsqueda escrita no)
-const guardarFiltros = () => { const q = x => { const { q: _q, pap, hist, ...resto } = x; return resto; }; ls.set("lib.filtros." + S.email, { mis: q(S.filtro.mis), todos: q(S.filtro.todos) }); };
+const guardarFiltros = () => { const q = x => { const { q: _q, pap, hist, lote, ...resto } = x; return resto; }; ls.set("lib.filtros." + S.email, { mis: q(S.filtro.mis), todos: q(S.filtro.todos) }); };
 function cargarFiltros() { const g = ls.get("lib.filtros." + S.email, null); if (!g) return; S.filtro.mis = { ...S.filtro.mis, ...g.mis, q: "" }; S.filtro.todos = { ...S.filtro.todos, ...g.todos, q: "", pap: false, hist: false }; }
 const isoAFecha = t => { if (!t) return null; const [y, m, d] = t.split("-").map(Number); return y ? new Date(y, m - 1, d) : null; };
 const dd = d => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
@@ -2684,13 +2694,18 @@ function pintarLista(cual) {
   CAMPOS_RF.forEach(k => { fl[k] ??= ""; });
   if (!pap) guardarFiltros();
   if (pap) suscribirPapelera();
-  const porFecha = cual === "todos" && !pap && !!rangoFecha(fl);
-  if (cual === "todos") suscribirFechaTodos(pap ? {} : fl);
-  const cargandoFecha = porFecha && !S.todosFecha;
+  // «Ver registros» de una importación (Ajustes → Histórico): solo los de esa carga
+  const loteF = cual === "todos" && !pap && fl.lote ? fl.lote : "";
+  if (loteF && S._loteId !== loteF) { S._loteId = loteF; S.loteRegs = null;
+    cargarLote(loteF).then(rs => { if (S._loteId !== loteF) return; S.loteRegs = rs.filter(vivo).sort((a, b) => numDe(b.numero) - numDe(a.numero)); if (S.view === "todos") pintarLista("todos"); })
+      .catch(e => { toast("No se pudo cargar la importación: " + e.message, "bad"); S.loteRegs = []; if (S.view === "todos") pintarLista("todos"); }); }
+  const porFecha = cual === "todos" && !pap && !loteF && !!rangoFecha(fl);
+  if (cual === "todos") suscribirFechaTodos(pap || loteF ? {} : fl);
+  const cargandoFecha = (porFecha && !S.todosFecha) || (loteF && !S.loteRegs);
   // «Buscar en todo el historial»: sin fechas, aplica los filtros al resumen completo (no solo a los últimos 100)
-  const hist = cual === "todos" && !pap && !porFecha && fl.hist && poder();
+  const hist = cual === "todos" && !pap && !porFecha && !loteF && fl.hist && poder();
   if (hist) cargarTodoResumen();
-  const base = pap ? S.papelera || [] : cual === "mis" ? S.mis : porFecha ? S.todosFecha || [] : hist ? mezclarHist() : S.todos;
+  const base = pap ? S.papelera || [] : cual === "mis" ? S.mis : loteF ? S.loteRegs || [] : porFecha ? S.todosFecha || [] : hist ? mezclarHist() : S.todos;
   const datos = pap ? base : base.filter(r => pasaFiltrosReg(fl, r));
   const activos = pap ? [] : activosReg(fl, cual), pcFil = enPC();
   const sel = S.selReg ||= new Set();
@@ -2707,7 +2722,7 @@ function pintarLista(cual) {
   const nPend = (cuenta.PT || 0) + (cuenta.OB || 0);
   const chips = [["", "Todos", ante.length], ...(nPend && (cuenta.OB || 0) && (cuenta.PT || 0) ? [["PT,OB", "Pendientes + observados", nPend]] : []), ...["PT", "EP", "EC", "OB", "RE", "NA"].map(k => [k, ESTADOS[k], cuenta[k] || 0]), ...Object.keys(SEGUIM).map(k => [k, SEGUIM[k][1], cuenta[k] || 0])].filter(c => c[0] === "" || c[2] > 0 || c[0] === fl.st);
   const tabla = tablaPC(), ns = sel.size, selRegs = vis.filter(r => sel.has(r.id));
-  const parcial = cual === "todos" && !pap && !porFecha && !hist && S.todosLleno && (activos.length || qs.length) && poder();
+  const parcial = cual === "todos" && !pap && !porFecha && !hist && !loteF && S.todosLleno && (activos.length || qs.length) && poder();
   const hayFiltro = activos.length || qs.length;
   const vacio = `<div class="empty card"><b>${pap ? (S.papelera ? "La papelera está vacía" : "Cargando papelera…") : datos.length ? "Nada coincide con el filtro" : cargandoFecha ? "Buscando…" : activos.length ? "No hay registros con esos filtros" : "Aún no hay registros"}</b>${pap ? (S.papelera ? "Lo que se borre aparecerá aquí y se podrá restaurar." : "") : datos.length ? "Prueba con otra búsqueda." : cual === "mis" ? "Lo que guardes en «Nueva» aparecerá aquí." : "Los registros de campo aparecerán aquí al instante."}</div>`;
   // La barra de acciones en grupo se arma aparte para actualizarla al marcar sin redibujar toda la lista
@@ -2728,6 +2743,7 @@ function pintarLista(cual) {
   ${cargandoFecha ? '<p class="rf-nota">Buscando los registros de esas fechas…</p>' : porFecha && S.todosFechaLleno ? '<p class="rf-nota">Hay muchos registros en esas fechas; se muestran los 3000 más recientes. Acorta el rango para verlos todos.</p>' : ""}
   ${fl.fecha === "rango" && fl.f1 && fl.f2 && fl.f1 > fl.f2 ? '<p class="rf-nota">«Desde» era posterior a «Hasta»: se tomaron al revés.</p>' : ""}
   ${parcial ? `<p class="rf-nota" id="rParcial">Estos filtros revisan solo los últimos ${S.todos.length} registros. <button type="button" class="btn-txt" id="rHist">Buscar en todo el historial</button></p>` : ""}
+  ${loteF ? `<p class="pinfo aviso imp-ver" role="note"><span>Solo la importación <b>«${esc(nombreLote(loteF))}»</b>${S.loteRegs ? ` · ${S.loteRegs.length.toLocaleString("es-PE")} ${S.loteRegs.length === 1 ? "registro" : "registros"}` : " · cargando…"}</span><button type="button" class="btn-txt" id="rLoteX">Ver todos los registros</button></p>` : ""}
   ${hist ? `<p class="rf-nota">Buscando en todo el historial (datos resumidos: código, tipo, capa, PK, estado y fecha). <button type="button" class="btn-txt" id="rHistX">Volver a los últimos</button></p>` : ""}
   ${cual === "mis" && (cuenta.OB || 0) && !sts.includes("OB") ? `<div class="pinfo aviso mis-obs" role="note"><span><b>Tienes ${cuenta.OB === 1 ? "1 observado" : cuenta.OB + " observados"} por corregir.</b> ${cuenta.OB === 1 ? "Está primero" : "Están primero"} en la lista.</span><button type="button" class="btn-txt" id="rVerObs">Ver solo ${cuenta.OB === 1 ? "ese" : "esos"}</button></div>` : ""}
   ${pap ? "" : `<div class="chips" id="rSt" role="group" aria-label="Filtrar por estado (Ctrl o Mayús + clic para elegir varios)">${chips.map(([k, t, n]) => `<button type="button" class="chip" data-st="${k}" aria-pressed="${fl.st === k}">${esc(t)}<span class="c">${n}</span></button>`).join("")}</div>`}
@@ -2735,7 +2751,7 @@ function pintarLista(cual) {
   ${!vis.length ? vacio : tabla ? `<div class="card twrap"><table class="rtab" id="lista"><thead><tr><th class="ck"><input type="checkbox" id="rAll" ${vis.slice(0, lim).every(r => sel.has(r.id)) ? "checked" : ""} aria-label="Seleccionar todos"></th><th>Código y estado</th><th>Liberación</th><th>Frente</th><th>Progresiva</th>${thMas()}</tr></thead><tbody>${vis.slice(0, lim).map(filaT).join("")}</tbody></table></div><p class="nota-g">Clic derecho sobre una fila para ver sus acciones. Marca varias para trabajarlas juntas.</p>`
     : `<div class="list" id="lista">${vis.slice(0, lim).map((r, i) => conMas(tarjeta(r, i), r)).join("")}</div>`}
   ${cual === "mis" ? `<p class="ver-app" style="text-align:center;margin:18px 0 0">Versión ${VERSION_APP}</p>` : ""}
-  ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : cual === "todos" && !pap && !porFecha && !hist && S.todosLleno ? `<button class="btn sec more" id="bMasSrv" type="button">Cargar registros más antiguos</button>` : ""}`;
+  ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : cual === "todos" && !pap && !porFecha && !hist && !loteF && S.todosLleno ? `<button class="btn sec more" id="bMasSrv" type="button">Cargar registros más antiguos</button>` : ""}`;
   // Se redibuja cuando se deja de escribir (150 ms), no con cada letra
   $("#rWsp")?.addEventListener("click", () => abrirResumenWsp(vis, activos.length > 0 || !!fl.st || qs.length > 0));
   buscadorDiferido($("#q"), v => { fl.q = v; }, () => pintarLista(cual), () => S.view === cual);
@@ -2743,6 +2759,7 @@ function pintarLista(cual) {
   $("#rSup")?.addEventListener("click", () => irSuperficies());
   $("#rHist")?.addEventListener("click", () => { fl.hist = true; pintarLista(cual); });
   $("#rHistX")?.addEventListener("click", () => { fl.hist = false; pintarLista(cual); });
+  $("#rLoteX")?.addEventListener("click", () => { fl.lote = ""; S._loteId = ""; S.loteRegs = null; pintarLista(cual); });
   $("#rVerObs")?.addEventListener("click", () => { fl.st = "OB"; pintarLista(cual); });
   // Estado: un clic elige uno; con Ctrl o Mayús se suman varios
   $("#rSt")?.addEventListener("click", e => {
@@ -2755,7 +2772,7 @@ function pintarLista(cual) {
   $("#rVaciar")?.addEventListener("click", () => borrarSiempre(datos, "Vaciar papelera"));
   // Filtros: en computadora se aplican al cambiar; en el celular, desde la hoja con «Aplicar»
   $("#rFil")?.addEventListener("change", e => { const k = e.target.dataset.rf; if (!k) return; fl[k] = e.target.value; if (k === "fecha") { if (fl.fecha === "dia" || fl.fecha === "rango") fl.f1 ||= hoyISO(); else { fl.f1 = ""; fl.f2 = ""; } } pintarLista(cual); });
-  $("#rfX")?.addEventListener("click", () => { CAMPOS_RF.forEach(k => { fl[k] = ""; }); fl.st = ""; fl.q = ""; fl.hist = false; pintarLista(cual); });
+  $("#rfX")?.addEventListener("click", () => { CAMPOS_RF.forEach(k => { fl[k] = ""; }); fl.st = ""; fl.q = ""; fl.hist = false; fl.lote = ""; S._loteId = ""; pintarLista(cual); });
   $("#rFilBtn")?.addEventListener("click", () => abrirFiltrosReg(cual));
   $("#rChips")?.addEventListener("click", e => { const c = e.target.closest("[data-quitar]"); if (!c) return; const k = c.dataset.quitar; if (k === "fecha") { fl.fecha = ""; fl.f1 = ""; fl.f2 = ""; fl.fc = ""; } else fl[k] = ""; pintarLista(cual); });
   const lista = $("#lista");
@@ -6312,34 +6329,376 @@ function ajCapas() {
   });
 }
 
-/* ---------- Importar histórico (archivo preparado a partir del Excel de protocolos) ---------- */
+/* ---------- Importaciones: el Excel de protocolos, mes a mes ---------- */
+// Cada carga es una «importación» con nombre: sus registros llevan «lote» y se ven, se descargan o se quitan por separado.
+// Regla que cuida lo hecho en la app: nunca se escribe ni se borra un registro creado en la app (origen «app»),
+// ni uno importado que después se trabajó en la app (historial, archivos, XML, carpeta, papelera…).
+const IMP_CAMPOS = ["numero", "actividad", "descripcion", "estructuraId", "subestructuraId", "elementoId", "tipoId", "pkInicio", "pkFin", "cota", "capa", "area", "observaciones", "topografoId", "generadoPor", "estado", "numeroCargo", "fechaCampo", "fechaLiberacion", "fechaEntrega"];
+const IMP_ROTULO = { numero: "Código", actividad: "Actividad", descripcion: "Descripción", estructuraId: "Estructura", subestructuraId: "Frente", elementoId: "Elemento", tipoId: "Tipo", pkInicio: "PK inicio", pkFin: "PK final", cota: "Cota", capa: "Capa", area: "Superficie", observaciones: "Observaciones", topografoId: "Topógrafo", generadoPor: "Generado", estado: "Estado", numeroCargo: "N° entrega", fechaCampo: "Fecha de liberación", fechaLiberacion: "Fecha de entrega", fechaEntrega: "Entrega a Calidad" };
+const IMP_FECHAS = ["fechaCampo", "fechaLiberacion", "fechaEntrega"], IMP_NUMS = ["pkInicio", "pkFin", "area"];
+// Lote «~»: lo importado antes de la versión 30 (sin nombre). Lote «*»: todo lo importado
+const LOTE_VIEJO = "~", LOTE_TODO = "*";
+// Cambios que hace Ajustes en muchos registros a la vez (renombrar una capa, unir tipos…): no cuentan como trabajo sobre el registro
+const HIST_MANT = /^(Capa renombrada:|Frente «|Clave del topógrafo:|Tipo unido:|Unión deshecha:|Elemento unido:|Elemento del tipo «)/;
+const msDe = v => toDate(v)?.getTime() ?? null;
+const numDe = t => { const m = String(t ?? "").match(/(\d+)\s*$/); return m ? parseInt(m[1], 10) : 0; };
+// Un código del archivo vale si es solo número o lleva el prefijo de la obra («SKT-TOP-»); «SKT-GEO-00012» no es de aquí
+const codigoObra = t => { const x = String(t ?? "").toUpperCase().replace(/\s+/g, ""), pre = (S.config?.prefijo || "SKT-TOP-").toUpperCase().replace(/\s+/g, "").replace(/-+$/, "");
+  const m = x.match(/^(.*?)[-_ ]?0*(\d+)$/); if (!m || !parseInt(m[2], 10)) return 0; const p = m[1].replace(/-+$/, ""); return !p || p === pre ? parseInt(m[2], 10) : -1; };
+const claveCab = t => sinTilde(t).replace(/[^a-z0-9]+/g, "");
+const nombreLote = id => id === LOTE_VIEJO ? "Importado antes (sin nombre)" : id === LOTE_TODO ? "todo lo importado" : (S.lotes || []).find(x => x.id === id)?.nombre || "Importación";
+
+// Lee documentos por un campo con «in» (30 valores por consulta, 8 consultas a la vez)
+async function leerPorCampo(col, campo, valores) {
+  const out = [], gs = []; for (let i = 0; i < valores.length; i += 30) gs.push(valores.slice(i, i + 30));
+  for (let i = 0; i < gs.length; i += 8) (await Promise.all(gs.slice(i, i + 8).map(g => getDocsFromServer(query(collection(db, col), where(campo, "in", g)))))).forEach(s => s.docs.forEach(d => out.push(d)));
+  return out;
+}
+// Un importado «trabajado en la app»: tiene archivos, XML, carpeta, notas, protocolos, papelera… o algo en su historial
+const tocadoPorCampos = r => !!((r.archivos || []).length || (r.linksCsv || []).length || (r.linksFotos || []).length || (r.xmlEntrega || []).length || (r.protocolos || []).length
+  || r.carpeta || r.notaObservacion || r.notaRechazo || r.nombreLiberacion || r.motivoEdicion || r.borrado || r.visto || r.procesado);
+async function trabajadosEnApp(regs) {
+  const set = new Set(regs.filter(tocadoPorCampos).map(r => r.id));
+  const resto = regs.filter(r => !set.has(r.id)).map(r => r.id);
+  (await leerPorCampo("historial", "liberacionId", resto)).forEach(d => { const h = d.data(); if (!(h.accion === "editado" && HIST_MANT.test(h.nota || ""))) set.add(h.liberacionId); });
+  return set;
+}
+async function leerLotes() { const d = await getDocFromServer(doc(db, "config", "importaciones")); S.lotes = d.exists() ? d.data().items || [] : []; return S.lotes; }
+// Cambia la lista de importaciones dentro de una transacción (si otro la toca a la vez, se reintenta con lo nuevo)
+const editarLotes = fn => runTransaction(db, async t => { const ref = doc(db, "config", "importaciones"), d = await t.get(ref), items = fn(d.exists() ? d.data().items || [] : []).filter(Boolean);
+  t.set(ref, { items: clon(items), editadoEn: serverTimestamp(), editadoPor: S.email }); S.lotes = items; return items; });
+// Agrega a una lista (tipos, topógrafos) lo que falte, leyendo la lista en el momento: no pisa lo que otro agregó
+const agregarALista = (lista, nuevos) => runTransaction(db, async t => { const ref = doc(db, "listas", lista), d = await t.get(ref), items = d.exists() ? d.data().items || [] : [];
+  const add = nuevos.filter(n => !items.some(x => x.id === n.id)); if (!add.length) return items; const max = Math.max(0, ...items.map(x => x.orden || 0));
+  const todo = [...items, ...add.map((x, i) => lista === "tipos" ? { ...x, orden: max + i + 1 } : x)]; t.set(ref, { items: clon(todo), editadoEn: serverTimestamp(), editadoPor: S.email }); S.listas[lista] = clon(todo); return todo; });
+async function cargarLote(id) {
+  const col = collection(db, "liberaciones");
+  const snap = await getDocsFromServer(id === LOTE_VIEJO || id === LOTE_TODO ? query(col, where("origen", "==", "excel")) : query(col, where("lote", "==", id)));
+  const regs = snap.docs.map(fila);
+  return id === LOTE_VIEJO ? regs.filter(r => !r.lote) : regs;
+}
+// Cambios del resumen del panel juntos por documento (un envío por parte de frente, no uno por registro)
+function resumenLote() {
+  const m = {}, pon = (sid, k, id, v) => { (m[idRes(sid, k)] ||= {})[id] = v; };
+  return {
+    poner(id, d) { const k = parteRes(id); pon(d.subestructuraId, k, id, compacto(d)); if (k && !resRepartido()) pon(d.subestructuraId, 0, id, deleteField()); },
+    quitar(id, sid) { if (!sid) return; const k = parteRes(id); pon(sid, k, id, deleteField()); if (k && !resRepartido()) pon(sid, 0, id, deleteField()); },
+    a(b) { Object.entries(m).forEach(([rid_, r]) => b.set(doc(db, "resumen", rid_), { r }, { merge: true })); }
+  };
+}
+
+/* ----- Leer el archivo: Excel (.xlsx), CSV o el JSON de antes ----- */
+async function leerXlsx(file) {
+  const buf = new Uint8Array(await file.arrayBuffer()), dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength), td = new TextDecoder();
+  let p = buf.length - 22; while (p >= 0 && dv.getUint32(p, true) !== 0x06054b50) p--;
+  if (p < 0) throw new Error("no es un Excel .xlsx (si es .xls, ábrelo y guárdalo como .xlsx)");
+  const n = dv.getUint16(p + 10, true), ent = {}; let o = dv.getUint32(p + 16, true);
+  for (let i = 0; i < n && dv.getUint32(o, true) === 0x02014b50; i++) {
+    const nl = dv.getUint16(o + 28, true), el = dv.getUint16(o + 30, true), cl = dv.getUint16(o + 32, true);
+    ent[td.decode(buf.subarray(o + 46, o + 46 + nl))] = { met: dv.getUint16(o + 10, true), tam: dv.getUint32(o + 20, true), pos: dv.getUint32(o + 42, true) };
+    o += 46 + nl + el + cl;
+  }
+  const texto = async nombre => {
+    const e = ent[nombre]; if (!e) return "";
+    const ini = e.pos + 30 + dv.getUint16(e.pos + 26, true) + dv.getUint16(e.pos + 28, true), datos = buf.subarray(ini, ini + e.tam);
+    if (e.met === 0) return td.decode(datos);
+    if (e.met !== 8 || typeof DecompressionStream === "undefined") throw new Error("este navegador no puede abrir el Excel; usa Chrome o Edge actualizado");
+    return await new Response(new Blob([datos]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+  };
+  const xml = t => new DOMParser().parseFromString(t, "application/xml");
+  const ss = [...xml(await texto("xl/sharedStrings.xml") || "<sst/>").getElementsByTagName("si")].map(si => [...si.getElementsByTagName("t")].filter(t => t.parentNode.nodeName !== "rPh").map(t => t.textContent).join(""));
+  // Primera hoja del libro
+  let hoja = "xl/worksheets/sheet1.xml";
+  try {
+    const rid_ = xml(await texto("xl/workbook.xml")).getElementsByTagName("sheet")[0]?.getAttribute("r:id");
+    const rel = [...xml(await texto("xl/_rels/workbook.xml.rels")).getElementsByTagName("Relationship")].find(r => r.getAttribute("Id") === rid_)?.getAttribute("Target");
+    if (rel) { const t = rel.startsWith("/") ? rel.slice(1) : "xl/" + rel; if (ent[t]) hoja = t; }
+  } catch (_) {}
+  if (!ent[hoja]) throw new Error("el Excel no tiene hojas");
+  // La hoja del libro primero y después las demás (por si la primera es una portada)
+  const hojas = [hoja, ...Object.keys(ent).filter(k => /^xl\/worksheets\/[^/]+\.xml$/.test(k) && k !== hoja).sort()];
+  return hojas.map(h => () => filasHoja(h));
+  async function filasHoja(hoja) {
+  const filas = [];
+  for (const row of xml(await texto(hoja)).getElementsByTagName("row")) {
+    const f = []; let ci = 0;
+    for (const c of row.getElementsByTagName("c")) {
+      const ref = c.getAttribute("r"); if (ref) { let k = 0; for (const ch of ref.replace(/\d+/g, "")) k = k * 26 + ch.charCodeAt(0) - 64; ci = k - 1; }
+      const t = c.getAttribute("t"), v = c.getElementsByTagName("v")[0]?.textContent;
+      f[ci++] = t === "s" ? ss[+v] ?? "" : t === "inlineStr" ? [...c.getElementsByTagName("t")].map(x => x.textContent).join("") : t === "str" || t === "e" ? v ?? "" : t === "b" ? v === "1" : v != null && v !== "" ? Number(v) : null;
+    }
+    filas.push(f);
+  }
+  return filas;
+  }
+}
+function leerCsvTabla(txt) {
+  const t = txt.replace(/^﻿/, ""), sep = (t.split(/\r?\n/)[0].match(/;/g) || []).length > (t.split(/\r?\n/)[0].match(/,/g) || []).length ? ";" : ",";
+  const filas = []; let f = [], c = "", q = false;
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (q) { if (ch === '"') { if (t[i + 1] === '"') { c += '"'; i++; } else q = false; } else c += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === sep) { f.push(c); c = ""; }
+    else if (ch === "\n" || ch === "\r") { if (ch === "\r" && t[i + 1] === "\n") i++; f.push(c); c = ""; filas.push(f); f = []; }
+    else c += ch;
+  }
+  if (c || f.length) { f.push(c); filas.push(f); }
+  return filas;
+}
+// Fecha de una celda: número de serie de Excel, «2026-10-19» o «19/10/2026». Queda al mediodía (no se corre de día)
+function fechaTabla(v) {
+  if (v == null || v === "") return null;
+  let y, m, d, k;
+  if (typeof v === "number") { if (v < 20000 || v > 80000) return null; const u = new Date(Math.round((v - 25569) * 86400000)); y = u.getUTCFullYear(); m = u.getUTCMonth(); d = u.getUTCDate(); }
+  else { const s = String(v).trim();
+    if ((k = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/))) { y = +k[1]; m = k[2] - 1; d = +k[3]; }
+    else if ((k = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/))) { d = +k[1]; m = k[2] - 1; y = +k[3] < 100 ? 2000 + +k[3] : +k[3]; if (m > 11 && d <= 12) [d, m] = [m + 1, d - 1]; }
+    else if (/^\d+(\.\d+)?$/.test(s)) return fechaTabla(parseFloat(s));
+    else return null; }
+  if (m < 0 || m > 11 || d < 1 || d > 31) return null;
+  const f = new Date(y, m, d, 12); return f.getMonth() === m ? f.getTime() : null;
+}
+const capaDeTexto = t => { const m = String(t).match(/\bcapa\s*(?:n[°º.]?\s*)?[:.]?\s*(\d{1,3})\b/i); return m ? "Capa " + parseInt(m[1], 10) : ""; };
+const cotaDeTexto = t => { const m = String(t).match(/\bcota\s*[:.]?\s*(variable|\d{2,4}(?:[.,]\d+)?)/i); return m ? (/^v/i.test(m[1]) ? "Variable" : m[1].replace(",", ".")) : ""; };
+const IMP_CAB = { numero: ["nregistro", "noregistro", "registro", "codigo", "numero", "nprotocolo"], topo: ["keytopografo", "topografo"], descripcion: ["descripcion"],
+  pki: ["kminicio", "pkinicio", "kminicial"], pkf: ["kmfin", "pkfin", "kmfinal"], fCampo: ["fechacampo", "fechadecampo"], fLib: ["fechaliberacion", "fechadeliberacion"], fEnt: ["fechadeentrega", "fechaentrega"],
+  cargo: ["nentrega", "noentrega"], est: ["estructura"], sub: ["subestructura", "frente"], ele: ["elemento"], tipo: ["tipodeliberacion", "tipoliberacion", "tipo"], capa: ["capa"], cota: ["cota"],
+  gen: ["generado", "generadopor"], estado: ["keystatus"], area: ["superficiem2", "superficie", "area"], obs: ["observaciones", "observacion"], act: ["actividad"] };
+// Filas de la tabla → registros «crudos» (los nombres de frente y tipo se emparejan después con las listas)
+function filasARegistros(filas) {
+  const campoDe = c => { const k = claveCab(c); return Object.keys(IMP_CAB).find(x => IMP_CAB[x].includes(k)); };
+  const hi = filas.slice(0, 15).findIndex(f => { const cs = (f || []).map(campoDe); return cs.includes("numero") && (cs.includes("descripcion") || cs.includes("tipo")); });
+  if (hi < 0) throw new Error("no encuentro la fila de títulos (N° Registro, Descripcion, Tipo de Liberacion…)");
+  const col = {}; filas[hi].forEach((c, i) => { const k = campoDe(c); if (k && col[k] == null) col[k] = i; });
+  const v = (f, k) => col[k] == null ? null : f[col[k]] ?? null, txt = (f, k) => { const x = v(f, k); return x == null ? "" : String(x).replace(/\s+/g, " ").trim(); };
+  const porNum = new Map(), avisos = { sinCodigo: 0, otroPrefijo: [], repetidos: [], sinFecha: 0, sinEstado: col.estado == null, capaTexto: 0 };
+  filas.slice(hi + 1).forEach((f, i) => {
+    if (!f || !f.some(x => x != null && String(x).trim() !== "")) return;
+    const n = codigoObra(txt(f, "numero")); if (!n) { avisos.sinCodigo++; return; } if (n < 0) { avisos.otroPrefijo.push(txt(f, "numero")); return; }
+    const desc = txt(f, "descripcion");
+    const pk = k => { const x = v(f, k); if (typeof x === "number") return Math.round(x * 100) / 100; const p = leerPk(x); return p == null || isNaN(p) ? null : p; };
+    const fL = fechaTabla(v(f, "fLib")), fC = fechaTabla(v(f, "fCampo")) ?? fL, fE = fechaTabla(v(f, "fEnt")), kst = txt(f, "estado").toUpperCase();
+    const ar = v(f, "area"), capa = txt(f, "capa") || capaDeTexto(desc);
+    if (fC == null) avisos.sinFecha++;
+    if (!txt(f, "capa") && capa) avisos.capaTexto++;
+    if (porNum.has(n)) avisos.repetidos.push(fmtNumero(n));
+    // Dentro del mismo día quedan en el orden de sus códigos
+    porNum.set(n, { id: "xl-" + String(n).padStart(5, "0"), numero: fmtNumero(n), _fila: hi + 2 + i, descripcion: desc, pkInicio: pk("pki"), pkFin: pk("pkf"),
+      fechaCampo: fC == null ? null : fC + n % 100000, fechaLiberacion: fL, fechaEntrega: fE, estado: ESTADOS[kst] ? kst : fE ? "EC" : "EP",
+      cota: txt(f, "cota") || cotaDeTexto(desc), area: typeof ar === "number" ? ar : parseFloat(String(ar ?? "").replace(",", ".")) || null, observaciones: txt(f, "obs"),
+      topografoId: txt(f, "topo").toUpperCase(), generadoPor: txt(f, "gen"), numeroCargo: txt(f, "cargo"),
+      _est: txt(f, "est"), _sub: txt(f, "sub"), _ele: txt(f, "ele"), _tipo: txt(f, "tipo"), _act: txt(f, "act"), _capa: capa });
+  });
+  if (!porNum.size) throw new Error("el archivo no tiene filas con código");
+  return { regs: [...porNum.values()], avisos };
+}
+// Empareja los nombres del archivo con las listas de la app. Lo que no coincide solo queda en I.faltan para elegirlo a mano
+function emparejarImp(I) {
+  if (!I.tabla) { I.faltan = { sub: [], tipo: [] }; return; }
+  const subs = S.listas.estructuras.flatMap(e => (e.subs || []).map(s => ({ id: s.id, nombre: s.nombre, est: e })));
+  const igual = (a, b) => claveCab(a) === claveCab(b);
+  I.pares ||= { sub: {}, tipo: {} }; I.auto = { sub: {}, tipo: {} }; I.faltan = { sub: [], tipo: [] }; I.lect = { sub: [], tipo: [] };
+  const cuenta = (k) => { const c = {}; I.crudos.forEach(r => { const x = k(r); c[x] = (c[x] || 0) + 1; }); return c; };
+  const kSub = r => r._sub || (r._est ? "Estructura: " + r._est : "");
+  Object.entries(cuenta(kSub)).forEach(([raw, n]) => {
+    if (!raw) return;
+    let s = subs.find(x => igual(x.nombre, raw));
+    if (!s && raw.startsWith("Estructura: ")) { const e = S.listas.estructuras.find(x => igual(x.nombre, raw.slice(12))); if (e && (e.subs || []).length === 1) s = { id: e.subs[0].id }; }
+    if (s) I.auto.sub[raw] = s.id;
+    const x = { raw, n }; I.lect.sub.push(x); if (!s && !I.pares.sub[raw]) I.faltan.sub.push(x); });
+  // Un tipo con el mismo nombre solo se toma solo si es del mismo elemento que dice el archivo
+  // («Relleno en zanja» de Tubería no es el de Movimiento de tierras): si no, se pregunta
+  Object.entries(cuenta(r => r._tipo)).forEach(([raw, n]) => {
+    if (!raw) return;
+    const els = {}; I.crudos.filter(r => r._tipo === raw).forEach(r => { els[r._ele] = (els[r._ele] || 0) + 1; });
+    const eleRaw = Object.entries(els).sort((a, b) => b[1] - a[1])[0]?.[0] || "", el = S.listas.elementos.find(e => igual(e.nombre, eleRaw));
+    const mismos = S.listas.tipos.filter(x => igual(x.nombre, raw) || similitud(x.nombre, raw) === 1);
+    const t = el ? mismos.find(x => x.elementoId === el.id) : mismos[0];
+    if (t) I.auto.tipo[raw] = t.id;
+    const sug = [...new Set([...mismos, ...(el ? parecidos(raw, S.listas.tipos.filter(x => x.elementoId === el.id), 0.5).map(p => p.o) : []), ...parecidos(raw, S.listas.tipos, 0.5).map(p => p.o)].map(o => o.id))].slice(0, 5);
+    const x = { raw, n, sug, ele: eleRaw }; I.lect.tipo.push(x); if (!t && !I.pares.tipo[raw]) I.faltan.tipo.push(x); });
+  // Registros finales, con los ids de las listas (lo elegido a mano gana a lo emparejado solo)
+  const usados = new Set(S.listas.tipos.map(t => t.id)); I.tiposNuevos = [];
+  const tipoNuevo = raw => { let t = I.tiposNuevos.find(x => x.nombre === raw); if (!t) { const ej = I.crudos.find(r => r._tipo === raw), el = S.listas.elementos.find(e => igual(e.nombre, ej?._ele || "")) || S.listas.elementos[0];
+    t = { id: nuevoId(raw, usados), nombre: raw, elementoId: el?.id || "", enGrafico: false }; usados.add(t.id); I.tiposNuevos.push(t); } return t; };
+  I.subDe = raw => I.pares.sub[raw] || I.auto.sub[raw] || ""; I.tipoDe = raw => I.pares.tipo[raw] || I.auto.tipo[raw] || "";
+  I.regs = I.crudos.map(r => {
+    const subId = I.subDe(kSub(r)), par = I.tipoDe(r._tipo);
+    const tn = par === "+" ? tipoNuevo(r._tipo) : null, tipoId = tn ? tn.id : par, tipo = tn || L.tipo(tipoId);
+    const act = S.listas.actividades.find(a => igual(a.nombre, r._act) || a.id === r._act.toUpperCase());
+    const { _est, _sub, _ele, _tipo, _act, _capa, ...resto } = r;
+    return { ...resto, actividad: act?.id || "LIB", estructuraId: estDeSub(subId)?.id || "", subestructuraId: subId, tipoId,
+      elementoId: tipo?.elementoId || S.listas.elementos.find(e => igual(e.nombre, _ele))?.id || "", capa: normCapa(_capa, subId, tipoId) };
+  });
+}
+async function leerArchivoImp(f) {
+  const nombre = f.name || "archivo", ext = (nombre.match(/\.([a-z0-9]+)$/i)?.[1] || "").toLowerCase();
+  if (ext === "xls") throw new Error("es un Excel antiguo (.xls): ábrelo y guárdalo como .xlsx");
+  const I = { archivo: nombre, pares: { sub: {}, tipo: {} } };
+  if (ext === "json") {
+    const d = JSON.parse(await f.text());
+    if (!d || !Array.isArray(d.registros) || !d.registros.length || !d.registros[0].numero) throw new Error("no es el archivo del histórico");
+    const malos = d.registros.filter(r => codigoObra(r.numero) <= 0);
+    I.regs = d.registros.filter(r => codigoObra(r.numero) > 0).map(r => ({ ...r, numero: fmtNumero(codigoObra(r.numero)), id: r.id || "xl-" + String(codigoObra(r.numero)).padStart(5, "0") }));
+    if (!I.regs.length) throw new Error("el archivo no tiene registros con código de esta obra");
+    I.ultimo = d.ultimoNumero || 0; I.toposExtra = d.topografosNuevos || []; I.avisos = { sinCodigo: malos.length };
+  } else {
+    const hojas = ext === "csv" || ext === "txt" ? [async () => leerCsvTabla(await f.text())] : await leerXlsx(f);
+    let t, err; for (const h of hojas) { try { t = filasARegistros(await h()); break; } catch (e) { err ||= e; } } if (!t) throw err;
+    I.tabla = true; I.crudos = t.regs; I.avisos = t.avisos;
+  }
+  return I;
+}
+const rangoDias = (a, b) => { const f = t => new Date(t).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }).replace(/\./g, ""); return a == null ? "" : f(a) === f(b) ? f(a) : `${f(a)} – ${f(b)}`; };
+const verCampoImp = (k, v) => v == null || v === "" ? "—" : IMP_FECHAS.includes(k) ? fISO(v) : k === "pkInicio" || k === "pkFin" ? fmtPk(v) : k === "subestructuraId" ? nom(L.sub(v), v) : k === "estructuraId" ? nom(L.est(v), v)
+  : k === "tipoId" ? nom(L.tipo(v), v) : k === "elementoId" ? nom(L.ele(v), v) : k === "estado" ? ESTADOS[v] || v : k === "actividad" ? nom(L.act(v), v) : String(v);
+// Qué campos cambian entre el archivo y lo que hay. «porDia»: las fechas se comparan por día (lo de la app tiene hora)
+function difImp(nuevo, viejo, porDia) {
+  return IMP_CAMPOS.filter(k => {
+    let a = nuevo[k], b = viejo[k];
+    if (IMP_FECHAS.includes(k)) { a = a ?? null; b = msDe(b); if (porDia) { if (a == null) return false; a = fISO(a); b = b == null ? "" : fISO(b); } }
+    else if (IMP_NUMS.includes(k)) { a = a ?? null; b = b ?? null; if (porDia && a == null) return false; }
+    else { a = String(a ?? "").trim(); b = String(b ?? "").trim(); if (k === "topografoId") { a = claveTopo(a); b = claveTopo(b); } if (k === "capa") { a = sinCapa(a) ? "" : a; b = sinCapa(b) ? "" : b; } if (porDia && !a) return false; }
+    return a !== b;
+  });
+}
+// Compara el archivo con lo que hay en la base y separa: nuevos, cambian, iguales, de la app y trabajados en la app
+async function revisarImp(I) {
+  emparejarImp(I);
+  if (I.faltan.sub.length || I.faltan.tipo.length) { I.clas = null; return; }
+  const regs = I.regs.map(r => ({ ...r, topografoId: claveTopo(r.topografoId) }));
+  const exist = (await leerPorCampo("liberaciones", "numero", regs.map(r => r.numero))).map(fila);
+  const porNum = new Map(), agrega = (num, x) => { const l = porNum.get(num) || []; if (!l.some(y => y.id === x.id)) l.push(x); porNum.set(num, l); };
+  exist.forEach(x => agrega(x.numero, x));
+  // Un levantamiento con dron puede tener varios códigos (uno por protocolo)
+  (await getDocsFromServer(query(collection(db, "liberaciones"), where("actividad", "==", "DRN")))).docs.map(fila).forEach(x => (x.protocolos || []).forEach(p => { if (p.numero) agrega(p.numero, x); }));
+  // Por si el documento existe con otro código (no se pisa nada sin mirarlo)
+  const sinVer = regs.filter(r => !(porNum.get(r.numero) || []).some(x => x.id === r.id));
+  for (let i = 0; i < sinVer.length; i += 60) (await Promise.all(sinVer.slice(i, i + 60).map(r => getDocFromServer(doc(db, "liberaciones", r.id))))).forEach((d, j) => { if (d.exists()) agrega(sinVer[i + j].numero, fila(d)); });
+  const todos = [...new Map([...porNum.values()].flat().map(x => [x.id, x])).values()];
+  const trab = await trabajadosEnApp(todos.filter(x => x.origen === "excel"));
+  I.clas = regs.map(r => {
+    const xs = porNum.get(r.numero) || [], app = xs.find(x => x.origen !== "excel"), prot = xs.find(x => x.origen === "excel" && trab.has(x.id));
+    if (app) return { r, k: "app", viejo: app, dif: difImp(r, app, true) };
+    if (prot) return { r, k: "trabajado", viejo: prot, dif: difImp(r, prot, true) };
+    const viejo = xs.find(x => x.id === r.id) || xs[0];
+    if (!viejo) return { r, k: "nuevo" };
+    const r2 = viejo.id === r.id ? r : { ...r, id: viejo.id }, dif = difImp(r2, viejo, false);
+    return { r: r2, k: dif.length ? "cambia" : "igual", viejo, dif };
+  });
+  const c = await getDocFromServer(doc(db, "contadores", "skt")); I.corr = c.exists() ? c.data().ultimo || 0 : 0;
+  // H: un importado cuya importación no está en la lista (carga cortada) se vuelve a escribir para que quede en una importación visible
+  const ls_ = await leerLotes();
+  I.loteCortado = ls_.filter(x => x.incompleta && x.archivo === I.archivo).sort((a, b) => (b.fecha || 0) - (a.fecha || 0))[0]?.id || "";
+  const lotes = new Set(ls_.filter(x => !x.incompleta || x.id === I.loteCortado || x.id === I.lote).map(x => x.id));
+  I.clas.forEach(x => { if (x.k === "igual" && x.viejo?.lote && !lotes.has(x.viejo.lote)) { x.k = "cambia"; x.dif = ["lote"]; } });
+  I.maxNum = Math.max(I.ultimo || 0, ...regs.map(r => numDe(r.numero)));
+  I.toposNuevos = [...new Set([...(I.toposExtra || []), ...regs.map(r => r.topografoId)].filter(k => k && !L.topo(k)))];
+  const fs = regs.map(r => r.fechaCampo).filter(x => x != null), ns = regs.map(r => numDe(r.numero));
+  I.f1 = fs.length ? Math.min(...fs) : null; I.f2 = fs.length ? Math.max(...fs) : null; I.n1 = Math.min(...ns); I.n2 = Math.max(...ns);
+  I.nombre ||= rangoDias(I.f1, I.f2) || I.archivo.replace(/\.[a-z0-9]+$/i, "");
+}
+const cuentaImp = I => { const c = { nuevo: 0, cambia: 0, igual: 0, app: 0, trabajado: 0 }; (I.clas || []).forEach(x => c[x.k]++); return c; };
+function difsImp(I) { return (I.clas || []).filter(x => (x.k === "app" || x.k === "trabajado") && x.dif.length).flatMap(x => x.dif.map(k => [x.r.numero, x.k === "app" ? "Registrado en la app" : "Importado y trabajado en la app", IMP_ROTULO[k], verCampoImp(k, k === "topografoId" ? claveTopo(x.viejo[k]) : x.viejo[k]), verCampoImp(k, x.r[k])])); }
+function resumenImp(I) {
+  if (!I.faltan) emparejarImp(I);
+  const n = (I.regs || I.crudos).length, m = x => x.toLocaleString("es-PE"), A_ = I.avisos || {};
+  let h = `<div class="kpis"><span><b>${m(n)}</b> registros en «${esc(I.archivo)}»</span></div>`;
+  const sel_ = (v, x) => v === x ? " selected" : "";
+  const opSub = (x, v) => S.listas.estructuras.map(e => `<optgroup label="${esc(e.nombre)}">${(e.subs || []).map(s => `<option value="${esc(s.id)}"${sel_(v, s.id)}>${esc(s.nombre)}</option>`).join("")}</optgroup>`).join("");
+  const opTipo = (x, v) => `${x.sug.length ? `<optgroup label="Parecidos">${x.sug.map(id => `<option value="${esc(id)}"${sel_(v, id)}>${esc(nom(L.tipo(id)))} · ${esc(nom(L.ele(L.tipo(id)?.elementoId)))}</option>`).join("")}</optgroup>` : ""}<option value="+"${sel_(v, "+")}>Crear el tipo «${esc(x.raw)}»</option><optgroup label="Todos los tipos">${S.listas.tipos.filter(t => !x.sug.includes(t.id)).slice().sort((a, b) => a.nombre.localeCompare(b.nombre, "es")).map(t => `<option value="${esc(t.id)}"${sel_(v, t.id)}>${esc(t.nombre)} · ${esc(nom(L.ele(t.elementoId)))}</option>`).join("")}</optgroup>`;
+  const fila_ = (cual, x, ops) => { const v = cual === "sub" ? I.subDe(x.raw) : I.tipoDe(x.raw);
+    return `<div class="imp-par"><div><b>${esc(x.raw)}</b><span class="muted small"> · ${x.n} ${x.n === 1 ? "fila" : "filas"}${x.ele ? " · " + esc(x.ele) : ""}</span></div><select data-par="${cual}" data-raw="${esc(x.raw)}" aria-label="Qué es «${esc(x.raw)}» en la app">${v ? "" : '<option value="">Elegir…</option>'}${ops(x, v)}</select></div>`; };
+  if (I.faltan.sub.length || I.faltan.tipo.length) {
+    h += `<div class="pinfo aviso" role="note" style="margin:0"><b>Antes de seguir, elige qué es cada uno en la app.</b> Estos nombres del archivo no coinciden con un frente o un tipo (o el tipo con ese nombre es de otro elemento).</div>
+    ${I.faltan.sub.length ? `<div class="flabel" style="margin:6px 0 0">Frentes</div>${I.faltan.sub.map(x => fila_("sub", x, opSub)).join("")}` : ""}
+    ${I.faltan.tipo.length ? `<div class="flabel" style="margin:6px 0 0">Tipos de liberación</div>${I.faltan.tipo.map(x => fila_("tipo", x, opTipo)).join("")}` : ""}`;
+    return h;
+  }
+  if (!I.clas) return h + '<p class="small muted" style="margin:0">Comparando con lo que ya hay en la app…</p>';
+  const c = cuentaImp(I), difs = difsImp(I), lect = I.lect || { sub: [], tipo: [] };
+  const est = {}; I.clas.forEach(x => { if (x.k === "nuevo" || x.k === "cambia") est[x.r.estado] = (est[x.r.estado] || 0) + 1; });
+  const fr = {}; I.clas.forEach(x => { const k = nom(L.sub(x.r.subestructuraId), "Sin frente"); fr[k] = (fr[k] || 0) + 1; });
+  const sinTipo = I.regs.filter(r => !r.tipoId).length, sinSub = I.regs.filter(r => !r.subestructuraId).length;
+  const notas = [
+    c.app ? `<b>${m(c.app)}</b> ${c.app === 1 ? "código ya está registrado" : "códigos ya están registrados"} en la app: no se tocan.` : "",
+    c.trabajado ? `<b>${m(c.trabajado)}</b> ${c.trabajado === 1 ? "importado antes ya se trabajó" : "importados antes ya se trabajaron"} en la app (entrega, archivos o correcciones): no se tocan.` : "",
+    A_.sinEstado ? "El archivo no trae columna de estado: los que tienen fecha de entrega entran como «Entregado a Calidad» y el resto como «En proceso»." : "",
+    A_.capaTexto ? `En ${m(A_.capaTexto)} la capa se tomó de la descripción («Capa: 30»).` : "",
+    A_.sinCodigo ? `${m(A_.sinCodigo)} ${A_.sinCodigo === 1 ? "fila sin código no se carga" : "filas sin código no se cargan"}.` : "",
+    A_.otroPrefijo?.length ? `<b>${m(A_.otroPrefijo.length)}</b> con un código que no es de esta obra no se cargan: ${esc(A_.otroPrefijo.slice(0, 6).join(", "))}${A_.otroPrefijo.length > 6 ? "…" : ""}.` : "",
+    A_.repetidos?.length ? `Códigos repetidos en el archivo (vale la última fila): ${esc(A_.repetidos.slice(0, 8).join(", "))}${A_.repetidos.length > 8 ? "…" : ""}.` : "",
+    A_.sinFecha ? `${m(A_.sinFecha)} sin fecha de liberación.` : "", sinSub ? `${m(sinSub)} sin frente.` : "", sinTipo ? `${m(sinTipo)} sin tipo.` : "",
+    I.tiposNuevos?.length ? `Se crean ${I.tiposNuevos.length === 1 ? "el tipo" : "los tipos"}: ${esc(I.tiposNuevos.map(t => t.nombre).join(", "))}.` : "",
+    I.toposNuevos.length ? `Claves que no están en Topógrafos y se agregan: ${esc(I.toposNuevos.join(", "))}.` : "",
+    I.maxNum > I.corr ? `El correlativo sube de ${esc(fmtNumero(I.corr))} a <b>${esc(fmtNumero(I.maxNum))}</b> para que la app no repita códigos del archivo.` : ""
+  ].filter(Boolean);
+  const lectH = lect.sub.length + lect.tipo.length ? `<details class="imp-dif" id="hLect"${I.lectAb ? " open" : ""}><summary>Cómo se leyó el archivo: ${lect.sub.length} ${lect.sub.length === 1 ? "frente" : "frentes"} y ${lect.tipo.length} ${lect.tipo.length === 1 ? "tipo" : "tipos"}</summary><p class="small muted" style="margin:6px 0">Revisa que cada nombre del Excel caiga en el frente y el tipo correctos; si no, cámbialo aquí antes de importar.</p>
+    ${lect.sub.length ? `<div class="flabel" style="margin:6px 0 0">Frentes</div>${lect.sub.map(x => fila_("sub", x, opSub)).join("")}` : ""}${lect.tipo.length ? `<div class="flabel" style="margin:6px 0 0">Tipos de liberación</div>${lect.tipo.map(x => fila_("tipo", x, opTipo)).join("")}` : ""}</details>` : "";
+  h += `<div class="kpis" id="hCuenta"><span><b>${m(c.nuevo)}</b> nuevos</span><span><b>${m(c.cambia)}</b> se actualizan</span><span><b>${m(c.igual)}</b> ya cargados, sin cambios</span>${c.app || c.trabajado ? `<span><b>${m(c.app + c.trabajado)}</b> no se tocan</span>` : ""}${Object.entries(est).map(([k, v]) => `<span><span class="st ${esc(k)}">${esc(ESTADOS[k] || k)}</span> ${m(v)}</span>`).join("")}</div>
+  <p class="small muted" style="margin:0">Códigos ${esc(fmtNumero(I.n1))} a ${esc(fmtNumero(I.n2))}${I.f1 != null ? ` · ${esc(rangoDias(I.f1, I.f2))}` : ""} · ${Object.entries(fr).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc(k)} ${v}`).join(" · ")}</p>
+  ${notas.length ? `<ul class="imp-notas">${notas.map(t => `<li>${t}</li>`).join("")}</ul>` : ""}
+  ${lectH}
+  ${difs.length ? `<details class="imp-dif"><summary>${m(new Set(difs.map(d => d[0])).size)} de los que no se tocan dicen algo distinto en el archivo</summary><p class="small muted" style="margin:6px 0">Se queda lo que está en la app. Revísalos y corrige a mano el que haga falta. <button type="button" class="btn-txt" id="hDifCsv">Descargar la lista (CSV)</button></p><div class="twrap"><table class="rtab"><thead><tr><th>Código</th><th>Dato</th><th>En la app</th><th>En el archivo</th></tr></thead><tbody>${difs.slice(0, 60).map(d => `<tr><td class="mono nw">${esc(d[0])}</td><td>${esc(d[2])}</td><td>${esc(d[3])}</td><td>${esc(d[4])}</td></tr>`).join("")}</tbody></table></div>${difs.length > 60 ? `<p class="small muted">…y ${m(difs.length - 60)} más en la lista descargable.</p>` : ""}</details>` : ""}
+  <div class="f" style="margin:4px 0 0"><label for="hNombre">Nombre de esta importación</label><input id="hNombre" maxlength="60" value="${esc(I.nombre)}"></div>`;
+  return h;
+}
 function ajHistorico() {
-  cuerpoAj();
-  const A = S.aj;
-  $("#ajBody").innerHTML = `
-  <p class="muted small" style="margin:0 0 12px">Carga el archivo <b>liberaciones-historico.json</b> preparado a partir del Excel de protocolos. Cada registro conserva su N° SKT-TOP; si lo vuelves a importar, se actualiza sin duplicarse. Se necesita internet mientras se importa.</p>
+  const body = cuerpoAj(), A = S.aj, I = A.imp, listo = I && I.clas, c = listo ? cuentaImp(I) : null, nEsc = c ? c.nuevo + c.cambia : 0;
+  body.innerHTML = `
+  <p class="muted small" style="margin:0 0 12px">Carga el <b>Excel de protocolos</b> (.xlsx) de un mes o un periodo. Cada carga queda como una importación aparte, que puedes ver, descargar o quitar sin afectar a las demás. <b>Lo registrado en la app nunca se toca:</b> ni al importar ni al quitar. Se necesita internet.</p>
   <div class="card section hist-box">
-    <label class="upbtn"><input type="file" id="hFile" accept=".json,application/json" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>Elegir archivo del histórico</label>
-    <div id="hRes">${A.hist ? resumenHist(A.hist) : ""}</div>
-    <div class="actions" style="margin:4px 0 8px"><button type="button" class="btn pri" id="hImp" ${A.hist ? "" : "disabled"}>Importar${A.hist ? " " + A.hist.registros.length.toLocaleString("es-PE") + " registros" : ""}</button></div>
-    <div class="prog" id="hProg" hidden><i></i></div><p class="small muted" id="hEst" style="margin:0 0 8px"></p>
+    <label class="upbtn"><input type="file" id="hFile" accept=".xlsx,.csv,.json,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>Elegir el Excel a importar</label>
+    <div id="hRes">${I ? resumenImp(I) : ""}</div>
+    <div class="actions" style="margin:4px 0 8px"><button type="button" class="btn pri" id="hImp" ${listo ? "" : "disabled"}>${listo ? (nEsc ? `Importar ${nEsc.toLocaleString("es-PE")} ${nEsc === 1 ? "registro" : "registros"}` : "Nada nuevo que importar") : "Importar"}</button>${I ? '<button type="button" class="btn sec" id="hCancel">Quitar el archivo</button>' : ""}</div>
+    <div class="prog" id="hProg" hidden><i></i></div><p class="small muted" id="hEst" style="margin:0 0 8px">${A.impMsg || ""}</p>
   </div>
+  <div class="card section"><h2>Importaciones</h2><p class="muted small" style="margin:0 0 10px">«Quitar» borra solo los registros de esa carga que nadie trabajó en la app, y antes descarga una copia de lo que se quita.</p>
+    <div id="hLotes"><p class="muted small">Leyendo…</p></div>
+    <div class="actions" style="margin:12px 0 10px"><button type="button" class="btn sec" id="hResp">Descargar respaldo completo</button><button type="button" class="btn warn" id="hBorrar">Quitar todo lo importado</button></div>
+    <p class="small muted" id="hEst2" style="margin:0 0 8px">${A.quitMsg ? esc(A.quitMsg) : "El respaldo trae todos los registros, el historial, las listas y el correlativo en un archivo para guardar en tu PC (sin las fotos)."}</p></div>
   <div class="card section"><h2>Correlativo SKT-TOP</h2><p class="muted small" style="margin:0 0 10px">Último código usado. Gabinete genera desde el siguiente. Solo se puede subir (bajarlo repetiría códigos). Quitar lo importado no lo cambia.</p>
     <div class="corr"><span class="mono" id="cActual">Leyendo…</span><input id="cNuevo" class="mono" inputmode="numeric" placeholder="Ej. 02692" aria-label="Último código usado"><button type="button" class="btn sec" id="cGuardar">Cambiar</button></div></div>
-  <div class="card section"><h2>Quitar lo importado</h2><p class="muted small" style="margin:0 0 10px">Borra solo los registros que vinieron del Excel; lo registrado en la app, el correlativo, las capas y los modelos no se tocan.</p>
-    <div class="actions" style="margin:0 0 10px"><button type="button" class="btn warn" id="hBorrar">Quitar registros importados</button></div></div>
   <div class="card section"><h2>Resumen del panel</h2><p class="muted small" style="margin:0 0 10px">El panel lee un resumen por frente para gastar pocas lecturas. Se actualiza solo con cada registro; usa este botón solo si ves algo raro en el panel.</p>
     <div class="actions" style="margin:0 0 10px"><button type="button" class="btn sec" id="hRes2">Reconstruir resumen</button></div></div>`;
+  const enHist = () => S.view === "ajustes" && S.aj.tab === "historico";
+  const revisar = async () => { $("#hEst").textContent = "Comparando con lo que ya hay en la app…"; try { await revisarImp(A.imp); } catch (e) { console.error(e); A.impMsg = "No se pudo comparar: " + esc(e.message); } if (enHist()) ajHistorico(); };
   $("#hFile").addEventListener("change", async e => {
-    const [f] = await tomarArchivos(e.target); if (!f) return;
-    try {
-      const d = JSON.parse(await f.text());
-      if (!d || !Array.isArray(d.registros) || !d.registros.length || !d.registros[0].numero) throw new Error("no es el archivo del histórico");
-      A.hist = d; ajHistorico();
-    } catch (err) { toast("No se pudo leer: " + err.message, "bad"); }
+    // La vista previa anterior se va al instante (antes de terminar de leer el archivo nuevo)
+    const n0 = e.target.files?.[0]?.name; if (!n0) return;
+    A.imp = null; A.impMsg = ""; const r0 = $("#hRes"); if (r0) r0.innerHTML = `<p class="small muted" style="margin:0" id="hLeyendo">Leyendo «${esc(n0)}»…</p>`; const b0 = $("#hImp"); if (b0) b0.disabled = true;
+    const [f] = await tomarArchivos(e.target); if (!f) { ajHistorico(); return; }
+    if (!navigator.onLine) { toast("Se necesita señal para revisar el archivo.", "bad"); ajHistorico(); return; }
+    try { A.imp = await leerArchivoImp(f); A.impMsg = ""; ajHistorico(); await revisarImp(A.imp); if (enHist()) ajHistorico(); }
+    catch (err) { console.error(err); A.imp = null; toast("No se pudo leer: " + err.message, "bad"); if (enHist()) ajHistorico(); }
+  });
+  $("#hRes").addEventListener("change", e => { const s = e.target.closest("[data-par]"); if (s) { if (s.value) A.imp.pares[s.dataset.par][s.dataset.raw] = s.value; else delete A.imp.pares[s.dataset.par][s.dataset.raw]; if (s.closest("#hLect")) A.imp.lectAb = true; emparejarImp(A.imp); if (!A.imp.faltan.sub.length && !A.imp.faltan.tipo.length) { A.imp.clas = null; $("#hImp").disabled = true; revisar(); } }
+    else if (e.target.id === "hNombre") A.imp.nombre = e.target.value.trim() || A.imp.nombre; });
+  $("#hRes").addEventListener("click", e => {
+    if (e.target.id === "hDifCsv") descargar(`diferencias_${hoyISO()}.csv`, "﻿" + [["Código", "Qué es", "Dato", "En la app", "En el archivo"], ...difsImp(A.imp)].map(csvLinea).join("\r\n"), "text/csv;charset=utf-8");
   });
   $("#hImp").addEventListener("click", importarHist);
-  $("#hBorrar").addEventListener("click", borrarHist);
+  $("#hCancel")?.addEventListener("click", () => { A.imp = null; A.impMsg = ""; ajHistorico(); });
+  $("#hBorrar").addEventListener("click", () => quitarImportacion(LOTE_TODO));
+  $("#hResp").addEventListener("click", respaldoCompleto);
+  // Lista de importaciones
+  const pintarLotes = () => {
+    const el = $("#hLotes"); if (!el || !enHist()) return;
+    const fila_ = (id, titulo, det) => `<div class="imp-lote" data-lote="${esc(id)}"><div><b>${esc(titulo)}</b><span class="small muted">${det}</span></div><div class="imp-acc"><button type="button" class="mini" data-lk="ver">Ver registros</button><button type="button" class="mini" data-lk="csv">Descargar</button><button type="button" class="mini warn-mini" data-lk="quitar">Quitar</button></div></div>`;
+    el.innerHTML = (S.lotes || []).slice().sort((a, b) => (b.fecha || 0) - (a.fecha || 0)).map(x => fila_(x.id, x.nombre, `${(x.n || 0).toLocaleString("es-PE")} ${x.n === 1 ? "registro" : "registros"}${x.incompleta ? " · <b>se cortó: vuelve a importar el archivo o quítala</b>" : ""} · ${esc(fmtNumero(x.numMin))} a ${esc(fmtNumero(x.numMax))} · «${esc(x.archivo || "")}» · cargado el ${esc(fmtFecha(x.fecha, false))} por ${esc(x.porNombre || x.por || "")}${x.conservados ? ` · ${x.conservados} conservados al quitar` : ""}`)).join("")
+      + (A.hayViejo === false ? "" : fila_(LOTE_VIEJO, "Importado antes (sin nombre)", A.hayViejo ? `${A.nViejo.toLocaleString("es-PE")} registros cargados con el archivo del histórico, antes de la versión 30` : "Lo que se cargó con el archivo del histórico, antes de la versión 30"))
+      || '<p class="muted small" style="margin:0">Todavía no hay importaciones.</p>';
+  };
+  leerLotes().then(pintarLotes).catch(e => { const el = $("#hLotes"); if (el) el.textContent = "No se pudo leer: " + e.message; });
+  // ¿Queda algo de antes? Una sola lectura (el primero que aparezca)
+  if (A.hayViejo == null) getDocs(query(collection(db, "liberaciones"), where("origen", "==", "excel"), limit(400))).then(s => { const v = s.docs.filter(d => !d.data().lote).length; if (!v && s.docs.length < 400) A.hayViejo = false; pintarLotes(); }).catch(() => {});
+  $("#hLotes").addEventListener("click", async e => {
+    const b = e.target.closest("[data-lk]"); if (!b) return; const id = b.closest("[data-lote]").dataset.lote, k = b.dataset.lk;
+    if (k === "ver") { S.filtro.todos.lote = id; S.filtro.todos.pap = false; S.filtro.todos.st = ""; S.filtro.todos.q = ""; ir("todos"); }
+    if (k === "csv") { b.disabled = true; try { const regs = (await cargarLote(id)).filter(vivo).sort((x, y) => numDe(x.numero) - numDe(y.numero)); if (regs.length) exportarSel(regs, "importacion_" + slug(nombreLote(id))); else toast("Esa importación no tiene registros."); } catch (er) { toast("No se pudo descargar: " + er.message, "bad"); } b.disabled = false; }
+    if (k === "quitar") quitarImportacion(id);
+  });
   const leerCorr = () => getDoc(doc(db, "contadores", "skt")).then(c => { const u = c.exists() ? c.data().ultimo || 0 : 0; A.corr = u; const el = $("#cActual"); if (el) el.innerHTML = `Último: <b>${esc(fmtNumero(u))}</b> · siguiente: <b>${esc(fmtNumero(u + 1))}</b>`; }).catch(e => { const el = $("#cActual"); if (el) el.textContent = "No se pudo leer: " + e.message; });
   leerCorr();
   $("#cGuardar").addEventListener("click", async () => {
@@ -6355,59 +6714,135 @@ function ajHistorico() {
   });
   $("#hRes2").addEventListener("click", async e => { const b = e.target; if (!await confirmar("Reconstruir resumen", "Se leen todos los registros para rehacer el resumen del panel. Úsalo solo si el panel no cuadra; consume lecturas.", "Reconstruir")) return; b.disabled = true; b.textContent = "Reconstruyendo…"; try { const n = await reconstruirResumen(); toast(`Resumen listo: ${n.toLocaleString("es-PE")} registros`); } catch (er) { toast("No se pudo: " + er.message, "bad"); } b.disabled = false; b.textContent = "Reconstruir resumen"; });
 }
-function resumenHist(d) {
-  const c = {}; d.registros.forEach(r => { c[r.estado] = (c[r.estado] || 0) + 1; });
-  const fr = {}; d.registros.forEach(r => { const k = nom(L.sub(r.subestructuraId), "Sin frente"); fr[k] = (fr[k] || 0) + 1; });
-  return `<div class="kpis"><span><b>${d.registros.length.toLocaleString("es-PE")}</b> registros</span>${Object.entries(c).map(([k, v]) => `<span><span class="st ${k}">${ESTADOS[k] || k}</span> ${v.toLocaleString("es-PE")}</span>`).join("")}<span><b>${d.registros.filter(r => r.capa).length.toLocaleString("es-PE")}</b> con capa</span></div>
-  <p class="small muted" style="margin:8px 0 0">${Object.entries(fr).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc(k)} ${v}`).join(" · ")}</p>`;
-}
+// Huella de un registro: si cambia entre la revisión y la escritura, alguien lo trabajó en la app y no se toca
+const huellaImp = r => JSON.stringify([r.estado || "", msDe(r.editadoEn), msDe(r.fechaEntrega), msDe(r.fechaLiberacion), r.carpeta || "", (r.xmlEntrega || []).length, (r.archivos || []).length, !!r.borrado,
+  r.capa || "", r.tipoId || "", r.subestructuraId || "", r.topografoId || "", r.numero || "", r.pkInicio ?? null, r.pkFin ?? null, r.lote || ""]);
 async function importarHist() {
-  const d = S.aj.hist; if (!d) return;
+  const A = S.aj, I = A.imp; if (!I || !I.clas) return;
   if (!navigator.onLine) { toast("Se necesita señal para importar.", "bad"); return; }
+  const nombre = ($("#hNombre")?.value || "").trim() || I.nombre; I.nombre = nombre;
+  let c = cuentaImp(I);
+  if (!(c.nuevo + c.cambia)) { A.impMsg = "Listo: no había nada nuevo que importar; todo lo del archivo ya está cargado o se conserva como está en la app."; ajHistorico(); return; }
+  if (!await confirmar("Importar", `Se cargan <b>${(c.nuevo + c.cambia).toLocaleString("es-PE")}</b> registros como la importación «${esc(nombre)}».${c.app + c.trabajado ? ` Los <b>${(c.app + c.trabajado).toLocaleString("es-PE")}</b> que ya están hechos o trabajados en la app no se tocan.` : ""}`, "Importar")) return;
   const btn = $("#hImp"), prog = $("#hProg"), est = $("#hEst");
-  if (!await confirmar("Importar histórico", `Se cargan ${d.registros.length.toLocaleString("es-PE")} registros del Excel. Si ya estaban, se actualizan sin duplicarse.`, "Importar")) return;
-  btn.disabled = true; prog.hidden = false;
-  const ts = ms => ms ? Timestamp.fromDate(new Date(ms)) : null;
-  // Una clave vieja (cambiada en Ajustes → Topógrafos) se guarda con la clave actual
-  const regs = d.registros.map(r => r.topografoId && claveTopo(r.topografoId) !== r.topografoId ? { ...r, topografoId: claveTopo(r.topografoId) } : r), LOTE = 400;
+  btn.disabled = true; prog.hidden = false; est.textContent = "Revisando otra vez antes de escribir…";
+  const ts = ms => ms ? Timestamp.fromDate(new Date(ms)) : null, LOTE = 100, m = x => x.toLocaleString("es-PE");
   try {
-    for (let i = 0; i < regs.length; i += LOTE) {
-      const b = writeBatch(db), res = {};
-      regs.slice(i, i + LOTE).forEach(r => {
-        if (r.subestructuraId && r.estado !== "X") (res[idRes(r.subestructuraId, parteRes(r.id))] ||= {})[r.id] = compacto({ ...r, fechaCampo: r.fechaCampo || 0 });
-        const { id, fechaCampo, fechaLiberacion, fechaEntrega, ...resto } = r;
-        b.set(doc(db, "liberaciones", id), { ...resto, fechaCampo: ts(fechaCampo), fechaLiberacion: ts(fechaLiberacion), fechaEntrega: ts(fechaEntrega),
-          nombreLiberacion: "", notaObservacion: "", linksCsv: [], linksFotos: [], archivos: [],
-          creadoEn: ts(fechaCampo) || serverTimestamp(), creadoPor: "importado", editadoEn: serverTimestamp(), editadoPor: S.email, origen: "excel" });
+    // 1) El correlativo sube primero: desde aquí gabinete ya no puede generar un código que trae el archivo
+    await runTransaction(db, async t => { const ref = doc(db, "contadores", "skt"), d = await t.get(ref), u = d.exists() ? d.data().ultimo || 0 : 0; if (u < I.maxNum) t.set(ref, { ultimo: I.maxNum, editadoPor: S.email, editadoEn: serverTimestamp() }, { merge: true }); });
+    // Se vuelve a comparar justo antes de escribir: lo que alguien haya hecho en la app mientras tanto queda protegido
+    await revisarImp(I); c = cuentaImp(I);
+    const escr = I.clas.filter(x => x.k === "nuevo" || x.k === "cambia");
+    // Si una carga anterior de este mismo archivo se cortó, se sigue en la misma importación
+    const lote = I.lote ||= I.loteCortado || "imp-" + rid();
+    const ns = escr.map(x => numDe(x.r.numero)), fs = escr.map(x => x.r.fechaCampo).filter(x => x != null);
+    const ficha = { id: lote, nombre, archivo: I.archivo, fecha: Date.now(), por: S.email, porNombre: S.perfil?.nombre || "", numMin: Math.min(...ns), numMax: Math.max(...ns), f1: fs.length ? Math.min(...fs) : null, f2: fs.length ? Math.max(...fs) : null };
+    // 2) La importación queda en la lista ANTES de escribir (si se corta, se ve y se puede quitar)
+    const ya0 = I.clas.filter(x => x.k === "igual" && x.viejo?.lote === lote).length;
+    await editarLotes(items => [...items.filter(x => x.id !== lote), { ...ficha, n: escr.length + ya0, incompleta: true }]);
+    // 3) Tipos y claves nuevas, sin pisar lo que otro haya agregado
+    if (I.tiposNuevos?.length) await agregarALista("tipos", I.tiposNuevos);
+    const nuevos = I.toposNuevos.filter(k => !L.topo(k));
+    if (nuevos.length) await agregarALista("topografos", nuevos.map(k => ({ id: k, nombre: k })));
+    // 4) Registros en transacciones de 100: cada uno se vuelve a leer y se salta si ya no está como se revisó
+    const hechos = [], saltados = [];
+    for (let i = 0; i < escr.length; i += LOTE) {
+      const trozo = escr.slice(i, i + LOTE);
+      const r_ = await runTransaction(db, async t => {
+        const ds = await Promise.all(trozo.map(x => t.get(doc(db, "liberaciones", x.r.id))));
+        const res = resumenLote(), ok_ = [], no = [];
+        trozo.forEach((x, j) => {
+          const ahora = ds[j].exists() ? ds[j].data() : null, r = x.r;
+          const cambio = x.k === "nuevo" ? !!ahora : !ahora || ahora.origen !== "excel" || tocadoPorCampos(ahora) || huellaImp(ahora) !== huellaImp(x.viejo);
+          if (cambio) { no.push(r.numero); return; }
+          const { id, fechaCampo, fechaLiberacion, fechaEntrega, _fila, ...resto } = r;
+          if (ahora?.subestructuraId && (ahora.subestructuraId !== r.subestructuraId || r.estado === "X")) res.quitar(id, ahora.subestructuraId);
+          if (r.subestructuraId && r.estado !== "X") res.poner(id, { ...r, fechaCampo: fechaCampo || 0 });
+          t.set(doc(db, "liberaciones", id), { ...resto, fechaCampo: ts(fechaCampo), fechaLiberacion: ts(fechaLiberacion), fechaEntrega: ts(fechaEntrega),
+            nombreLiberacion: "", notaObservacion: "", linksCsv: [], linksFotos: [], archivos: [],
+            creadoEn: ts(fechaCampo) || serverTimestamp(), creadoPor: "importado", editadoEn: serverTimestamp(), editadoPor: S.email, origen: "excel", lote, importadoEn: serverTimestamp() });
+          ok_.push(x);
+        });
+        res.a(t);
+        return { ok_, no };
       });
-      Object.entries(res).forEach(([rid, m]) => b.set(doc(db, "resumen", rid), { r: m }, { merge: true }));
-      await b.commit();
-      const hechos = Math.min(regs.length, i + LOTE);
-      prog.firstElementChild.style.width = (hechos / regs.length * 100).toFixed(1) + "%";
-      est.textContent = `Importados ${hechos.toLocaleString("es-PE")} de ${regs.length.toLocaleString("es-PE")}…`;
+      hechos.push(...r_.ok_); saltados.push(...r_.no);
+      const n = Math.min(escr.length, i + LOTE);
+      prog.firstElementChild.style.width = (n / escr.length * 100).toFixed(1) + "%";
+      est.textContent = `Importados ${m(n)} de ${m(escr.length)}…`;
     }
-    // Topógrafos que aparecen en el Excel y aún no están en la lista
-    const nuevos = (d.topografosNuevos || []).filter(k => !L.topo(k));
-    if (nuevos.length) await setDoc(doc(db, "listas", "topografos"), { items: clon([...S.listas.topografos, ...nuevos.map(k => ({ id: k, nombre: k }))]), editadoEn: serverTimestamp(), editadoPor: S.email });
-    const c = await getDoc(doc(db, "contadores", "skt"));
-    if (!c.exists() || (c.data().ultimo || 0) < (d.ultimoNumero || 0)) await setDoc(doc(db, "contadores", "skt"), { ultimo: d.ultimoNumero });
-    est.textContent = `Listo: ${regs.length.toLocaleString("es-PE")} registros importados.${nuevos.length ? ` Se agregaron las claves ${nuevos.join(", ")} a Topógrafos; completa sus nombres.` : ""}`;
-    toast("Histórico importado");
-  } catch (e) { console.error(e); est.textContent = "Se detuvo: " + (e.code === "permission-denied" ? "sin permiso. Publica las reglas nuevas en Firebase." : e.message) + " Puedes volver a importar; no se duplica."; toast("La importación se detuvo", "bad"); }
-  btn.disabled = false;
+    // 5) La importación queda completa con su cuenta; las otras importaciones descuentan lo que pasó a esta
+    const mov = {}; hechos.forEach(x => { if (x.viejo?.lote && x.viejo.lote !== lote) mov[x.viejo.lote] = (mov[x.viejo.lote] || 0) + 1; });
+    const ya = I.clas.filter(x => x.k === "igual" && x.viejo?.lote === lote).length;
+    await editarLotes(items => items.map(x => x.id === lote ? { ...ficha, n: hechos.length + ya, nuevos: hechos.filter(h => h.k === "nuevo").length, actualizados: hechos.filter(h => h.k === "cambia").length }
+      : mov[x.id] ? { ...x, n: Math.max(0, (x.n || 0) - mov[x.id]) } : x).filter(x => x.n > 0 || x.conservados));
+    I.lote = null;
+    A.impMsg = `Listo: ${m(hechos.length)} registros importados en «${esc(nombre)}».${c.app + c.trabajado ? ` ${m(c.app + c.trabajado)} no se tocaron porque ya están en la app.` : ""}${saltados.length ? ` ${m(saltados.length)} no se escribieron porque alguien los trabajó en la app mientras se importaba (${esc(saltados.slice(0, 5).join(", "))}${saltados.length > 5 ? "…" : ""}).` : ""}${nuevos.length ? ` Se agregaron las claves ${esc(nuevos.join(", "))} a Topógrafos; completa sus nombres.` : ""}`;
+    A.hayViejo = null; BUS.todos = null; S._loteId = "";
+    toast("Importación lista");
+    await revisarImp(I).catch(() => {});
+  } catch (e) { console.error(e); A.impMsg = "Se detuvo: " + esc(e.code === "permission-denied" ? "sin permiso. Publica las reglas nuevas en Firebase." : e.message) + " Vuelve a pulsar «Importar»: sigue en la misma importación y no se duplica."; toast("La importación se detuvo", "bad"); }
+  if (S.view === "ajustes" && S.aj.tab === "historico") ajHistorico();
 }
-async function borrarHist() {
-  const btn = $("#hBorrar");
-  if (!await confirmar("Quitar registros importados", "Se borran todos los registros que vinieron del Excel. Los registrados en la app se quedan. No se puede deshacer, pero puedes volver a importar el archivo.", "Quitar importados", true)) return;
-  btn.disabled = true; btn.textContent = "Quitando…";
+// Registro → forma del archivo de importación (para la copia que se descarga antes de quitar)
+const aPlanoImp = r => ({ id: r.id, ...Object.fromEntries(IMP_CAMPOS.map(k => [k, IMP_FECHAS.includes(k) ? msDe(r[k]) : r[k] ?? (IMP_NUMS.includes(k) ? null : "")])) });
+// Quita una importación («~» lo de antes, «*» todo). Solo borra importados que nadie trabajó en la app
+async function quitarImportacion(id) {
+  if (!navigator.onLine) { toast("Se necesita señal.", "bad"); return; }
+  const A = S.aj, di = t => { const el = $("#hEst2"); if (el) el.textContent = t; }, nombre = nombreLote(id), m = x => x.toLocaleString("es-PE");
+  if (A.quitando) return; A.quitando = true; A.quitMsg = "";
+  di("Revisando qué se puede quitar…");
+  const revisar = async () => { const regs = (await cargarLote(id)).filter(r => r.origen === "excel"), trab = await trabajadosEnApp(regs); return { regs, trab, quitar: regs.filter(r => !trab.has(r.id)) }; };
   try {
-    const snap = await getDocs(query(collection(db, "liberaciones"), where("origen", "==", "excel")));
-    const ids = snap.docs.map(d => d.id);
-    for (let i = 0; i < ids.length; i += 400) { const b = writeBatch(db); ids.slice(i, i + 400).forEach(id => b.delete(doc(db, "liberaciones", id))); await b.commit(); }
-    btn.textContent = "Actualizando el panel…"; await reconstruirResumen();
-    toast(`${ids.length.toLocaleString("es-PE")} registros importados quitados`);
-  } catch (e) { toast("No se pudo quitar: " + e.message, "bad"); }
-  btn.disabled = false; btn.textContent = "Quitar registros importados";
+    let { regs, quitar } = await revisar(), quedan = regs.length - quitar.length;
+    if (!quitar.length) {
+      A.quitMsg = regs.length ? `No se quitó nada: los ${m(regs.length)} registros de «${nombre}» se trabajaron en la app y se conservan.` : "No hay registros importados que quitar.";
+      if (!regs.length && id !== LOTE_VIEJO && id !== LOTE_TODO) await editarLotes(items => items.filter(x => x.id !== id));
+      if (!regs.length && (id === LOTE_TODO || id === LOTE_VIEJO)) A.hayViejo = false;
+      throw null;
+    }
+    if (!await confirmar(id === LOTE_TODO ? "Quitar todo lo importado" : "Quitar importación", `Se borran <b>${m(quitar.length)}</b> registros de ${id === LOTE_TODO ? "todas las importaciones" : "«" + esc(nombre) + "»"}.${quedan ? ` <b>${m(quedan)}</b> se conservan porque se trabajaron en la app (entregas, archivos o correcciones).` : ""} Lo registrado en la app no se toca. Antes de borrar se descarga una copia de lo que se quita; con ese archivo se puede volver a cargar.`, "Quitar " + m(quitar.length), true)) { di(""); A.quitando = false; return; }
+    // Se vuelve a revisar después de confirmar (mientras el aviso estaba abierto, alguien pudo trabajar alguno)
+    di("Revisando otra vez…");
+    const conf = new Set(quitar.map(r => r.id)); ({ regs, quitar } = await revisar()); quitar = quitar.filter(r => conf.has(r.id));
+    descargar(`copia_antes_de_quitar_${slug(nombre)}_${hoyISO()}.json`, JSON.stringify({ version: 1, origen: "copia antes de quitar: " + nombre, ultimoNumero: 0, registros: quitar.map(aPlanoImp) }), "application/json");
+    // Se borra en transacciones de 100: cada registro se vuelve a leer y se salta si ya no está como se revisó
+    const borrados = new Set();
+    for (let i = 0; i < quitar.length; i += 100) {
+      const trozo = quitar.slice(i, i + 100);
+      const ok_ = await runTransaction(db, async t => {
+        const ds = await Promise.all(trozo.map(r => t.get(doc(db, "liberaciones", r.id)))), res = resumenLote(), si = [];
+        trozo.forEach((r, j) => { const a = ds[j].exists() ? ds[j].data() : null; if (!a || a.origen !== "excel" || tocadoPorCampos(a) || huellaImp(a) !== huellaImp(r)) return; t.delete(doc(db, "liberaciones", r.id)); res.quitar(r.id, a.subestructuraId); si.push(r.id); });
+        res.a(t); return si;
+      });
+      ok_.forEach(x => borrados.add(x));
+      di(`Quitando… ${m(Math.min(quitar.length, i + 100))} de ${m(quitar.length)}`);
+    }
+    // La lista de importaciones queda con lo que se conservó de cada una
+    const cons = {}; regs.filter(r => r.lote && !borrados.has(r.id)).forEach(r => { cons[r.lote] = (cons[r.lote] || 0) + 1; });
+    const afect = new Set(regs.map(r => r.lote).filter(Boolean));
+    await editarLotes(items => items.map(x => afect.has(x.id) || id === x.id ? { ...x, n: cons[x.id] || 0, conservados: cons[x.id] || 0, incompleta: false } : x).filter(x => x.n > 0));
+    quedan = regs.length - borrados.size;
+    A.hayViejo = null; BUS.todos = null; S._loteId = ""; if (A.imp?.clas) await revisarImp(A.imp).catch(() => {});
+    A.quitMsg = `Listo: ${m(borrados.size)} registros importados quitados.${quedan ? ` ${m(quedan)} se conservaron porque se trabajaron en la app.` : ""} La copia quedó en tus descargas.`;
+    toast(`${m(borrados.size)} registros importados quitados`);
+  } catch (e) { if (e) { console.error(e); A.quitMsg = "No se pudo quitar: " + e.message; toast("No se pudo quitar: " + e.message, "bad"); } }
+  A.quitando = false;
+  if (S.view === "ajustes" && S.aj.tab === "historico") ajHistorico();
+}
+// Todo en un archivo para guardar fuera de Firebase (sin las fotos ni los CSV, que van aparte)
+async function respaldoCompleto() {
+  if (!navigator.onLine) { toast("Se necesita señal.", "bad"); return; }
+  const b = $("#hResp"); b.disabled = true; b.textContent = "Preparando…";
+  try {
+    const plano = v => v && typeof v.toDate === "function" ? { _fecha: v.toDate().toISOString() } : Array.isArray(v) ? v.map(plano) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, plano(x)])) : v;
+    const [lib, his, lis, cfg, con] = await Promise.all(["liberaciones", "historial", "listas", "config", "contadores"].map(c => getDocs(collection(db, c))));
+    const docs = s => s.docs.map(d => ({ id: d.id, ...plano(d.data()) }));
+    descargar(`respaldo_liberaciones_${hoyISO()}.json`, JSON.stringify({ tipo: "respaldo-liberaciones", fecha: new Date().toISOString(), versionApp: VERSION_APP, por: S.email, liberaciones: docs(lib), historial: docs(his), listas: docs(lis), config: docs(cfg), contadores: docs(con) }), "application/json");
+    S.aj.quitMsg = `Respaldo descargado: ${lib.docs.length.toLocaleString("es-PE")} registros y ${his.docs.length.toLocaleString("es-PE")} anotaciones del historial. Guárdalo en un lugar seguro.`; const el = $("#hEst2"); if (el) el.textContent = S.aj.quitMsg;
+    toast("Respaldo descargado");
+  } catch (e) { console.error(e); toast("No se pudo hacer el respaldo: " + e.message, "bad"); }
+  b.disabled = false; b.textContent = "Descargar respaldo completo";
 }
 
 /* Protocolos del levantamiento con dron: nombre, zonas donde aplica y cómo se generan los códigos */

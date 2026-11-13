@@ -11,6 +11,19 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 30: importaciones mes a mes (Ajustes → Histórico)
+
+No cambia las reglas de Firebase.
+
+- **Lo registrado en la app nunca se toca:** ni al importar ni al quitar. Tampoco un importado que después se trabajó en la app (entregado, con archivos, XML, carpeta, notas, papelera o cualquier cambio en su historial). Los cambios en lote de Ajustes (renombrar capa, unir tipos, cambiar clave, mover frente) no cuentan como trabajo.
+- **Se carga el Excel directo** (.xlsx, la misma hoja «Log» de protocolos; también CSV o el JSON de antes). Ya no hace falta convertirlo aparte.
+- **Vista previa antes de escribir:** cuántos son nuevos, cuántos se actualizan, cuántos ya estaban iguales y cuántos no se tocan porque ya están en la app (con la lista de lo que el archivo dice distinto, descargable). Avisa capa y cota sacadas de la descripción («Capa:30», «Cota: Variable»), claves de topógrafo nuevas y cuánto sube el correlativo.
+- **Emparejar nombres:** un frente o un tipo que no está en las listas, o un tipo con el mismo nombre pero de otro elemento (p. ej. «Relleno en zanja» de Tubería en una fila de Movimiento de tierras), se elige a mano o se crea. «Cómo se leyó el archivo» deja revisar y cambiar todos.
+- **Cada carga es una importación con nombre** (por defecto, su rango de fechas). En la lista: **Ver registros** (Registros muestra solo esa carga), **Descargar** (CSV) y **Quitar** (solo esa; las demás no se tocan). Lo cargado antes de esta versión aparece como «Importado antes (sin nombre)».
+- Un código que ya estaba importado y sin tocar se actualiza y pasa a la importación nueva; nunca se duplica. Las fechas del Excel quedan en su día (mediodía) y, dentro del día, en el orden de los códigos.
+- **A prueba de choques:** las revisiones leen del servidor (nunca de la copia del teléfono o la PC); el correlativo sube antes de escribir; importar y quitar van por tandas que vuelven a leer cada registro y lo saltan si alguien lo trabajó en ese momento; y si la carga se corta, la importación queda en la lista como «se cortó» y al volver a importar el mismo archivo se completa sin duplicar. Solo se cargan códigos con el prefijo de la obra.
+- **Respaldo completo:** descarga todos los registros, el historial, las listas, la configuración y el correlativo en un archivo para guardar fuera de Firebase. Al quitar, primero se descarga una copia de lo que se quita (se puede volver a cargar).
+
 ## Versión 29: roces del trabajo diario (etapa 1 del análisis desde cero)
 
 Sale del informe `analisis/informe.md` (hallazgos H6 a H13). No cambia las reglas de Firebase.

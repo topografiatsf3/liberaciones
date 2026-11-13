@@ -100,6 +100,7 @@ export function writeBatch() {
 }
 export async function getDocs(q) { return runQuery(q); }
 export async function getDocsFromServer(q) { return runQuery(q); }
+export async function getDocFromServer(ref) { return snapDoc(ref.path); }
 
 export async function runTransaction(db, fn) {
   const ops = [];

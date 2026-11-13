@@ -3,7 +3,7 @@
 Pruebas automáticas que abren la app en un navegador real (Chromium con Playwright) y revisan los flujos completos: registrar en campo sin señal, bandeja y código SKT-TOP único, panel, papelera, Modelo 2D, versión de computadora, celular, etc.
 
 - **No usan Firebase real**: `fake/` es un Firebase simulado que guarda todo en el navegador. No gastan lecturas ni almacenamiento.
-- **No usan datos reales**: `datos/` tiene un histórico, un eje y una liberación inventados, con la misma forma que los de obra. Se regeneran con los scripts `generar_historico.py`, `generar_eje.py` e `inventar_liberacion.py`.
+- **No usan datos reales**: `datos/` tiene un histórico, un eje y una liberación inventados, con la misma forma que los de obra. Se regeneran con los scripts `generar_historico.py`, `generar_excel.py` (Excel de protocolos con las columnas del «Log» mensual), `generar_eje.py` e `inventar_liberacion.py`.
 - Las capturas de pantalla se guardan en `capturas/` (no se suben al repositorio).
 
 ## Cómo correrlas
@@ -54,6 +54,7 @@ En Windows sin bash: `powershell -ExecutionPolicy Bypass -File pruebas\correr.ps
 | prueba34 | Etiquetas de seguimiento: «Procesado»/«Por procesar» en aspas y «Enterado»/«Por ver» en levantamientos, iguales en la tabla, la ficha, el menú «⋯», Ctrl+K y el celular; chips para filtrar por ellas; marcar procesado en la Bandeja cambia la etiqueta en Registros |
 | prueba35 | Versión 28: tipos sugeridos según el frente («Usados en…», «usado aquí»), «Detalle» aparte del tipo (separar «pz3-7» al agregar y al buscar), y en Ajustes → Tipos corregir nombre antes de aprobar, ver los registros, unir con buscador y «Deshacer» la unión |
 | prueba36 | Versión 29: «Guardar» fijo y «Limpiar» arriba, «Mis registros» abre en «Todos» con aviso de observados, ✕ de la ficha sin pisar las flechas, «Rechazar» al pie y al final de la barra de grupo, gabinete entra a la Bandeja, números del Panel arriba con su alcance, «Registrado por» con nombre, «Fecha de entrega a Calidad» y 44 px en tableta táctil |
+| prueba37 | Versión 30: importaciones mes a mes. Respaldo, quitar lo importado antes conservando lo trabajado en la app, leer el .xlsx, emparejar frentes y tipos (también de otro elemento), vista previa, importar con nombre, ver una importación en Registros, segunda carga por CSV, quitar solo una importación, reimportar sin duplicar y celular |
 | prueba25 | Productividad: observado → corregido (nota visible al editar, «Corregido» en la Bandeja, historial con lo que cambió) → re-aceptado con su mismo código, búsqueda sin tildes, duplicar un rechazado, Bandeja con teclado y Mayús+clic, ficha con anterior/siguiente que pasa sola al siguiente, «Deshacer», filtros que se recuerdan, varios estados, «Esta semana» y «Ver más» en Mis registros |
 | prueba10 | Ficha en pantallas medianas, «atrás», búsqueda por capa, aceptar sin señal, gabinete sin «Editar» (solo cambiar capa), superposición, depuración de fotos, jefe en Modelo 2D |
 
