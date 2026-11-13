@@ -50,22 +50,23 @@ const cuenta = p => p.$$eval('#lista [data-id]', x => x.length);
   await p.screenshot({ path: path.join(OUT, '1-ajustes-protocolos.png'), fullPage: true });
   ok(await p.$eval('#prCod input[value="porProtocolo"]', i => i.checked), 'por defecto: un código por protocolo');
   // Equipos en Ajustes → Tipos
-  await p.click('[data-tab="tipos"]'); await p.waitForSelector('#eqList');
+  await p.click('[data-tab="tipos"]'); await p.waitForSelector('#eqList', { state: 'attached' });
+  if (await p.$('.md-idx [data-md="_extra"]')) await p.click('.md-idx [data-md="_extra"]'); // pantalla ancha: «Equipos» en la lista de la izquierda
   ok((await p.$$eval('#eqList [data-k="qnom"]', i => i.map(x => x.value))).join() === 'Estación total,GNSS,Dron', 'la lista de equipos se edita en Ajustes → Tipos');
 
   // 2. Filtros en Registros (computadora)
   await p.click('#nav [data-v="todos"]'); await p.waitForSelector('#rFil');
   ok(await cuenta(p) === 6, 'sin filtros se ven los 6 registros');
-  await p.selectOption('#rfFecha', 'hoy'); await p.waitForTimeout(400);
+  await p.$eval('#rFil [data-fe="hoy"]', b => b.click()); await p.waitForTimeout(400);
   ok((await filas(p)).sort().join() === 'Registro 1,Registro 2', 'Hoy: solo los de hoy');
-  await p.selectOption('#rfFecha', 'ayer'); await p.waitForTimeout(400);
+  await p.$eval('#rFil [data-fe="ayer"]', b => b.click()); await p.waitForTimeout(400);
   ok((await filas(p)).join() === 'Registro 3', 'Ayer');
-  await p.selectOption('#rfFecha', '7d'); await p.waitForTimeout(400);
+  await p.$eval('#rFil [data-fe="7d"]', b => b.click()); await p.waitForTimeout(400);
   ok(await cuenta(p) === 4, 'Últimos 7 días');
-  await p.selectOption('#rfFecha', 'dia'); await p.waitForSelector('#rfF1');
+  await p.$eval('#rFil [data-fe="dia"]', b => b.click()); await p.waitForSelector('#rfF1');
   await p.fill('#rfF1', isoDe(hoy0 - 400 * DIA)); await p.press('#rfF1', 'Tab'); await p.waitForTimeout(500);
   ok((await filas(p)).join() === 'Registro 6', 'Un día: encuentra uno de hace más de un año (lo pide a Firebase)');
-  await p.selectOption('#rfFecha', 'rango'); await p.waitForSelector('#rfF2');
+  await p.$eval('#rFil [data-fe="rango"]', b => b.click()); await p.waitForSelector('#rfF2');
   await p.fill('#rfF1', isoDe(hoy0 - 60 * DIA)); await p.press('#rfF1', 'Tab'); await p.waitForTimeout(200);
   await p.fill('#rfF2', isoDe(hoy0 - 1 * DIA)); await p.press('#rfF2', 'Tab'); await p.waitForTimeout(500);
   ok((await filas(p)).sort().join() === 'Registro 3,Registro 4,Registro 5', 'Entre fechas');

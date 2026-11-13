@@ -792,7 +792,7 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
   .rtab.compacta thead th{position:sticky;top:0;z-index:4;box-shadow:inset 0 -1px 0 var(--line)}
   .rtab.compacta thead th:first-child{border-top-left-radius:8px}.rtab.compacta thead th:last-child{border-top-right-radius:8px}
 }
-@media (min-width:860px) and (max-width:1199px){.rtab.compacta td.tqd .tq{white-space:normal;min-width:84px}.rtab.compacta .hcb{white-space:normal;padding:8px 7px}}
+@media (min-width:860px) and (max-width:1499px){.rtab.compacta td.tqd .tq{white-space:normal;min-width:84px}.rtab.compacta .hcb{white-space:normal;padding:8px 7px}}
 /* Pantallas de 1200 a 1499 px (laptop): código y estado en dos líneas y sin la descripción al lado, para que quepa todo */
 @media (min-width:860px) and (max-width:1499px){
   .rtab.compacta td.tcod>*{display:block;margin:0}
@@ -801,7 +801,9 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
   .rtab.compacta .tl>b{max-width:100%}
   .rtab.compacta td.tfr{max-width:130px}
   .rtab.compacta td,.rtab.compacta .hcb{padding-left:7px;padding-right:7px}
-  .rgrid{grid-template-columns:220px minmax(0,1fr)}
+  .rgrid{grid-template-columns:210px minmax(0,1fr)}
+  .rtab.compacta td.tfr{max-width:120px}
+  .rtab.compacta td.mas-td{width:36px}
 }
 .fsel{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:var(--accent);color:#fff;font:700 11px var(--f-body);padding:0 5px;letter-spacing:0}
 @media (min-width:1200px){
@@ -811,6 +813,7 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
   .fcol-h{display:flex;align-items:center;gap:8px;padding:0 2px 6px;border-bottom:1px solid var(--line);margin-bottom:4px}
   .fcol-h b{font-size:14px}
   .fcol-h .btn-txt{margin-left:auto;font-size:12.5px}
+  .fsec>summary .fres{font:600 11.5px var(--f-body);text-transform:none;letter-spacing:0;color:var(--accent-strong);margin-left:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
   .fcol .f{margin:4px 0 6px}
   .fcol .f label,.fcol .flabel{font-size:11px}
   .fcol .f select,.fcol .f input{min-height:36px;font-size:13px;padding:5px 8px;width:100%}
@@ -1656,7 +1659,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 35;
+const VERSION_APP = 36;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2888,20 +2891,19 @@ const normTxt = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u
 function alternarF(fl, k, v, on) { const s = new Set(lstF(fl[k])); on ? s.add(v) : s.delete(v); fl[k] = [...s].join(","); }
 // Columna de filtros de la computadora (Registros y Bandeja)
 function colFiltros(fl, C, keys, fecha) {
-  const U = S._facUI ||= {}, nAct = keys.filter(k => lstF(fl[k]).length).length + (fecha && rangoFecha(fl) ? 1 : 0);
+  const U = S._facUI ||= ls.get("lib.facUI", {}), nAct = keys.filter(k => lstF(fl[k]).length).length + (fecha && rangoFecha(fl) ? 1 : 0);
   const sec = k => {
     const o = opsFac(k, fl, C, U[k + "+"] ? 0 : 8), nSel = lstF(fl[k]).length; if (!o.n) return "";
-    return `<details class="fsec" data-fsec="${k}" ${U[k] === false ? "" : "open"}><summary>${FAC[k].t}${nSel ? ` <span class="fsel">${nSel}</span><button type="button" class="btn-txt" data-fx="${k}" style="margin-left:auto">Quitar</button>` : ""}</summary>
+    return `<details class="fsec" data-fsec="${k}" ${U[k] ? "open" : ""}><summary>${FAC[k].t}${nSel ? ` <span class="fsel">${nSel}</span><button type="button" class="btn-txt" data-fx="${k}" style="margin-left:auto">Quitar</button>` : ""}</summary>
       ${o.n > 8 ? `<input type="search" class="fbus" data-fbus placeholder="Buscar ${FAC[k].t.toLowerCase()}…" aria-label="Buscar ${FAC[k].t.toLowerCase()}">` : ""}<div class="fops">${o.html}</div>
       ${o.n > 8 ? `<button type="button" class="btn-txt fmas" data-fmas="${k}">${U[k + "+"] ? "Ver menos" : `Ver todos (${o.n})`}</button>` : ""}</details>`;
   };
   const tituloF = (FECHA_CAMPO[fl.fc || ""] || FECHA_CAMPO[""])[1];
-  const fe = !fecha ? "" : `<details class="fsec" data-fsec="fecha" ${U.fecha === false ? "" : "open"}><summary>Fecha${rangoFecha(fl) ? ' <span class="fsel">1</span>' : ""}</summary>
+  const fe = !fecha ? "" : `<details class="fsec" data-fsec="fecha" ${U.fecha ? "open" : ""}><summary>Fecha${rangoFecha(fl) ? ` <span class="fsel">1</span><span class="fres">${esc(textoFecha({ ...fl, fc: "" }))}</span>` : ""}</summary>
     <div class="f"><label for="rfFc">Filtrar por</label><select id="rfFc" data-rf="fc">${Object.entries(FECHA_CAMPO).map(([k, [, t]]) => `<option value="${k}" ${(fl.fc || "") === k ? "selected" : ""}>${t}</option>`).join("")}</select></div>
-    <div class="fquick" role="group" aria-label="${esc(tituloF)}">${FECHAS_RF.filter(([k]) => !["dia", "rango"].includes(k)).map(([k, t]) => `<button type="button" data-fe="${k}" aria-pressed="${(fl.fecha || "") === k}">${t}</button>`).join("")}</div>
-    <div class="f"><label for="rfFecha">${tituloF}</label><select id="rfFecha" data-rf="fecha">${FECHAS_RF.map(([k, t]) => `<option value="${k}" ${(fl.fecha || "") === k ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+    <div class="fquick" role="group" aria-label="${esc(tituloF)}">${FECHAS_RF.map(([k, t]) => `<button type="button" data-fe="${k}" aria-pressed="${(fl.fecha || "") === k}">${t}</button>`).join("")}</div>
     ${fl.fecha === "dia" ? `<div class="f"><label for="rfF1">Día</label><input id="rfF1" type="date" data-rf="f1" value="${esc(fl.f1 || "")}"></div>` : fl.fecha === "rango" ? `<div class="f"><label for="rfF1">Desde</label><input id="rfF1" type="date" data-rf="f1" value="${esc(fl.f1 || "")}"></div><div class="f"><label for="rfF2">Hasta</label><input id="rfF2" type="date" data-rf="f2" value="${esc(fl.f2 || "")}"></div>` : ""}</details>`;
-  return `<div class="fcol-h"><b>Filtros</b>${nAct ? ` <span class="fsel">${nAct}</span>` : ""}${nAct ? '<button type="button" class="btn-txt" id="rfX">Limpiar todo</button>' : ""}</div>${fe}${keys.map(sec).join("")}`;
+  return `<div class="fcol-h"><b>Filtros</b>${nAct ? ` <span class="fsel">${nAct}</span>` : ""}<button type="button" class="btn-txt fcol-plg" data-fplg title="Plegar o desplegar todos">${keys.some(k => U[k]) || (fecha && U.fecha) ? "Plegar todo" : "Desplegar todo"}</button></div>${fe}${keys.map(sec).join("")}`;
 }
 // Eventos de la columna de filtros: marcar opciones, buscar dentro de una, ver todas, plegar y recordar lo plegado
 function ligarColFiltros(box, fl, repintar) {
@@ -2909,11 +2911,12 @@ function ligarColFiltros(box, fl, repintar) {
   box.addEventListener("change", e => { const c = e.target.closest("[data-fk]"); if (!c) return; alternarF(fl, c.dataset.fk, c.value, c.checked); repintar(); });
   box.addEventListener("click", e => {
     const x = e.target.closest("[data-fx]"); if (x) { e.preventDefault(); fl[x.dataset.fx] = ""; repintar(); return; }
+    if (e.target.closest("[data-fplg]")) { const abrir = !box.querySelector(".fsec[open]"); box.querySelectorAll("[data-fsec]").forEach(d => { U[d.dataset.fsec] = abrir; }); ls.set("lib.facUI", U); repintar(); return; }
     const m = e.target.closest("[data-fmas]"); if (m) { U[m.dataset.fmas + "+"] = !U[m.dataset.fmas + "+"]; repintar(); return; }
-    const q = e.target.closest("[data-fe]"); if (q) { fl.fecha = q.dataset.fe; fl.f1 = ""; fl.f2 = ""; repintar(); }
+    const q = e.target.closest("[data-fe]"); if (q) { fl.fecha = q.dataset.fe; if (fl.fecha === "dia" || fl.fecha === "rango") fl.f1 ||= hoyISO(); else { fl.f1 = ""; fl.f2 = ""; } U.fecha = true; ls.set("lib.facUI", U); repintar(); }
   });
   box.addEventListener("input", e => { if (!e.target.matches("[data-fbus]")) return; const t = normTxt(e.target.value.trim()); e.target.closest(".fsec").querySelectorAll(".fop").forEach(l => { l.hidden = t ? !l.dataset.txt.includes(t) : l.hasAttribute("data-extra"); }); });
-  box.addEventListener("toggle", e => { const d = e.target.closest?.("[data-fsec]"); if (d) U[d.dataset.fsec] = d.open; }, true);
+  box.addEventListener("toggle", e => { const d = e.target.closest?.("[data-fsec]"); if (d) { U[d.dataset.fsec] = d.open; ls.set("lib.facUI", U); } }, true);
 }
 /* Cabeceras de la tabla: clic abre ordenar y filtrar esa columna (como en Excel) */
 function thCol(fl, col, def) {
@@ -3066,7 +3069,7 @@ function pintarLista(cual) {
   <div class="tools"><input class="search" id="q" type="search" placeholder="Buscar N°, PK, tipo, frente…" value="${esc(fl.q)}" aria-label="Buscar">${cual === "mis" ? `<button type="button" class="mini wsp-btn" id="rWsp">${ICON_WSP}Resumen WhatsApp</button>` : ""}${pap && puedeAjustes() && datos.length ? '<button type="button" class="mini warn-mini" id="rVaciar">Vaciar papelera</button>' : ""}${!pap && vis.length ? `<button type="button" class="mini" id="rExp" title="Exporta a CSV lo que se ve con estos filtros">Exportar ${hayFiltro || sts.length ? "lo filtrado" : "lista"} (${vis.length})</button>` : ""}${puedeCol ? `<button type="button" class="mini" id="rFacT" aria-pressed="${colFil}" title="Muestra u oculta la columna de filtros">${colFil ? "Ocultar filtros" : `Filtros${activos.length ? ` (${activos.length})` : ""}`}</button>` : ""}${cual === "todos" && !pap && puedeAjustes() ? `<button type="button" class="mini sup-btn" id="rSup" title="Abre Panel → Modelo 2D, donde se ven las superficies XML de las liberaciones">${ICON_SUP}Superficies (XML)</button>` : ""}</div>
   ${pap || colFil ? "" : pcFil ? `<div class="rfil" id="rFil">${controlesReg(fl, cual, false)}${hayFiltro ? '<button type="button" class="btn-txt" id="rfX">Limpiar filtros</button>' : ""}</div>`
     : `<button type="button" class="fil-btn" id="rFilBtn" style="margin:0 0 8px;border-top:0;padding-top:0"><span class="fil-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg></span><b>${activos.length ? `${activos.length} ${activos.length === 1 ? "filtro" : "filtros"}` : "Filtrar por fecha, tipo, frente…"}</b>${CHEV}</button>${activos.length ? `<div class="fchips" id="rChips" style="margin-top:0">${activos.map(([k, t]) => `<button type="button" class="chip on" data-quitar="${k}" aria-label="Quitar filtro ${esc(t)}">${esc(t)}<span class="x" aria-hidden="true">✕</span></button>`).join("")}</div>` : ""}`}
-  ${puedeCol && activos.length ? `<div class="fchips fact" id="rChips"><span class="fact-n">${vis.length.toLocaleString("es-PE")} ${vis.length === 1 ? "registro" : "registros"} con</span>${activos.map(([k, t]) => `<button type="button" class="chip on" data-quitar="${k}" aria-label="Quitar filtro ${esc(t)}">${esc(t)}<span class="x" aria-hidden="true">✕</span></button>`).join("")}<button type="button" class="btn-txt" id="rfX2">Limpiar todo</button></div>` : ""}
+  ${puedeCol && activos.length ? `<div class="fchips fact" id="rChips"><span class="fact-n">${vis.length.toLocaleString("es-PE")} ${vis.length === 1 ? "registro" : "registros"} con</span>${activos.map(([k, t]) => `<button type="button" class="chip on" data-quitar="${k}" aria-label="Quitar filtro ${esc(t)}">${esc(t)}<span class="x" aria-hidden="true">✕</span></button>`).join("")}<button type="button" class="btn-txt" id="rfX">Limpiar todo</button></div>` : ""}
   ${cargandoFecha ? '<p class="rf-nota">Buscando los registros de esas fechas…</p>' : porFecha && S.todosFechaLleno ? '<p class="rf-nota">Hay muchos registros en esas fechas; se muestran los 3000 más recientes. Acorta el rango para verlos todos.</p>' : ""}
   ${fl.fecha === "rango" && fl.f1 && fl.f2 && fl.f1 > fl.f2 ? '<p class="rf-nota">«Desde» era posterior a «Hasta»: se tomaron al revés.</p>' : ""}
   ${parcial ? `<p class="rf-nota" id="rParcial">Estos filtros revisan solo los últimos ${S.todos.length} registros. <button type="button" class="btn-txt" id="rHist">Buscar en todo el historial</button></p>` : ""}
@@ -3105,7 +3108,7 @@ function pintarLista(cual) {
   // Filtros: en computadora se aplican al cambiar; en el celular, desde la hoja con «Aplicar»
   $("#rFil")?.addEventListener("change", e => { const k = e.target.dataset.rf; if (!k) return; fl[k] = e.target.value; if (k === "fecha") { if (fl.fecha === "dia" || fl.fecha === "rango") fl.f1 ||= hoyISO(); else { fl.f1 = ""; fl.f2 = ""; } } pintarLista(cual); });
   const limpiarR = () => { CAMPOS_RF.forEach(k => { fl[k] = ""; }); fl.st = ""; fl.q = ""; fl.hist = false; fl.lote = ""; fl.ord = ""; S._loteId = ""; pintarLista(cual); };
-  $("#rfX")?.addEventListener("click", limpiarR); $("#rfX2")?.addEventListener("click", limpiarR);
+  $("#rfX")?.addEventListener("click", limpiarR);
   $("#rFacT")?.addEventListener("click", () => { ls.set("lib.facOff", !ls.get("lib.facOff", false)); pintarLista(cual); });
   $("#rFilBtn")?.addEventListener("click", () => abrirFiltrosReg(cual));
   $("#rChips")?.addEventListener("click", e => { const c = e.target.closest("[data-quitar]"); if (!c) return; const k = c.dataset.quitar; if (k === "fecha") { fl.fecha = ""; fl.f1 = ""; fl.f2 = ""; fl.fc = ""; } else fl[k] = ""; pintarLista(cual); });
@@ -6337,7 +6340,7 @@ function pintarBandeja() {
     ${colFil ? "" : `<select id="bFr" aria-label="Frente" class="bsel">${opcionesFrente(lstF(F.sub).length === 1 ? F.sub : "", lstF(F.sub).length > 1 ? `${lstF(F.sub).length} frentes` : "Todos los frentes")}</select>
     <select id="bTopo" aria-label="Topógrafo" class="bsel"><option value="">${lstF(F.topo).length > 1 ? `${lstF(F.topo).length} topógrafos` : "Todos los topógrafos"}</option>${S.listas.topografos.filter(x => x.activo !== false).map(x => `<option value="${esc(x.id)}" ${F.topo === x.id ? "selected" : ""}>${esc(x.id)} · ${esc(x.nombre)}</option>`).join("")}</select>`}
     ${puedeCol ? `<button type="button" class="mini" id="bFacT" aria-pressed="${colFil}">${colFil ? "Ocultar filtros" : `Filtros${nFil ? ` (${nFil})` : ""}`}</button>` : ""}${nFil || B.q ? '<button type="button" class="btn-txt" id="bLimpiar">Limpiar</button>' : ""}</div>
-  ${nFil && puedeCol ? `<div class="fchips fact" id="bChips"><span class="fact-n">${vis.length} de ${fuente.length} con</span>${KB.filter(k => lstF(F[k]).length).map(k => `<button type="button" class="chip on" data-bquitar="${k}" aria-label="Quitar filtro ${esc(FAC[k].t)}">${esc(FAC[k].t)}: ${esc(lstF(F[k]).map(v => FAC[k].n(v) || v).join(" o "))}<span class="x" aria-hidden="true">✕</span></button>`).join("")}</div>` : nFil && fuente.length !== vis.length ? `<p class="rf-nota">${vis.length} de ${fuente.length} con estos filtros.</p>` : ""}
+  ${nFil && puedeCol ? `<div class="fchips fact" id="bChips"><span class="fact-n">${vis.length} de ${fuente.length} con</span>${KB.filter(k => lstF(F[k]).length).map(k => `<button type="button" class="chip on" data-bquitar="${k}" aria-label="Quitar filtro ${esc(FAC[k].t)}">${esc(FAC[k].t)}: ${esc(lstF(F[k]).map(v => FAC[k].n(v) || v).join(" o "))}<span class="x" aria-hidden="true">✕</span></button>`).join("")}<button type="button" class="btn-txt" id="rfX">Limpiar todo</button></div>` : nFil && fuente.length !== vis.length ? `<p class="rf-nota">${vis.length} de ${fuente.length} con estos filtros.</p>` : ""}
   ${t === "EP" && B.errEP ? `<p class="pinfo" style="margin:0 0 12px">${esc(B.errEP)}</p>` : ""}
   <div class="cap-bulk ${ns ? "on" : ""}" id="bBulk"><label class="ck" style="margin-right:4px"><input type="checkbox" id="bAll" ${vis.length && vis.slice(0, lim).every(r => B.sel.has(r.id)) ? "checked" : ""} aria-label="Seleccionar todo"></label><span><b>${ns}</b> ${ns === 1 ? "seleccionada" : "seleccionadas"}</span>
     ${t === "EP" ? `<button type="button" class="mini ok-btn" data-bk="entregar">Entregar a Calidad</button><button type="button" class="mini" data-bk="exportar">Exportar CSV</button>` : `<button type="button" class="mini ok-btn" data-bk="aceptar">Aceptar y generar códigos</button><button type="button" class="mini" data-bk="observar">Observar</button>${t === "OB" ? '<button type="button" class="mini" data-bk="reabrir">Devolver a pendientes</button>' : ""}<button type="button" class="mini" data-bk="exportar">Exportar CSV</button>`}<button type="button" class="mini" data-bk="limpiar">Deseleccionar</button>${t === "EP" ? "" : '<button type="button" class="mini warn-mini aparte" data-bk="rechazar">Rechazar</button><button type="button" class="mini warn-mini" data-bk="papelera">Mandar a la papelera</button>'}</div>
@@ -6349,7 +6352,7 @@ function pintarBandeja() {
   if (!S._popSigue) cerrarPop(); S._popSigue = false;
   const repB = () => { guardarBandeja(); pintarBandeja(); };
   if (colFil) ligarColFiltros($("#bFil"), F, repB);
-  $("#bFil")?.addEventListener("click", e => { if (e.target.closest("#rfX")) { KB.forEach(k => { F[k] = ""; }); F.ord = ""; B.q = ""; repB(); } });
+  $("#bChips")?.addEventListener("click", e => { if (e.target.closest("#rfX")) { KB.forEach(k => { F[k] = ""; }); F.ord = ""; B.q = ""; repB(); } });
   $("#blist thead")?.addEventListener("click", e => { const b = e.target.closest("[data-hc]"); if (!b) return; e.stopPropagation(); if ($("#hPop")?.dataset.col === b.dataset.hc) { cerrarPop(); return; } popColumna(b, F, b.dataset.hc, COLB[b.dataset.hc], C, [], repB); $("#hPop").dataset.col = b.dataset.hc; });
   $("#bHist")?.addEventListener("click", async e => { e.target.disabled = true; e.target.textContent = "Cargando…";
     try { const sn = await getDocs(query(collection(db, "liberaciones"), where("estado", "==", "EP"), where("origen", "==", "excel"))); B.epHist = sn.docs.map(fila).filter(vivo); B.epHistOk = true; pintarBandeja(); toast(`${B.epHist.length.toLocaleString("es-PE")} del histórico cargadas`); }

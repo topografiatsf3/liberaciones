@@ -11,6 +11,15 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 36: columna de filtros más ordenada
+
+No cambia las reglas de Firebase.
+
+- Los filtros de la columna empiezan **plegados** (solo los títulos, con cuántas opciones hay marcadas) y se quedan como los dejes, también al volver a abrir la app. «Desplegar todo» / «Plegar todo» arriba.
+- **Fecha** solo con botones (Todas, Hoy, Ayer, Esta semana, Últimos 7 días, Este mes, Un día, Entre fechas); ya no se repite en un desplegable. Plegada, dice qué fecha está puesta.
+- Un solo **«Limpiar todo»**, junto a los filtros puestos sobre la tabla (Registros y Bandeja).
+- Entre 1200 y 1500 px la tabla cabe entera con la columna de filtros abierta (fecha y topógrafo en dos líneas).
+
 ## Versión 35: revisión de computadora (media pantalla y pantalla completa)
 
 No cambia las reglas de Firebase. El celular y «Mis registros» quedan igual.

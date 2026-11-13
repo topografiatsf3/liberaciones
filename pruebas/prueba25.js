@@ -161,9 +161,9 @@ const estadoDe = (p, desc) => p.evaluate(d => { const s = window.__fakeStore(); 
   ok(await d.$eval('#rFil [data-fk="sub"][value="pp-oeste"]', i => i.checked), 'el filtro de frente se recuerda al recargar');
   await d.click('#rfX'); await d.waitForTimeout(200);
   ok(!(await d.$('#rFil [data-fk="sub"]:checked')) && await d.getAttribute('#rSt [data-st=""]', 'aria-pressed') === 'true', '«Limpiar filtros» quita también el estado');
-  await d.selectOption('#rfFecha', 'sem'); await d.waitForTimeout(400);
+  await d.$eval('#rFil [data-fe="sem"]', b => b.click()); await d.waitForTimeout(400);
   ok((await d.textContent('.lead')).includes('Esta semana'), 'filtro de fecha «Esta semana»');
-  await d.selectOption('#rfFecha', ''); await d.waitForTimeout(200);
+  await d.$eval('#rFil [data-fe=""]', b => b.click()); await d.waitForTimeout(200);
 
   // «Ver más» en Mis registros con más de 400
   await p.evaluate(() => {

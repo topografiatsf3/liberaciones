@@ -36,6 +36,9 @@ const filas = (p, sel = '#lista tbody tr[data-id]') => p.$$eval(sel, x => x.leng
   ok(await p.$eval('#lista', t => t.classList.contains('compacta')) && await p.$$eval('#lista thead [data-hc]', x => x.map(b => b.dataset.hc).join()) === 'cod,lib,fr,pk,fe', 'tabla compacta con columnas Código y estado, Liberación, Frente, Progresiva, Fecha y topógrafo');
   const alto = await p.$eval('#lista tbody tr[data-id]:not(:has(.tn))', tr => tr.getBoundingClientRect().height);
   ok(alto < 56, `filas de una sola línea (${Math.round(alto)} px de alto)`);
+  ok(await p.$$eval('#rFil .fsec', x => x.every(d => !d.open)), 'los filtros empiezan plegados (solo los títulos)');
+  await p.click('#rFil [data-fplg]'); await p.waitForTimeout(250);
+  ok(await p.$$eval('#rFil .fsec', x => x.every(d => d.open)), '«Desplegar todo» los abre');
   const total = await filas(p);
   // Frente: conteo y varias opciones a la vez
   const op = async (k, v) => p.$(`#rFil [data-fk="${k}"][value="${v}"]`);
@@ -102,7 +105,7 @@ const filas = (p, sel = '#lista tbody tr[data-id]') => p.$$eval(sel, x => x.leng
   await p.screenshot({ path: OUT + '/03-bandeja.png' });
   await p.reload(); await p.waitForSelector('#nav button'); await p.waitForTimeout(1500); await ir(p, 'bandeja'); await p.waitForSelector('#bFil.fcol');
   ok(await filas(p, '#blist tr[data-rid]') === 2 && (await p.textContent('#blist tr[data-rid] td.mono')).trim().startsWith('0+300'), 'la Bandeja recuerda filtro y orden');
-  await p.click('#bFil #rfX'); await p.waitForTimeout(250);
+  await p.click('#bChips #rfX'); await p.waitForTimeout(250);
   ok(await filas(p, '#blist tr[data-rid]') === 3, '«Limpiar todo» en la Bandeja');
 
   // --- Ajustes
