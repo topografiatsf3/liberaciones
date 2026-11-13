@@ -754,7 +754,7 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
 #mReal{display:block;cursor:grab;touch-action:pan-y;user-select:none}
 #mReal:active{cursor:grabbing}
 #mReal .rlib{cursor:pointer}
-#mReal .rlab{font:700 11px var(--f-mono);fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:3px;pointer-events:none}
+#mReal .rlab{font:700 11px var(--f-mono);fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:3;pointer-events:none}
 #mReal .rlab.pk{font-weight:600;fill:var(--ink)}
 .norte{position:absolute;bottom:10px;left:10px;width:30px;height:34px;background:rgba(255,255,255,.88);border-radius:8px;padding:2px}
 .norte text{font:700 11px var(--f-body);fill:var(--ink)}
@@ -763,6 +763,65 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
 .rzoom button{min-width:40px;min-height:36px;border:1px solid var(--line);background:rgba(255,255,255,.94);border-radius:8px;font-weight:700;font-size:15px}
 .rzoom button[data-rz="0"]{font-size:12px}
 .rzoom button:hover{background:var(--surface-2)}
+/* Mesa de trabajo del Modelo 2D: rueda para acercar, lectura de coordenadas, medir y superficies editables */
+.mcoord{position:absolute;left:48px;bottom:10px;font:600 11.5px var(--f-mono);color:var(--ink);background:rgba(255,255,255,.92);border-radius:6px;padding:3px 8px;pointer-events:none;white-space:nowrap}
+.msec .mcoord{left:54px;bottom:auto;top:8px;white-space:normal;max-width:calc(100% - 190px);line-height:1.5}
+.msec .mex{top:8px;right:10px}
+.msec svg{cursor:grab;user-select:none;touch-action:pan-y}
+.msec svg:active{cursor:grabbing}
+.msec.medir svg{cursor:crosshair}
+.msec .rzoom{bottom:32px}
+.msec .rzoom button{min-height:32px;min-width:36px}
+#sSvg .dis{transition:stroke-width .12s}
+#sSvg .dis.hi{stroke-width:4}
+#sSvg .smed{font:700 11.5px var(--f-mono);fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:3px}
+.msbar .msta{flex:1 1 100%;margin:0}
+.msbar select{border:1px solid var(--line-strong);border-radius:8px;padding:0 8px;min-height:38px;background:var(--surface);font-size:13px;font-weight:600}
+.msbar .mini[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent-strong);border-color:var(--accent)}
+.mdiv{display:none;height:12px;margin:4px 0 -8px;cursor:row-resize;position:relative;touch-action:none}
+.mdiv::after{content:"";position:absolute;left:50%;top:4px;width:64px;height:4px;margin-left:-32px;border-radius:2px;background:var(--line-strong)}
+.mdiv:hover::after,.mdiv.on::after{background:var(--accent)}
+.mleg-h{display:flex;align-items:center;gap:10px;flex:1 1 100%;font-size:12.5px;color:var(--ink)}
+.mleg-h .linkbtn{margin-left:auto;font-size:12.5px}
+.mleg .lchip{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:3px 10px 3px 8px;font:inherit;color:var(--ink);display:inline-flex;align-items:center;min-height:28px;text-align:left}
+.mleg .lchip:hover{border-color:var(--accent)}
+.mleg .lchip.off{color:var(--muted);text-decoration:line-through;background:var(--surface-2)}
+.mleg .lchip.off i{opacity:.3}
+.mmed{margin:8px 0 0;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--surface-2)}
+.mmed dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:4px 0 0}
+.mmed dt{color:var(--muted);font-weight:600}
+.mmed dd{margin:0;font-family:var(--f-mono);font-weight:600}
+.mmed-h{display:flex;align-items:center;gap:8px}
+.mmed-h .linkbtn{margin-left:auto}
+.supf{display:grid;grid-template-columns:auto 44px 1fr;gap:10px;align-items:center;border-top:1px solid var(--line);padding:6px 0}
+.supf input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
+.supf input[type=color]{width:44px;height:36px;border:1px solid var(--line);border-radius:8px;padding:2px;background:var(--surface)}
+.supf input[type=text]{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-height:38px;font-size:14px;background:var(--surface)}
+.supf small{display:block;color:var(--muted);font-size:11.5px;font-weight:600;margin-top:2px;overflow-wrap:anywhere}
+@media (min-width:1024px){
+  #view:has(#mRoot){max-width:none}
+  .msbar .msta{flex:1 1 90px;order:1}
+  .msbar .mtool{order:2}
+  body.m-full:has(#mRoot) .nav,body.m-full:has(#mRoot) .top,body.m-full:has(#mRoot) .me{display:none}
+  body.m-full:has(#mRoot) #view{margin-left:0;padding:10px 14px 14px}
+  body.m-full:has(#mRoot) .view-title,body.m-full:has(#mRoot) .lead,body.m-full:has(#mRoot) .mws .nota-g{display:none}
+  body.m-full:has(#mRoot) .mdiv{display:block}
+  body.m-full:has(#mRoot) .chartbox{margin-bottom:8px}
+  body.m-full:has(#mRoot) .pgrid{grid-template-columns:260px minmax(0,1fr);gap:12px}
+}
+/* Leyenda, medición y tabla al costado: en pantalla completa desde 1400 px; con el menú a la vista, desde 1800 px */
+@media (min-width:1400px){
+  body.m-full .mgrid.con-lat{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}
+  body.m-full .mgrid.con-lat .mlat{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto;padding-top:14px}
+  body.m-full .mgrid.con-lat .mleg{margin-top:0}
+  body.m-full .mgrid.con-lat .mlat .hm{display:none}
+}
+@media (min-width:1800px){
+  .mgrid.con-lat{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}
+  .mgrid.con-lat .mlat{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto;padding-top:14px}
+  .mgrid.con-lat .mleg{margin-top:0}
+  .mgrid.con-lat .mlat .hm{display:none}
+}
 .legend i.crz{background:repeating-linear-gradient(-45deg,var(--ink) 0 2px,transparent 2px 5px);border:1px solid var(--ink)}
 .legend i.fue{background:repeating-linear-gradient(45deg,#e0a43a 0 2px,#fff4dd 2px 5px)}
 .avc{display:flex;gap:16px;align-items:center;margin:8px 0 6px}
@@ -1432,7 +1491,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 31;
+const VERSION_APP = 32;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -4372,6 +4431,7 @@ async function guardarModelo(file, al, eje, secs, lista, subId) {
   const partes = [[]]; let tam = 0;
   cs.forEach(t => { if (tam + t.length > 700000 && partes[partes.length - 1].length) { partes.push([]); tam = 0; } partes[partes.length - 1].push(t); tam += t.length + 4; });
   const flat = eje.flatMap(q => [r2(q[0]), r3(q[1]), r3(q[2])]);
+  const cfgAntes = MOD.secc[subId]?.cfg; if (cfgAntes) { const c = {}; dis.forEach(n => { if (cfgAntes[n]) c[n] = cfgAntes[n]; }); if (Object.keys(c).length) meta.cfg = c; }
   const mod = decModelo({ ...meta, cs }); MOD.secc[subId] = mod;
   S.ejes[subId] = { puntos: flat, nombre: file.name };
   // Liberaciones que vienen cortadas en las secciones
@@ -4695,15 +4755,16 @@ function dibujarPlantaReal() {
   const libs = vis.map(x => ({ x, b: mapa.get(x.id)?.bordeEN })).filter(o => o.b && o.b.length > 2);
   const base = P.mGrupo ? MOD.bases[subId]?.get(P.mGrupo) : null, an = base?.anillos || [];
   const pts = [...an.flat(), ...libs.flatMap(o => o.b)];
+  let marcasPk = null;
   if (!pts.length) { box.innerHTML = `<div class="empty" style="padding:28px 16px"><b>${P.mGrupo ? "Esta capa aún no tiene base ni liberaciones" : "Aún no hay superficies con contorno"}</b>${P.mGrupo ? "Sube su XML base (opcional) y los XML de cada liberación." : "Elige una capa o sube los XML de las liberaciones."}</div>`; return; }
   const rot = rotacion(pts, eje);
   // El tramo de eje que acompaña a la capa también entra en el encuadre
   const ejeV = []; if (eje && rot.sRango) { const [a, b] = rot.sRango; for (let i = 0; i <= 20; i++) ejeV.push(enDeSO(eje, a + (b - a) * i / 20, 0)); }
   const T = [...pts, ...ejeV].map(rot.f);
   const [x0, x1] = mm(T.map(t => t[0])), [y0, y1] = mm(T.map(t => t[1])), w = x1 - x0 || 1, h = y1 - y0 || 1;
-  const W = Math.max(300, cont.clientWidth), H = innerWidth < 760 ? 300 : 420, pad = 26;
-  const k = Math.min((W - 2 * pad) / w, (H - 2 * pad) / h);
-  let ex = 1; const hObj = (H - 2 * pad) * 0.55; if (h * k < hObj) ex = Math.min(10, hObj / (h * k));
+  const W = Math.max(300, cont.clientWidth), H = altoGraf("pl"), pad = 26;
+  // Escala real: la misma en los dos sentidos (sin deformar). Para ver una capa angosta se acerca con la rueda.
+  const k = Math.min((W - 2 * pad) / w, (H - 2 * pad) / h), ex = 1;
   const ox = (W - w * k) / 2, oy = (H - h * k * ex) / 2;
   const X = x => ox + (x - x0) * k, Y = y => oy + (y - y0) * k * ex;
   const xy = p => { const [x, y] = rot.f(p); return X(x).toFixed(1) + "," + Y(y).toFixed(1); };
@@ -4735,8 +4796,9 @@ function dibujarPlantaReal() {
     if (b > a) {
       const n = Math.min(400, Math.ceil(b - a)), linea = []; for (let i = 0; i <= n; i++) linea.push(enDeSO(eje, a + (b - a) * i / n, 0));
       out.push(`<path d="M${linea.map(xy).join("L")}" fill="none" stroke="${TOK.ink}" stroke-width="1.2" stroke-dasharray="7 5" ${ve} pointer-events="none"/>`);
-      const st = paso(b - a, W);
-      for (let v = Math.ceil(a / st) * st; v <= b; v += st) { const [px, py] = xy(enDeSO(eje, v, 0)).split(",").map(Number); out.push(`<circle cx="${px}" cy="${py}" r="2.6" fill="${TOK.ink}"/><text class="rlab pk" x="${px}" y="${py - 6}" text-anchor="middle">${fmtPk(v)}</text>`); }
+      // Progresivas: más seguidas cuanto más se acerca (se rehacen al cambiar el acercamiento)
+      marcasPk = f => { const st = paso((b - a) * f, W), m = []; for (let v = Math.ceil(a / st) * st; v <= b + 1e-6; v += st) { const [px, py] = xy(enDeSO(eje, v, 0)).split(",").map(Number); m.push(`<circle cx="${px}" cy="${py}" r="${(2.6 * f).toFixed(3)}" fill="${TOK.ink}"/><text class="rlab pk" x="${px}" y="${(py - 6 * f).toFixed(2)}" text-anchor="middle">${fmtPk(v)}</text>`); } return m.join(""); };
+      out.push('<g id="rPk" pointer-events="none"></g>');
     }
     if (mod && P.mSta != null && P.mSta >= a - 1 && P.mSta <= b + 1) {
       const sec = mod.secs[idxCerca(mod, P.mSta)] || []; let oa = -30, ob = 30;
@@ -4745,16 +4807,35 @@ function dibujarPlantaReal() {
     }
   }
   // Códigos sobre las liberaciones grandes
-  libs.forEach((o, i) => { const t = o.b.map(rot.f); const cx = t.reduce((s, q) => s + q[0], 0) / t.length, cy = t.reduce((s, q) => s + q[1], 0) / t.length; if ((bb[i][0][1] - bb[i][0][0]) * k > 46 && o.x.codigo) out.push(`<text class="rlab" x="${X(cx).toFixed(1)}" y="${(Y(cy) + 4).toFixed(1)}" text-anchor="middle">${esc(o.x.codigo.replace(/^SKT-TOP-/, ""))}</text>`); });
+  libs.forEach((o, i) => { const t = o.b.map(rot.f); const cx = t.reduce((s, q) => s + q[0], 0) / t.length, cy = t.reduce((s, q) => s + q[1], 0) / t.length; if (o.x.codigo) out.push(`<text class="rlab" data-w="${((bb[i][0][1] - bb[i][0][0]) * k).toFixed(1)}" x="${X(cx).toFixed(1)}" y="${(Y(cy) + 4).toFixed(1)}" text-anchor="middle">${esc(o.x.codigo.replace(/^SKT-TOP-/, ""))}</text>`); });
   // Flecha del norte
   const nx = Math.sin(rot.ang), ny = -Math.cos(rot.ang) * ex, nl = Math.hypot(nx, ny) || 1;
+  if (P.mVB && Math.abs(P.mVB[2] / P.mVB[3] - W / H) > 0.01) P.mVB = null;
   const vb = P.mVB || [0, 0, W, H];
   box.innerHTML = `<svg id="mReal" viewBox="${vb.join(" ")}" width="100%" height="${H}" role="img" aria-label="Planta real de la capa"><defs>${PAT_OBS}${defs.join("")}</defs>${out.join("")}</svg>
     <svg class="norte" viewBox="-20 -20 40 46" aria-label="Norte"><g transform="rotate(${(Math.atan2(nx / nl, -ny / nl) * 180 / Math.PI).toFixed(1)})"><path d="M0,-15 L6,6 L0,2 L-6,6Z" fill="${TOK.ink}"/></g><text x="0" y="22" text-anchor="middle">N</text></svg>
-    ${ex > 1.05 ? `<span class="mex">Ancho ×${ex.toFixed(1)}</span>` : ""}`;
-  box._t = { W, H, rot, X, Y, k, ex, ox, oy, x0, y0 };
+    <div class="mcoord" id="mCoord" hidden></div>`;
+  box._t = { W, H, rot, X, Y, k, ex, ox, oy, x0, y0, marcasPk, fPk: 0 };
   ajustarTextos();
-  const svg = $("#mReal");
+  const svg = $("#mReal"), pr = eje ? proyector(eje) : null;
+  // Rueda del ratón: acerca o aleja sin deformar, dejando fijo el punto que está bajo el cursor
+  let rafZ = 0;
+  svg.addEventListener("wheel", e => {
+    e.preventDefault();
+    const r = svg.getBoundingClientRect(), v = P.mVB || [0, 0, W, H], f = Math.exp(e.deltaY * (e.deltaMode ? 0.05 : 0.0015));
+    const nw = Math.min(W * 1.5, Math.max(W / 800, v[2] * f)), g = nw / v[2], mx = v[0] + (e.clientX - r.left) / r.width * v[2], my = v[1] + (e.clientY - r.top) / r.height * v[3];
+    P.mVB = [mx - (mx - v[0]) * g, my - (my - v[1]) * g, nw, nw * H / W]; svg.setAttribute("viewBox", P.mVB.join(" "));
+    if (!rafZ) rafZ = requestAnimationFrame(() => { rafZ = 0; ajustarTextos(); });
+  }, { passive: false });
+  // Lectura de coordenadas bajo el cursor
+  const coord = $("#mCoord");
+  svg.addEventListener("pointermove", e => {
+    if (e.pointerType !== "mouse") return;
+    const r = svg.getBoundingClientRect(), v = P.mVB || [0, 0, W, H], sx = v[0] + (e.clientX - r.left) * v[2] / r.width, sy = v[1] + (e.clientY - r.top) * v[3] / r.height;
+    const E = rot.inv((sx - ox) / k + x0, (sy - oy) / (k * ex) + y0), q = pr ? pr(E[0], E[1]) : null;
+    coord.hidden = false; coord.textContent = `E ${E[0].toFixed(2)} · N ${E[1].toFixed(2)}` + (q && q[2] < 500 ? ` · PK ${fmtPk(q[0])} · ${fmtOff(q[1])}` : "");
+  });
+  svg.addEventListener("pointerleave", () => { coord.hidden = true; });
   // Arrastrar para mover; tocar para elegir
   let ini = null, movio = false;
   svg.addEventListener("pointerdown", e => { ini = { x: e.clientX, y: e.clientY, vb: (P.mVB || [0, 0, W, H]).slice() }; movio = false; });
@@ -4768,6 +4849,8 @@ function dibujarPlantaReal() {
   svg.addEventListener("pointerup", e => {
     const fue = movio; ini = null; if (fue) return;
     const lib = e.target.closest(".rlib");
+    // Doble clic fuera de las liberaciones: ver todo (se cuenta a mano porque el primer clic vuelve a dibujar la planta)
+    if (!lib) { const u = box._uc, ah = performance.now(); box._uc = { t: ah, x: e.clientX, y: e.clientY }; if (u && ah - u.t < 400 && Math.hypot(e.clientX - u.x, e.clientY - u.y) < 8) { box._uc = null; zoomReal(0); return; } }
     if (lib) { const id = lib.dataset.sid; if (P.mSel === id) { editarSuperficie(id); return; } P.mSel = id; const x = vis.find(v => v.id === id); if (mod && x && x.pk0 != null) { const dentro = mod.est.filter(t => t >= x.pk0 - 0.05 && t <= x.pk1 + 0.05); P.mSta = dentro.length ? dentro[0] : mod.est[idxCerca(mod, (x.pk0 + x.pk1) / 2)]; } dibujarModelo(); return; }
     if (eje && mod) {
       const r = svg.getBoundingClientRect(), v = P.mVB || [0, 0, W, H], sx = v[0] + (e.clientX - r.left) * v[2] / r.width, sy = v[1] + (e.clientY - r.top) * v[3] / r.height;
@@ -4779,10 +4862,19 @@ function dibujarPlantaReal() {
 function zoomReal(f) {
   const P = S.panel, t = $("#mPlan")?._t; if (!t) return;
   if (!f) { P.mVB = null; }
-  else { const v = P.mVB || [0, 0, t.W, t.H], cx = v[0] + v[2] / 2, cy = v[1] + v[3] / 2, w = Math.min(t.W, Math.max(t.W / 40, v[2] / f)), h = w * t.H / t.W; P.mVB = w >= t.W ? null : [cx - w / 2, cy - h / 2, w, h]; }
+  else { const v = P.mVB || [0, 0, t.W, t.H], cx = v[0] + v[2] / 2, cy = v[1] + v[3] / 2, w = Math.min(t.W, Math.max(t.W / 800, v[2] / f)), h = w * t.H / t.W; P.mVB = w >= t.W ? null : [cx - w / 2, cy - h / 2, w, h]; }
   $("#mReal")?.setAttribute("viewBox", (P.mVB || [0, 0, t.W, t.H]).join(" ")); ajustarTextos();
 }
-function ajustarTextos() { const t = $("#mPlan")?._t, v = S.panel.mVB; const f = v ? v[2] / t.W : 1; document.querySelectorAll("#mReal .rlab").forEach(x => x.setAttribute("font-size", (11 * f).toFixed(2))); document.querySelectorAll("#mReal circle").forEach(x => x.setAttribute("r", (2.6 * f).toFixed(2))); }
+// Textos y marcas siempre del mismo tamaño en pantalla; al acercar aparecen más códigos y más progresivas
+function ajustarTextos() {
+  const t = $("#mPlan")?._t; if (!t) return; const v = S.panel.mVB, f = v ? v[2] / t.W : 1, g = $("#rPk");
+  if (g && t.marcasPk && t.fPk !== f) { g.innerHTML = t.marcasPk(f); t.fPk = f; }
+  // Los rayados (falta liberar, cruce, fuera, observado) tampoco se agrandan al acercar
+  document.querySelectorAll("#mReal pattern").forEach(pt => { pt.dataset.r ??= pt.getAttribute("patternTransform") || ""; pt.setAttribute("patternTransform", `${pt.dataset.r} scale(${f.toFixed(5)})`); });
+  document.querySelectorAll("#mReal .rlab").forEach(x => { x.style.fontSize = (11 * f).toFixed(3) + "px"; x.style.strokeWidth = (3 * f).toFixed(3); if (x.dataset.w) x.style.display = +x.dataset.w / f > 46 ? "" : "none"; });
+}
+// Alto de los gráficos: lo calcula medirAltos() según la pantalla
+const altoGraf = q => S.panel._alt?.[q] || (innerWidth < 760 ? (q === "pl" ? 300 : 250) : (q === "pl" ? 420 : 330));
 
 /* Lista de capas con su porcentaje, filtros y orden */
 function dibujarCapasLista() {
@@ -4820,12 +4912,21 @@ function dibujarCapasLista() {
 }
 
 /* --- Vista --- */
-const COL_DIS = [TOK.muted, "#a8875f", "#5f84ad", "#8d73ab", "#4f9187", "#b06f6f", "#7f9655", "#5a6b66", "#c08a3e", "#6e7fb8"];
+const COL_DIS = [TOK.muted, "#a8875f", "#5f84ad", "#8d73ab", "#4f9187", "#b06f6f", "#7f9655", "#5a6b66", "#c08a3e", "#6e7fb8",
+  "#3d6f8f", "#b3577f", "#6a8f3a", "#8a5a36", "#4a59a0", "#2f8f6f", "#a34b4b", "#7a6aa8", "#9a8a2e", "#39798c"];
+// Ajustes de cada superficie de diseño en las secciones: { [nombre]: { o: 1 (oculta), a: nombre a mostrar, c: color } }
+const cfgSup = (mod, i) => mod.cfg?.[mod.sups[i]] || {};
+const colDis = (mod, i) => cfgSup(mod, i).c || COL_DIS[i % COL_DIS.length];
+const nomDis = (mod, i) => cfgSup(mod, i).a || mod.sups[i];
+const aHex = c => { const x = document.createElement("canvas").getContext("2d"); x.fillStyle = c; return x.fillStyle; };
+const fmtOff2 = v => (v < 0 ? "I " : "D ") + Math.abs(v).toFixed(2);
+const zLinea = (pts, o) => { if (pts.length < 2 || o < pts[0][0] - 1e-6 || o > pts[pts.length - 1][0] + 1e-6) return null; for (let k = 1; k < pts.length; k++) if (o <= pts[k][0] + 1e-9) { const t = (o - pts[k - 1][0]) / ((pts[k][0] - pts[k - 1][0]) || 1); return pts[k - 1][1] + (pts[k][1] - pts[k - 1][1]) * t; } return null; };
 function colorSup(x) { const r = registroDe(x.codigo); return r ? COLOR[r.estado] || COLOR.PT : TOK.sinreg; }
 // Relleno de una superficie: como colorSup, pero «Observado» rayado
 function rellenoSup(x) { const r = registroDe(x.codigo); return r?.estado === "OB" ? "url(#obs)" : colorSup(x); }
 function pintarModelo() {
   const P = S.panel, lista = subsConDatos();
+  P.mFull ??= ls.get("lib.mFull", false); document.body.classList.toggle("m-full", !!P.mFull && enPC());
   const grupos = S.listas.estructuras.filter(e => e.activo !== false).map(e => `<optgroup label="${esc(e.nombre)}">${(e.subs || []).filter(s => s.activo !== false).map(s => `<option value="${esc(s.id)}" ${s.id === P.subId ? "selected" : ""}>${esc(s.nombre)}</option>`).join("")}</optgroup>`).join("");
   $("#view").innerHTML = `<div id="mRoot">
   <h1 class="view-title">Panel</h1>
@@ -4835,15 +4936,15 @@ function pintarModelo() {
   <div class="card chartbox">
     <div class="chart-h">
       <div class="tabs" style="margin:0" role="group" aria-label="Vista">${tabsPanel()}</div>
-      <div class="pl-ctl"><label class="mini eje"><input type="file" id="mFile" accept=".xml" multiple hidden>Subir XML</label><input type="file" id="mBaseFile" accept=".xml" hidden></div>
+      <div class="pl-ctl">${enPC() ? `<button type="button" class="mini" data-full aria-pressed="${!!P.mFull}" title="Tecla F">${P.mFull ? "Salir de pantalla completa" : "Pantalla completa"}</button>` : ""}<label class="mini eje"><input type="file" id="mFile" accept=".xml" multiple hidden>Subir XML</label><input type="file" id="mBaseFile" accept=".xml" hidden></div>
     </div>
     <div id="mBody"><div class="empty"><b>Cargando modelo…</b></div></div>
   </div>
   ${enPC() ? "" : '<div id="mCapas"></div>'}
   <div id="mLista"></div>${enPC() ? "</div></div>" : ""}</div>`;
-  const irFrente = id => { P.subId = id; P.mGrupo = ""; P.mInicial = ""; P.mSel = ""; P.mSta = null; P.mZoom = 1; ls.set("lib.panelSub", P.subId); suscribirPanel(estDeSub(P.subId).id); pintarPanel(); };
+  const irFrente = id => { P.subId = id; P.mGrupo = ""; P.mInicial = ""; P.mSel = ""; P.mSta = null; P.mZoom = 1; P.sV = null; P.sMed = null; ls.set("lib.panelSub", P.subId); suscribirPanel(estDeSub(P.subId).id); pintarPanel(); };
   $("#pSub").addEventListener("change", e => irFrente(e.target.value));
-  $("#mGrupo").addEventListener("change", e => { P.mGrupo = e.target.value; guardarCapaSub(P.subId, P.mGrupo); P.mSel = ""; P.mVB = null; irPrimera(); dibujarModelo(); centrarSta(); });
+  $("#mGrupo").addEventListener("change", e => { P.mGrupo = e.target.value; guardarCapaSub(P.subId, P.mGrupo); P.mSel = ""; P.mVB = null; P.sV = null; irPrimera(); dibujarModelo(); centrarSta(); });
   suscribirHayModelo(); marcarFrentes();
   $("#mBaseFile").addEventListener("change", async e => { const [f] = await tomarArchivos(e.target); if (f) subirBase(f); });
   $(".chart-h .tabs").addEventListener("click", e => { const b = e.target.closest("[data-vista]"); if (b) { P.vista = b.dataset.vista; ls.set("lib.panelVista", P.vista); pintarPanel(); } });
@@ -4852,7 +4953,13 @@ function pintarModelo() {
     const fr = e.target.closest("[data-irsub]"); if (fr) { irFrente(fr.dataset.irsub); return; }
     if (e.target.closest("[data-vercapas]")) { const c = $("#mCapas .capl"); if (c) { c.scrollIntoView({ behavior: "smooth", block: "start" }); c.classList.add("resalta"); setTimeout(() => c.classList.remove("resalta"), 1400); } return; }
     const t = e.target.closest("[data-sid]"); if (t && !e.target.closest("#mPlan")) { editarSuperficie(t.dataset.sid); return; }
+    if (e.target.closest("#mSec")) return;
     const mo = e.target.closest("[data-modo]"); if (mo) { P.mModo = mo.dataset.modo; ls.set("lib.mModo", P.mModo); P.mVB = null; dibujarModelo(); return; }
+    if (e.target.closest("[data-full]")) { pantallaCompleta(!P.mFull); return; }
+    const ch = e.target.closest("[data-dis]"); if (ch) { alternarSupDiseno(+ch.dataset.dis); return; }
+    if (e.target.closest("[data-supcfg]")) { editarSupsDiseno(); return; }
+    if (e.target.closest("[data-medir]")) { herramientaMedir(P.sHerr !== "medir"); return; }
+    if (e.target.closest("[data-medx]")) { P.sMed = null; dibujarSeccion(); return; }
     if (e.target.closest("[data-base]")) { $("#mBaseFile").click(); return; }
     if (e.target.closest("[data-subir]")) { $("#mFile").click(); return; }
     if (e.target.closest("[data-quitabase]")) { quitarBase(); return; }
@@ -4918,7 +5025,7 @@ function dibujarModelo() {
       <div class="legend">${leyEst}${P.mGrupo && base ? '<span><i class="falta-i"></i>Falta liberar</span><span><i class="crz"></i>Cruce</span><span><i class="fue"></i>Fuera de la base</span>' : ""}${eje ? '<span><i style="background:${TOK.ink};height:2px"></i>Eje</span>' : ""}</div>
       <div class="mbar">${seg}<span class="mbar-sp"></span>${P.mGrupo ? `<button type="button" class="mini" data-base>${base ? "Reemplazar base" : "Subir base"}</button>${base ? '<button type="button" class="mini warn-mini" data-quitabase>Quitar base</button>' : ""}` : '<button type="button" class="mini" data-base>Subir base de una capa</button>'}</div>
       <div class="mreal" id="mPlanBox"><div id="mPlan"></div><div class="rzoom" role="group" aria-label="Acercar o alejar"><button type="button" data-rz="+" aria-label="Acercar">+</button><button type="button" data-rz="-" aria-label="Alejar">−</button><button type="button" data-rz="0" aria-label="Ver todo">Todo</button></div></div>
-      <p class="nota-g">Planta real girada${eje ? " a lo largo del eje" : " según la forma de la capa"}. Arrastra para moverte; toca una liberación para elegirla y otra vez para ver sus datos${eje && mod ? "; toca cualquier punto para ver esa sección" : ""}.${base ? ` Base: ${esc(base.nombre || "")}.` : ""}</p>`;
+      <p class="nota-g">Planta real a escala, girada${eje ? " a lo largo del eje" : " según la forma de la capa"}. Rueda del ratón para acercar, arrastra para moverte y doble clic para ver todo; toca una liberación para elegirla y otra vez para ver sus datos${eje && mod ? "; toca cualquier punto para ver esa sección" : ""}.${base ? ` Base: ${esc(base.nombre || "")}.` : ""}</p>`;
   } else {
     const lim = mod ? [mod.pk0, mod.pk1] : [eje[0][0], eje[eje.length - 1][0]];
     const vp = vis.filter(x => x.pk0 != null);
@@ -4930,17 +5037,27 @@ function dibujarModelo() {
       <div class="legend">${leyEst}<span><i class="hatch"></i>Diseño</span><span><i style="background:var(--accent);height:3px"></i>Sección elegida</span></div>
       <div class="mbar">${seg}<span class="mbar-sp"></span><button type="button" class="mini" data-mz="-" aria-label="Alejar" ${(P.mZoom || 1) <= 1 ? "disabled" : ""}>−</button><button type="button" class="mini" data-mz="+" aria-label="Acercar">+</button><button type="button" class="mini" data-mz="0">Todo</button></div>
       <div class="mscroll" id="mPlanBox"><div id="mPlan"></div></div>
-      <p class="nota-g">Planta desarrollada: progresiva y desfase desde el eje (izquierda arriba, derecha abajo). Toca una liberación para ir a su sección y otra vez para ver sus datos.</p>`;
+      <p class="nota-g">Planta desarrollada: progresiva y desfase desde el eje (izquierda arriba, derecha abajo). Rueda del ratón para acercar y arrastra para moverte. Toca una liberación para ir a su sección y otra vez para ver sus datos.</p>`;
   }
   if (P.mSta == null && mod?.est.length) { P.mSta = mod.est[0]; irPrimera(); }
-  body.innerHTML = cab + (mod ? `<div class="mbar"><h3 id="mSecT">Sección</h3><button type="button" class="mini" data-mst="-" aria-label="Sección anterior">‹</button><button type="button" class="mini" data-mst="+" aria-label="Sección siguiente">›</button></div>
-    <input type="range" class="msta" id="mSta" min="0" max="${mod.est.length - 1}" step="1" value="${idxCerca(mod, P.mSta)}" aria-label="Sección">
-    <div class="msec" id="mSec"></div><div class="mleg" id="mLeg"></div><div id="mSecTab"></div>` : eje ? `<p class="pinfo">Hay eje pero no secciones: sube el XML del eje con secciones para comparar con el diseño.</p>` : "");
+  // Mesa de trabajo: planta arriba, sección abajo (con divisor en pantalla completa) y, si la pantalla es ancha, leyenda y tabla al costado
+  const iB = cab.indexOf('<div class="mbar">'), sEx = P.sEx ??= ls.get("lib.sEx", "auto");
+  body.innerHTML = cab.slice(0, iB) + `<div class="mgrid ${mod ? "con-lat" : ""}"><div class="mws" id="mWs">` + cab.slice(iB) + (mod ? `<div class="mdiv" id="mDiv" role="separator" aria-orientation="horizontal" title="Arrastra para repartir el alto entre la planta y la sección"></div>
+    <div class="mbar msbar"><h3 id="mSecT">Sección</h3><button type="button" class="mini" data-mst="-" aria-label="Sección anterior" title="Flecha izquierda">‹</button><button type="button" class="mini" data-mst="+" aria-label="Sección siguiente" title="Flecha derecha">›</button>
+      <select id="sEx" class="mtool" aria-label="Escala vertical de la sección">${[["auto", "Vertical: ajustar"], ["1", "Escala real 1:1"], ["2", "Vertical ×2"], ["5", "Vertical ×5"], ["10", "Vertical ×10"]].map(([v, t]) => `<option value="${v}" ${String(sEx) === v ? "selected" : ""}>${t}</option>`).join("")}</select>
+      <button type="button" class="mini mtool" data-medir aria-pressed="${P.sHerr === "medir"}" title="Mide entre dos puntos de la sección (tecla M)">Medir</button>
+      <input type="range" class="msta" id="mSta" min="0" max="${mod.est.length - 1}" step="1" value="${idxCerca(mod, P.mSta)}" aria-label="Sección"></div>
+    <div class="msec" id="mSec"></div></div><div class="mlat"><div class="mleg" id="mLeg"></div><div id="mMed"></div><div id="mSecTab"></div></div>` : (eje ? `<p class="pinfo">Hay eje pero no secciones: sube el XML del eje con secciones para comparar con el diseño.</p>` : "") + "</div>") + "</div>";
+  medirAltos();
   if (real) dibujarPlantaReal();
   else { const lim = mod ? [mod.pk0, mod.pk1] : [eje[0][0], eje[eje.length - 1][0]]; dibujarPlanModelo(mod, eje, vis.filter(x => x.pk0 != null), todas.filter(x => x.pk0 != null), lim); }
   if (mod) {
     $("#mSta").addEventListener("input", e => { P.mSta = mod.est[+e.target.value]; dibujarSeccion(); if (P.mModo === "real") dibujarPlantaReal(); else marcarStaPlan(); });
     $("#mSta").addEventListener("change", () => { if (P.mModo !== "real") centrarSta(); });
+    $("#sEx").addEventListener("change", e => { P.sEx = e.target.value === "auto" ? "auto" : +e.target.value; ls.set("lib.sEx", P.sEx); P.sV = null; dibujarSeccion(); });
+    conectarSeccion($("#mSec")); conectarDivisor($("#mDiv"));
+    $("#mLeg").addEventListener("mouseover", e => { const c = e.target.closest("[data-dis]"); document.querySelectorAll("#sSvg .dis.hi").forEach(x => x.classList.remove("hi")); if (c) document.querySelectorAll(`#sSvg .dis[data-i="${c.dataset.dis}"]`).forEach(x => x.classList.add("hi")); });
+    $("#mLeg").addEventListener("mouseleave", () => document.querySelectorAll("#sSvg .dis.hi").forEach(x => x.classList.remove("hi")));
     dibujarSeccion();
   }
   dibujarCapasLista();
@@ -4948,7 +5065,7 @@ function dibujarModelo() {
 }
 function dibujarPlanModelo(mod, eje, vis, todas, lim) {
   const P = S.panel, box = $("#mPlan"), cont = $("#mPlanBox"); if (!box) return;
-  const W0 = Math.max(300, cont.clientWidth - 2), W = Math.round(W0 * (P.mZoom || 1)), movil = innerWidth < 760, H = movil ? 210 : 260;
+  const W0 = Math.max(300, cont.clientWidth - 2), W = Math.round(W0 * (P.mZoom || 1)), movil = innerWidth < 760, H = movil ? 210 : Math.max(260, Math.min(460, altoGraf("pl") - 18));
   const padL = 10, padR = 10, padT = 14, padB = 26;
   // Rango de desfase: diseño + liberaciones
   let oA = Infinity, oB = -Infinity;
@@ -4981,10 +5098,23 @@ function dibujarPlanModelo(mod, eje, vis, todas, lim) {
   for (let v = Math.ceil(lim[0] / st) * st; v <= lim[1] + 1e-6; v += st) { const xv = +X(v), an = xv < 30 ? "start" : xv > W - 30 ? "end" : "middle"; out.push(`<line x1="${xv}" x2="${xv}" y1="${H - padB}" y2="${H - padB + 4}" stroke="${TOK.muted}"/><text class="mlab" x="${xv}" y="${H - 8}" text-anchor="${an}">${fmtPk(v)}</text>`); }
   out.push(`<line id="mStaL" x1="0" x2="0" y1="${padT - 6}" y2="${H - padB}" stroke="var(--accent)" stroke-width="2.5" ${P.mSta == null ? 'visibility="hidden"' : ""}/>`);
   box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Planta desarrollada del modelo"><defs>${PAT_OBS}<pattern id="hDis" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="${TOK.pista}"/><line x1="0" y1="0" x2="0" y2="7" stroke="${TOK.line}" stroke-width="2"/></pattern></defs>${out.join("")}</svg>`;
-  box._esc = { X, kx, lim, padL };
+  box._esc = { X, kx, lim, padL }; box._a = [mod, eje, vis, todas, lim];
   marcarStaPlan();
   const svg = box.querySelector("svg");
+  // Rueda: acerca a lo largo del eje dejando fija la progresiva bajo el cursor. Con el ratón se arrastra para moverse.
+  cont.onwheel = e => {
+    if (!e.deltaY || e.shiftKey) return; e.preventDefault();
+    const r = cont.getBoundingClientRect(), xIn = e.clientX - r.left, sC = lim[0] + (cont.scrollLeft + xIn - padL) / kx;
+    const z = Math.min(64, Math.max(1, (P.mZoom || 1) * (e.deltaY < 0 ? 1.25 : 0.8))); if (z === (P.mZoom || 1)) return;
+    P.mZoom = z; dibujarPlanModelo(mod, eje, vis, todas, lim);
+    cont.scrollLeft = Math.max(0, +$("#mPlan")._esc.X(sC) - xIn);
+    const bm = document.querySelector('#mBody [data-mz="-"]'); if (bm) bm.disabled = z <= 1;
+  };
+  let arr = null;
+  cont.onpointerdown = e => { cont._arr = false; arr = e.pointerType === "mouse" && !e.button ? { x: e.clientX, s: cont.scrollLeft } : null; };
+  cont.onpointermove = e => { if (!arr || !(e.buttons & 1)) { arr = null; return; } const dx = e.clientX - arr.x; if (!cont._arr && Math.abs(dx) < 5) return; cont._arr = true; cont.scrollLeft = arr.s - dx; };
   svg.addEventListener("click", e => {
+    if (cont._arr) { cont._arr = false; return; }
     const g = e.target.closest(".msup");
     const r = svg.getBoundingClientRect(), s = lim[0] + ((e.clientX - r.left) * (W / r.width) - padL) / kx;
     if (g) { const id = g.dataset.sid; if (P.mSel === id) { editarSuperficie(id); return; } P.mSel = id; const x = vis.find(v => v.id === id); const m = MOD.secc[P.subId]; if (m && x) { const dentro = m.est.filter(t => t >= x.pk0 - 0.05 && t <= x.pk1 + 0.05); P.mSta = dentro.length ? dentro.reduce((a, b) => Math.abs(b - s) < Math.abs(a - s) ? b : a) : m.est[idxCerca(m, s)]; } dibujarModelo(); return; }
@@ -4994,44 +5124,198 @@ function dibujarPlanModelo(mod, eje, vis, todas, lim) {
 }
 function marcarStaPlan() { const b = $("#mPlan"), l = $("#mStaL"); if (!b || !l || !b._esc || S.panel.mSta == null) return; const x = b._esc.X(S.panel.mSta); l.setAttribute("x1", x); l.setAttribute("x2", x); l.removeAttribute("visibility"); }
 function centrarSta() { const b = $("#mPlan"), c = $("#mPlanBox"); if (!b || !c || !b._esc || S.panel.mSta == null) return; c.scrollLeft = Math.max(0, +b._esc.X(S.panel.mSta) - c.clientWidth / 2); }
+/* Alto de la planta y la sección. En pantalla completa caben las dos en la ventana y el divisor reparte el alto. */
+function medirAltos() {
+  const P = S.panel, ws = $("#mWs"), sec = $("#mSec");
+  if (!ws || !enPC()) { P._alt = null; return; }
+  const cl = (v, a, b) => Math.round(Math.min(b, Math.max(a, v)));
+  if (!P.mFull) { P._alt = { pl: cl(innerHeight * 0.5, 380, 640), se: cl(innerHeight * 0.44, 320, 560) }; return; }
+  const r = sec ? Math.min(.78, Math.max(.22, P.mDiv ??= ls.get("lib.mDiv", .5))) : 1;
+  // Los gráficos aún están vacíos: lo que mide la mesa ahora es lo fijo (barras y divisor)
+  const tot = Math.max(sec ? 400 : 260, innerHeight - (ws.getBoundingClientRect().top + scrollY) - ws.offsetHeight - 22);
+  P._alt = { pl: Math.round(tot * r), se: Math.round(tot * (1 - r)), tot };
+}
+function redibujarGraficos() {
+  const P = S.panel;
+  if (P.mModo === "real") { P.mVB = null; dibujarPlantaReal(); } else { const a = $("#mPlan")?._a; if (a) dibujarPlanModelo(...a); }
+  dibujarSeccion();
+}
+function pantallaCompleta(on) {
+  const P = S.panel; P.mFull = !!on; ls.set("lib.mFull", P.mFull); document.body.classList.toggle("m-full", P.mFull && enPC());
+  const b = document.querySelector("#mRoot [data-full]"); if (b) { b.textContent = P.mFull ? "Salir de pantalla completa" : "Pantalla completa"; b.setAttribute("aria-pressed", P.mFull); }
+  P.mVB = null; scrollTo(0, 0); dibujarModelo();
+}
+function conectarDivisor(el) {
+  if (!el) return; const P = S.panel;
+  el.addEventListener("pointerdown", e => {
+    if (!P.mFull || !P._alt?.tot) return; e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add("on");
+    const y0 = e.clientY, r0 = P.mDiv ?? .5, tot = P._alt.tot; let raf = 0;
+    const mover = ev => { P.mDiv = Math.min(.78, Math.max(.22, r0 + (ev.clientY - y0) / tot)); P._alt = { pl: Math.round(tot * P.mDiv), se: Math.round(tot * (1 - P.mDiv)), tot }; if (!raf) raf = requestAnimationFrame(() => { raf = 0; redibujarGraficos(); }); };
+    const fin = () => { el.removeEventListener("pointermove", mover); el.classList.remove("on"); ls.set("lib.mDiv", P.mDiv); };
+    el.addEventListener("pointermove", mover); el.addEventListener("pointerup", fin, { once: true }); el.addEventListener("pointercancel", fin, { once: true });
+  });
+}
+function herramientaMedir(on) {
+  const P = S.panel; P.sHerr = on ? "medir" : ""; if (!on) P.sMed = null;
+  document.querySelector("#mBody [data-medir]")?.setAttribute("aria-pressed", !!on); dibujarSeccion();
+}
+/* Superficies de diseño de las secciones: mostrar u ocultar, nombre a mostrar y color. Se guarda en el modelo del frente. */
+let cfgSecT;
+function guardarCfgSec(subId) {
+  clearTimeout(cfgSecT);
+  cfgSecT = setTimeout(() => updateDoc(doc(db, "secciones", subId), { cfg: MOD.secc[subId]?.cfg || {} }).catch(e => toast("No se guardó el cambio de las superficies: " + (e.code === "permission-denied" ? "no tienes permiso." : e.message), "bad")), 500);
+}
+function alternarSupDiseno(i) {
+  const subId = S.panel.subId, mod = MOD.secc[subId]; if (!mod || mod.sups[i] == null) return;
+  const n = mod.sups[i], c = { ...(mod.cfg?.[n] || {}) }; if (c.o) delete c.o; else c.o = 1;
+  mod.cfg = { ...(mod.cfg || {}) }; if (Object.keys(c).length) mod.cfg[n] = c; else delete mod.cfg[n];
+  guardarCfgSec(subId); dibujarSeccion();
+}
+function editarSupsDiseno() {
+  const subId = S.panel.subId, mod = MOD.secc[subId]; if (!mod) return;
+  const filas = mod.sups.map((n, i) => { const c = cfgSup(mod, i); return `<div class="supf"><input type="checkbox" name="v${i}" ${c.o ? "" : "checked"} aria-label="Dibujar ${esc(n)}"><input type="color" name="c${i}" value="${esc(aHex(colDis(mod, i)))}" data-def="${esc(aHex(COL_DIS[i % COL_DIS.length]))}" aria-label="Color de ${esc(n)}"><span><input type="text" name="a${i}" value="${esc(c.a || "")}" placeholder="${esc(n)}" maxlength="60" aria-label="Nombre a mostrar de ${esc(n)}"><small>${esc(n)}</small></span></div>`; }).join("");
+  const dd = dialogo("Superficies de diseño en las secciones", `<p class="dlg-p">Elige cuáles se dibujan, con qué nombre y con qué color. Vale para todas las secciones de este frente y lo ve todo gabinete. El XML de Civil 3D no cambia.</p>
+    <div class="actions" style="margin:0 0 8px;flex-wrap:wrap"><button type="button" class="mini" data-todas="1">Mostrar todas</button><button type="button" class="mini" data-todas="0">Ocultar todas</button><button type="button" class="mini" data-orig>Nombres y colores originales</button></div>
+    <div class="mprev" style="gap:0">${filas}</div>`, o => {
+    const cfg = {};
+    mod.sups.forEach((n, i) => { const e = {}, a = (o["a" + i] || "").slice(0, 60), c = (o["c" + i] || "").toLowerCase(); if (!o["v" + i]) e.o = 1; if (a && a !== n) e.a = a; if (c && c !== aHex(COL_DIS[i % COL_DIS.length]).toLowerCase()) e.c = c; if (Object.keys(e).length) cfg[n] = e; });
+    mod.cfg = cfg; guardarCfgSec(subId); S.panel.sV = null; dibujarSeccion(); toast("Superficies de las secciones guardadas");
+  }, "Guardar", { ancho: true, sinFoco: true });
+  dd.addEventListener("click", e => {
+    const t = e.target.closest("[data-todas]"); if (t) dd.querySelectorAll(".supf input[type=checkbox]").forEach(x => { x.checked = t.dataset.todas === "1"; });
+    if (e.target.closest("[data-orig]")) { dd.querySelectorAll(".supf input[type=text]").forEach(x => { x.value = ""; }); dd.querySelectorAll(".supf input[type=color]").forEach(x => { x.value = x.dataset.def; }); }
+  });
+}
+function leyendaSeccion(mod, secT, hayCortes) {
+  const usadas = [...new Set(secT.map(p => p.i))].sort((a, b) => a - b), ocultas = mod.sups.filter((_, i) => cfgSup(mod, i).o).length;
+  $("#mLeg").innerHTML = `<div class="mleg-h"><b>Superficies de diseño</b>${ocultas ? `<span class="muted">${ocultas} ${ocultas === 1 ? "oculta" : "ocultas"}</span>` : ""}<button type="button" class="linkbtn" data-supcfg>Editar</button></div>`
+    + usadas.map(i => { const c = cfgSup(mod, i); return `<button type="button" class="lchip ${c.o ? "off" : ""}" data-dis="${i}" aria-pressed="${!c.o}" title="Clic para ${c.o ? "mostrarla" : "ocultarla"}${c.a ? " · " + esc(mod.sups[i]) : ""}"><i style="background:${colDis(mod, i)}"></i>${esc(nomDis(mod, i))}</button>`; }).join("")
+    + (hayCortes ? `<span><i style="background:linear-gradient(90deg,${COLOR.EC} 0 33%,${COLOR.EP} 33% 66%,#5b7fa6 66%);height:5px"></i>Liberaciones (color de su estado)</span>` : "");
+}
+/* Sección transversal: rueda para acercar al punto bajo el cursor, arrastrar para moverse, lectura de desfase y cota, y medir.
+   Lo que se está mirando (P.sV: centro y escalas) se mantiene al pasar de sección, para comparar el mismo sitio. */
 function dibujarSeccion() {
   const P = S.panel, mod = MOD.secc[P.subId], box = $("#mSec"); if (!mod || !box) return;
-  const k = idxCerca(mod, P.mSta), sta = mod.est[k], sec = mod.secs[k] || [];
+  const k = idxCerca(mod, P.mSta), sta = mod.est[k], secT = mod.secs[k] || [], sec = secT.filter(p => !cfgSup(mod, p.i).o);
   $("#mSecT").innerHTML = `Sección PK ${esc(fmtPk(sta))} <span class="muted small">· ${k + 1} de ${mod.est.length}</span>`;
   const { vis, todas } = supsGrupo(), visIds = new Set(vis.map(x => x.id)), mapa = MOD.sup[P.subId] || new Map();
   const cortes = todas.map(x => ({ x, d: mapa.get(x.id) })).filter(c => c.d && c.d.cortes.has(sta)).map(c => ({ ...c, pz: c.d.cortes.get(sta), vis: visIds.has(c.x.id) }));
-  const W = Math.max(300, box.clientWidth), movil = innerWidth < 760, H = movil ? 250 : 330, pad = { l: 46, r: 12, t: 12, b: 26 };
+  box.classList.toggle("medir", P.sHerr === "medir");
+  const W = Math.max(300, box.clientWidth), H = altoGraf("se"), pad = { l: 46, r: 12, t: 12, b: 26 }, pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
   let oA = Infinity, oB = -Infinity, zA = Infinity, zB = -Infinity;
   const ext = pts => pts.forEach(q => { oA = Math.min(oA, q[0]); oB = Math.max(oB, q[0]); zA = Math.min(zA, q[1]); zB = Math.max(zB, q[1]); });
   sec.forEach(p => ext(p.pts)); cortes.forEach(c => c.pz.forEach(ext));
-  if (!isFinite(oA)) { box.innerHTML = '<div class="empty" style="padding:24px"><b>Esta sección no tiene superficies de diseño</b></div>'; $("#mLeg").innerHTML = ""; $("#mSecTab").innerHTML = ""; return; }
+  leyendaSeccion(mod, secT, cortes.length > 0);
+  if (!isFinite(oA)) { box._s = null; box.innerHTML = `<div class="empty" style="padding:24px"><b>${secT.length ? "Las superficies de diseño de esta sección están ocultas" : "Esta sección no tiene superficies de diseño"}</b>${secT.length ? "Tócalas en la lista para volver a verlas." : ""}</div>`; $("#mSecTab").innerHTML = ""; $("#mMed").innerHTML = ""; return; }
   const mo = (oB - oA) * 0.03 + 0.5, mz = (zB - zA) * 0.08 + 0.3; oA -= mo; oB += mo; zA -= mz; zB += mz;
-  let kx = (W - pad.l - pad.r) / (oB - oA), ky = (H - pad.t - pad.b) / (zB - zA);
-  if (ky < kx) kx = ky;
-  const ex = ky / kx, x0 = pad.l + ((W - pad.l - pad.r) - (oB - oA) * kx) / 2;
-  const X = o => (x0 + (o - oA) * kx).toFixed(1), Y = z => (pad.t + (zB - z) * ky).toFixed(1);
+  // Encuadre completo: «ajustar» llena el alto (exagera la vertical si hace falta); con una escala fija se respeta esa relación
+  let kx0, ky0; const exM = P.sEx ?? "auto";
+  if (exM === "auto") { kx0 = pw / (oB - oA); ky0 = ph / (zB - zA); if (ky0 < kx0) kx0 = ky0; }
+  else { kx0 = Math.min(pw / (oB - oA), ph / ((zB - zA) * exM)); ky0 = kx0 * exM; }
+  let V = P.sV;
+  // Si lo que se estaba mirando ya no toca esta sección, se vuelve al encuadre completo
+  if (V) { const ho = pw / 2 / V.kx, hz = ph / 2 / V.ky; if (V.o + ho < oA || V.o - ho > oB || V.z + hz < zA || V.z - hz > zB) V = P.sV = null; }
+  V ||= { o: (oA + oB) / 2, z: (zA + zB) / 2, kx: kx0, ky: ky0 };
+  const ex = V.ky / V.kx, cx = pad.l + pw / 2, cy = pad.t + ph / 2;
+  const Xn = o => cx + (o - V.o) * V.kx, Yn = z => cy - (z - V.z) * V.ky, X = o => Xn(o).toFixed(1), Y = z => Yn(z).toFixed(1);
+  const o0 = V.o - pw / 2 / V.kx, o1 = V.o + pw / 2 / V.kx, z0 = V.z - ph / 2 / V.ky, z1 = V.z + ph / 2 / V.ky;
   const ln = pts => "M" + pts.map(q => X(q[0]) + "," + Y(q[1])).join("L");
-  const out = [];
-  const pasoF = (span, px) => { const obj = span / Math.max(2, px / 60); return [0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10, 20, 25, 50, 100].find(v => v >= obj) || 200; };
-  const zs = pasoF(zB - zA, H - pad.t - pad.b);
-  for (let z = Math.ceil(zA / zs) * zs; z <= zB + 1e-9; z = r3(z + zs)) out.push(`<line x1="${pad.l}" x2="${W - pad.r}" y1="${Y(z)}" y2="${Y(z)}" stroke="${TOK.rejilla}"/><text class="mlab" x="${pad.l - 4}" y="${(+Y(z) + 3.5).toFixed(1)}" text-anchor="end">${z.toFixed(zs < 0.5 ? 2 : zs < 1 ? 1 : 0)}</text>`);
-  const os = pasoF(oB - oA, W - pad.l - pad.r);
-  for (let o = Math.ceil(oA / os) * os; o <= oB + 1e-9; o = r3(o + os)) out.push(`<text class="mlab" x="${X(o)}" y="${H - 8}" text-anchor="middle">${Math.abs(o) < 1e-9 ? "Eje" : fmtOff(o).replace(/\.0$/, "")}</text>`);
-  if (oA < 0 && oB > 0) out.push(`<line x1="${X(0)}" x2="${X(0)}" y1="${pad.t}" y2="${H - pad.b}" stroke="${TOK.ink}" stroke-width="1" stroke-dasharray="5 4"/>`);
-  const usadas = [...new Set(sec.map(p => p.i))];
-  sec.forEach(p => out.push(`<path d="${ln(p.pts)}" fill="none" stroke="${COL_DIS[p.i % COL_DIS.length]}" stroke-width="1.6" stroke-linejoin="round"><title>${esc(mod.sups[p.i])}</title></path>`));
+  box._s = { W, H, pad, pw, ph, cx, cy, V, kx0, sec, secT, cortes, mod };
+  // Rejilla y rótulos según lo que se ve: al acercar bajan hasta el centímetro
+  const PASOS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10, 20, 25, 50, 100];
+  const pasoF = (span, px) => { const obj = span / Math.max(2, px / 60); return PASOS.find(v => v >= obj) || 200; };
+  const dec = v => v >= 1 ? 0 : v >= 0.1 && v !== 0.25 ? 1 : 2;
+  const rej = [], out = [];
+  const zs = pasoF(z1 - z0, ph), os = pasoF(o1 - o0, pw);
+  for (let z = r3(Math.ceil(z0 / zs) * zs); z <= z1 + 1e-9; z = r3(z + zs)) rej.push(`<line x1="${pad.l}" x2="${W - pad.r}" y1="${Y(z)}" y2="${Y(z)}" stroke="${TOK.rejilla}"/><text class="mlab" x="${pad.l - 4}" y="${(Yn(z) + 3.5).toFixed(1)}" text-anchor="end">${z.toFixed(dec(zs))}</text>`);
+  for (let o = r3(Math.ceil(o0 / os) * os); o <= o1 + 1e-9; o = r3(o + os)) rej.push(`<line x1="${X(o)}" x2="${X(o)}" y1="${pad.t}" y2="${H - pad.b}" stroke="${TOK.rejilla}" stroke-opacity=".55"/><text class="mlab" x="${X(o)}" y="${H - 8}" text-anchor="middle">${Math.abs(o) < 1e-9 ? "Eje" : (o < 0 ? "I " : "D ") + Math.abs(o).toFixed(dec(os))}</text>`);
+  if (o0 < 0 && o1 > 0) out.push(`<line x1="${X(0)}" x2="${X(0)}" y1="${pad.t}" y2="${H - pad.b}" stroke="${TOK.ink}" stroke-width="1" stroke-dasharray="5 4"/>`);
+  sec.forEach(p => out.push(`<path class="dis" data-i="${p.i}" d="${ln(p.pts)}" fill="none" stroke="${colDis(mod, p.i)}" stroke-width="1.6" stroke-linejoin="round"><title>${esc(nomDis(mod, p.i))}</title></path>`));
   cortes.sort((a, b) => a.vis - b.vis).forEach(c => { const col = colorSup(c.x), sel = P.mSel === c.x.id; c.pz.forEach(p => out.push(`<path class="mcut" data-sid="${esc(c.x.id)}" d="${ln(p)}" fill="none" stroke="${c.vis ? col : TOK.lineStrong}" stroke-width="${sel ? 5 : c.vis ? 3.6 : 2.4}" stroke-linecap="round" stroke-linejoin="round"><title>${esc(c.x.codigo || c.x.nombre)}</title></path>`)); });
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Sección transversal PK ${esc(fmtPk(sta))}">${out.join("")}</svg>${ex > 1.15 ? `<span class="mex">Vertical ×${ex.toFixed(1)}</span>` : ""}`;
-  $("#mLeg").innerHTML = usadas.map(i => `<span><i style="background:${COL_DIS[i % COL_DIS.length]}"></i>${esc(mod.sups[i])}</span>`).join("") + (cortes.length ? `<span><i style="background:linear-gradient(90deg,${COLOR.EC} 0 33%,${COLOR.EP} 33% 66%,#5b7fa6 66%);height:5px"></i>Liberaciones (color de su estado)</span>` : "");
+  // Medición entre dos puntos
+  const M = P.sMed; let medHtml = "";
+  if (M?.a) {
+    const ax = X(M.a[0]), ay = Y(M.a[1]), pto = (x, y) => `<circle cx="${x}" cy="${y}" r="4.5" fill="var(--accent)" stroke="#fff" stroke-width="1.5" pointer-events="none"/>`;
+    if (M.b) {
+      const bx = X(M.b[0]), by = Y(M.b[1]), dh = M.b[0] - M.a[0], dv = M.b[1] - M.a[1], dist = Math.hypot(dh, dv);
+      const pend = Math.abs(dh) < 1e-6 ? "vertical" : Math.abs(dv) < 1e-6 ? "horizontal" : `${(Math.abs(dv / dh) * 100).toFixed(1)} % · ${Math.abs(dh / dv).toFixed(2)}H:1V`;
+      out.push(`<path d="M${ax},${ay}L${bx},${ay}L${bx},${by}" fill="none" stroke="${TOK.muted}" stroke-dasharray="3 3" pointer-events="none"/><line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="var(--accent)" stroke-width="2.2" pointer-events="none"/>${pto(ax, ay)}${pto(bx, by)}<text class="smed" x="${((+ax + +bx) / 2).toFixed(1)}" y="${((+ay + +by) / 2 - 8).toFixed(1)}" text-anchor="middle" pointer-events="none">${dist.toFixed(2)} m</text>`);
+      medHtml = `<dl><dt>Punto 1</dt><dd>${fmtOff2(M.a[0])} · cota ${M.a[1].toFixed(2)}</dd><dt>Punto 2</dt><dd>${fmtOff2(M.b[0])} · cota ${M.b[1].toFixed(2)}</dd><dt>Horizontal</dt><dd>${Math.abs(dh).toFixed(2)} m</dd><dt>Vertical</dt><dd>${fmtDz(r3(dv))}</dd><dt>Distancia</dt><dd>${dist.toFixed(2)} m</dd><dt>Pendiente</dt><dd>${pend}</dd></dl>`;
+    } else {
+      out.push(`<line id="sGoma" x1="${ax}" y1="${ay}" x2="${ax}" y2="${ay}" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4" pointer-events="none"/>${pto(ax, ay)}`);
+      medHtml = `<p class="nota-g" style="margin:2px 0 0">Punto 1: ${fmtOff2(M.a[0])} · cota ${M.a[1].toFixed(2)}. Elige el segundo punto.</p>`;
+    }
+  }
+  $("#mMed").innerHTML = P.sHerr === "medir" || M?.a ? `<div class="mmed"><div class="mmed-h"><b>Medición</b>${M?.a ? '<button type="button" class="linkbtn" data-medx>Borrar</button>' : ""}</div>${medHtml || '<p class="nota-g" style="margin:2px 0 0">Haz clic en dos puntos de la sección; el cursor se pega a los vértices cercanos.</p>'}</div>` : "";
+  box.innerHTML = `<svg id="sSvg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Sección transversal PK ${esc(fmtPk(sta))}"><defs><clipPath id="sClip"><rect x="${pad.l}" y="${pad.t}" width="${pw}" height="${ph}"/></clipPath></defs>${rej.join("")}<g clip-path="url(#sClip)">${out.join("")}</g><line id="sCur" x1="0" x2="0" y1="${pad.t}" y2="${H - pad.b}" stroke="${TOK.muted}" stroke-dasharray="2 3" visibility="hidden" pointer-events="none"/></svg>
+    <span class="mex">${ex > 1.04 ? `Vertical ×${ex.toFixed(1)}` : "Escala real 1:1"}</span><div class="mcoord" id="sCoord" hidden></div>
+    <div class="rzoom" role="group" aria-label="Acercar o alejar la sección"><button type="button" data-sz="+" aria-label="Acercar">+</button><button type="button" data-sz="-" aria-label="Alejar">−</button><button type="button" data-sz="0" aria-label="Ver todo">Todo</button></div>`;
   // Δz de cada liberación en esta sección contra su superficie de referencia
   const filas = cortes.map(c => {
     const i = mod.sups.indexOf(c.x.supRef), dz = [];
-    if (i >= 0) c.pz.forEach(p => p.forEach(q => { const zd = zEnSeccion(sec, i, q[0]); if (zd != null) dz.push(q[1] - zd); }));
+    if (i >= 0) c.pz.forEach(p => p.forEach(q => { const zd = zEnSeccion(secT, i, q[0]); if (zd != null) dz.push(q[1] - zd); }));
     const os2 = c.pz.flat().map(q => q[0]), r = registroDe(c.x.codigo);
     return `<tr data-sid="${esc(c.x.id)}" class="${c.vis ? "" : "mfuera"}"><td>${celdaSup(c.x, r)}</td><td class="num hm">${fmtOff(Math.min(...os2))} a ${fmtOff(Math.max(...os2))}</td><td class="num">${dz.length ? fmtDz(r3(dz.reduce((t, v) => t + v, 0) / dz.length)) : "—"}</td><td class="num hm">${dz.length ? `${fmtDz(r3(Math.min(...dz)))} a ${fmtDz(r3(Math.max(...dz)))}` : "—"}</td></tr>`;
   });
   $("#mSecTab").innerHTML = filas.length ? `<div class="mwrap"><table class="mtab"><thead><tr><th>Liberación</th><th class="num hm">Desfase</th><th class="num">Δz medio</th><th class="num hm">Δz mín. a máx.</th></tr></thead><tbody>${filas.join("")}</tbody></table></div><p class="nota-g">Δz: cota liberada menos la superficie de diseño con la que se compara (+ arriba, − abajo).</p>` : `<p class="nota-g">No hay liberaciones cortadas en esta sección.</p>`;
 }
+function conectarSeccion(box) {
+  if (!box || box._on) return; box._on = true;
+  const P = S.panel; let ini = null, movio = false, raf = 0;
+  const redibuja = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; dibujarSeccion(); }); };
+  const mundo = e => { const s = box._s, svg = box.querySelector("#sSvg"); if (!s || !svg) return null; const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * s.W / r.width, py = (e.clientY - r.top) * s.H / r.height; return { px, py, o: s.V.o + (px - s.cx) / s.V.kx, z: s.V.z - (py - s.cy) / s.V.ky, dentro: px >= s.pad.l && px <= s.W - s.pad.r && py >= s.pad.t && py <= s.H - s.pad.b }; };
+  const zoom = (f, m) => { const s = box._s; if (!s) return; const V = s.V, g = Math.min(600 * s.kx0 / V.kx, Math.max(0.4 * s.kx0 / V.kx, f)), o = m ? m.o : V.o, z = m ? m.z : V.z; s.V = P.sV = { o: o - (o - V.o) / g, z: z - (z - V.z) / g, kx: V.kx * g, ky: V.ky * g }; redibuja(); };
+  // En «Medir» el cursor se pega al vértice más cercano (a menos de 10 px)
+  const pegar = m => { const s = box._s; let best = 10, pt = [m.o, m.z]; const prueba = q => { const d = Math.hypot(s.cx + (q[0] - s.V.o) * s.V.kx - m.px, s.cy - (q[1] - s.V.z) * s.V.ky - m.py); if (d < best) { best = d; pt = [q[0], q[1]]; } }; s.sec.forEach(p => p.pts.forEach(prueba)); s.cortes.forEach(c => c.pz.forEach(l => l.forEach(prueba))); return pt; };
+  const lectura = m => {
+    const s = box._s, cur = box.querySelector("#sCur"), co = box.querySelector("#sCoord"); if (!cur || !co) return;
+    if (!m || !m.dentro) { cur.setAttribute("visibility", "hidden"); co.hidden = true; return; }
+    const q = P.sHerr === "medir" ? pegar(m) : [m.o, m.z], x = (s.cx + (q[0] - s.V.o) * s.V.kx).toFixed(1);
+    cur.setAttribute("x1", x); cur.setAttribute("x2", x); cur.removeAttribute("visibility");
+    // La línea más cercana al cursor en vertical: su nombre y su cota en ese desfase
+    let mejor = null; const ve = (nombre, z, extra) => { if (z == null) return; const d = Math.abs(z - q[1]) * s.V.ky; if (!mejor || d < mejor.d) mejor = { d, nombre, z, extra }; };
+    s.sec.forEach(p => ve(nomDis(s.mod, p.i), zLinea(p.pts, q[0]), ""));
+    s.cortes.forEach(c => c.pz.forEach(l => { const z = zLinea(l, q[0]); if (z == null) return; const i = s.mod.sups.indexOf(c.x.supRef), zd = i >= 0 ? zEnSeccion(s.secT, i, q[0]) : null; ve(c.x.codigo || c.x.nombre, z, zd != null ? ` (Δz ${fmtDz(r3(z - zd))})` : ""); }));
+    co.hidden = false; co.innerHTML = `<b>${fmtOff2(q[0])} · cota ${q[1].toFixed(2)}</b>` + (mejor && mejor.d < 40 ? `<br>${esc(mejor.nombre)}: ${mejor.z.toFixed(2)}${mejor.extra}` : "");
+    const goma = box.querySelector("#sGoma"); if (goma) { goma.setAttribute("x2", x); goma.setAttribute("y2", (s.cy - (q[1] - s.V.z) * s.V.ky).toFixed(1)); }
+  };
+  box.addEventListener("wheel", e => { const m = mundo(e); if (!m) return; e.preventDefault(); zoom(Math.exp(-e.deltaY * (e.deltaMode ? 0.05 : 0.0015)), m); }, { passive: false });
+  box.addEventListener("pointerdown", e => { movio = false; ini = e.button || e.target.closest(".rzoom") || !box._s ? null : { x: e.clientX, y: e.clientY, V: { ...box._s.V } }; });
+  box.addEventListener("pointermove", e => {
+    const s = box._s; if (!s) return;
+    if (ini && (e.pointerType !== "mouse" || (e.buttons & 1))) {
+      const dx = e.clientX - ini.x, dy = e.clientY - ini.y; if (!movio && Math.hypot(dx, dy) < 5) return;
+      if (!movio) { movio = true; try { box.setPointerCapture(e.pointerId); } catch (_) {} }
+      const r = box.querySelector("#sSvg")?.getBoundingClientRect(); if (!r) return; const f = s.W / r.width;
+      s.V = P.sV = { ...ini.V, o: ini.V.o - dx * f / ini.V.kx, z: ini.V.z + dy * f / ini.V.ky }; redibuja(); return;
+    }
+    if (e.pointerType === "mouse") lectura(mundo(e));
+  });
+  box.addEventListener("pointerup", e => {
+    const fue = movio, tenia = ini; ini = null; if (fue || !tenia || P.sHerr !== "medir") return;
+    const m = mundo(e); if (!m || !m.dentro) return;
+    const q = pegar(m), M = P.sMed; P.sMed = !M?.a || M.b ? { a: q, b: null } : { a: M.a, b: q }; dibujarSeccion();
+  });
+  box.addEventListener("pointercancel", () => { ini = null; movio = false; });
+  box.addEventListener("pointerleave", () => lectura(null));
+  // Clic: botones de acercar; tras arrastrar o midiendo no se abre la liberación que quedó debajo
+  box.addEventListener("click", e => {
+    const z = e.target.closest("[data-sz]");
+    if (z) { e.stopPropagation(); if (z.dataset.sz === "0") { P.sV = null; dibujarSeccion(); } else zoom(z.dataset.sz === "+" ? 1.6 : 1 / 1.6); return; }
+    if (movio || P.sHerr === "medir") { e.stopPropagation(); e.preventDefault(); movio = false; }
+  }, true);
+  box.addEventListener("dblclick", e => { if (P.sHerr === "medir" || e.target.closest(".rzoom,.mcut")) return; P.sV = null; dibujarSeccion(); });
+}
+// Teclado en el Modelo 2D: ← → cambian de sección, F pantalla completa, M medir, Esc sale
+addEventListener("keydown", e => {
+  if (!S.dentro || S.view !== "panel" || S.panel.vista !== "modelo" || !$("#mBody") || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.target.matches?.("input,textarea,select,[contenteditable]") || document.querySelector(".dlg,#ctx,#cmdk,.lb") || $("#sheet")?.hidden === false) return;
+  const P = S.panel, k = e.key.toLowerCase();
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") { const b = document.querySelector(`#mBody [data-mst="${e.key === "ArrowLeft" ? "-" : "+"}"]`); if (b) { e.preventDefault(); b.click(); } }
+  else if (k === "f" && enPC()) pantallaCompleta(!P.mFull);
+  else if (k === "m" && $("#mSec")) herramientaMedir(P.sHerr !== "medir");
+  else if (e.key === "Escape") { if (P.sHerr === "medir") herramientaMedir(false); else if (P.mFull && enPC()) pantallaCompleta(false); }
+});
 const celdaSup = (x, r) => `<b class="mono">${esc(x.codigo || "Sin código")}</b> ${r ? `<span class="st ${esc(r.estado)}">${esc(ESTADOS[r.estado])}</span>` : '<span class="muted small">· sin registro</span>'}<div class="muted small mn">${esc(corta(x.nombre, 48))}</div>`;
 function dibujarListaModelo(vis) {
   const box = $("#mLista"); if (!box) return;

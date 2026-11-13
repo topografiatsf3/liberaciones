@@ -11,6 +11,18 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 32: Modelo 2D como mesa de trabajo en computadora
+
+No cambia las reglas de Firebase.
+
+- **Rueda del ratón para acercar** en la planta real, la desarrollada y la sección, dejando fijo el punto bajo el cursor. Se arrastra para moverse y con doble clic (o «Todo») se vuelve a ver todo.
+- **Sin deformar:** la planta real va siempre a escala (ya no estira el ancho); los códigos, las progresivas y los rayados se quedan del mismo tamaño al acercar, y aparecen más progresivas y más códigos.
+- **Lectura bajo el cursor:** Este, Norte, progresiva y desfase en la planta; desfase, cota y la línea más cercana (con su Δz si es una liberación) en la sección.
+- **Sección:** la rejilla se afina hasta el centímetro, el acercamiento se mantiene al pasar de sección (para comparar el mismo sitio), y se elige la escala vertical: ajustar, real 1:1, ×2, ×5 o ×10.
+- **Medir** (tecla M): dos clics en la sección dan horizontal, vertical, distancia y pendiente; el cursor se pega a los vértices.
+- **Superficies de diseño editables:** en la leyenda se toca una para ocultarla o mostrarla, y «Editar» abre la lista completa para elegir cuáles se dibujan, con qué nombre y color. Se guarda en el modelo del frente (lo ve todo gabinete); el XML no cambia y se conserva al reemplazar el eje. Ahora hay 20 colores distintos (antes se repetían desde la superficie 11).
+- **Todo el espacio:** en computadora el Modelo 2D usa el ancho completo. «Pantalla completa» (tecla F) quita el menú, hace caber planta y sección en la ventana, pone la leyenda y la tabla al costado y deja repartir el alto con un divisor. Flechas ← → cambian de sección; Esc sale.
+
 ## Versión 31: arreglo del importador
 
 - «Crear el tipo» al emparejar ya no crea un segundo tipo si uno con ese nombre y elemento ya existe (por ejemplo, el creado en la importación anterior): se usa ese.
