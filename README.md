@@ -11,6 +11,17 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 33: computadora para gabinete y jefe de área
+
+No cambia las reglas de Firebase. El celular queda igual.
+
+- **Todo el ancho:** Bandeja, Registros, Panel y Ajustes ya no se cortan en 1280 px; en una pantalla Full HD se usa todo el espacio.
+- **Columna de filtros con conteos** (Registros y Bandeja, desde 1200 px): fecha con botones rápidos (Hoy, Ayer, Esta semana…), frente, tipo, capa, topógrafo, actividad y equipo. Se marcan **varias opciones a la vez** y cada una dice cuántos registros quedarían. Cada filtro se pliega y, si tiene muchas opciones, se busca dentro. Se recuerdan al volver.
+- **Tabla compacta:** una línea por registro con columnas Código y estado, Liberación (tipo · capa y la descripción al lado), Frente, Progresiva y Fecha y topógrafo. En laptop (1366) la descripción se oculta para que todo quepa.
+- **Filtros en la cabecera, como en Excel:** clic en el título de una columna para ordenar (↑ ↓) y filtrar (estado, tipo, capa, frente, topógrafo). La columna ordenada o filtrada queda marcada.
+- **Ficha a la derecha** sin tapar la tabla.
+- **Ajustes con menú lateral:** las 9 secciones en una columna a la izquierda; Usuarios en dos columnas (solicitudes y agregar | con acceso), Tipos con los grupos lado a lado, Capas con la lista y los tramos que no se liberan juntos, Protocolos e Histórico en dos columnas.
+
 ## Versión 32: Modelo 2D como mesa de trabajo en computadora
 
 No cambia las reglas de Firebase.

@@ -763,6 +763,98 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
 .rzoom button{min-width:40px;min-height:36px;border:1px solid var(--line);background:rgba(255,255,255,.94);border-radius:8px;font-weight:700;font-size:15px}
 .rzoom button[data-rz="0"]{font-size:12px}
 .rzoom button:hover{background:var(--surface-2)}
+/* Computadora (versión 33): ancho completo, columna de filtros con conteos, tabla compacta y Ajustes con menú lateral */
+@media (min-width:1024px){
+  body.v-todos #view,body.v-bandeja #view,body.v-panel #view,body.v-ajustes #view{max-width:none}
+  .rtab.compacta td{padding:7px 10px;vertical-align:middle}
+  .rtab.compacta td.ck{vertical-align:middle}
+  .rtab.compacta td.tcod>*{display:inline-block;width:auto;margin:0 6px 0 0;vertical-align:middle}
+  .rtab.compacta td.tcod .st,.rtab.compacta td.tcod .pend-tag{margin:0 6px 0 0}
+  .rtab.compacta .tl{display:flex;gap:10px;align-items:baseline;min-width:0}
+  .rtab.compacta .tl>b{flex:none;max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rtab.compacta .tl>span{flex:1 1 auto;min-width:0;color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rtab.compacta td.tqd{white-space:nowrap}
+  .rtab.compacta td.tqd .tq{margin:0}
+  .rtab.compacta .tdesc .tn,.rtab.compacta .tmarcas{margin-top:2px}
+  .rtab th.hc{padding:0}
+  .rtab .hcb{display:flex;align-items:center;gap:6px;width:100%;border:0;background:transparent;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;padding:10px;cursor:pointer;text-align:left;white-space:nowrap}
+  .rtab .hcb:hover,.rtab th.hc.ord .hcb,.rtab th.hc.filt .hcb{color:var(--ink)}
+  .rtab .hcb::after{content:"▾";opacity:.45;font-size:10px}
+  .rtab .hcb:hover::after{opacity:1}
+  .rtab th.hc.filt .hcb{color:var(--accent-strong)}
+}
+.rmain #rSt{flex-wrap:wrap;overflow:visible}
+@media (min-width:1024px) and (max-width:1199px){.rtab.compacta td.tqd .tq{white-space:normal;min-width:84px}.rtab.compacta .hcb{white-space:normal;padding:8px 7px}}
+/* Pantallas de 1200 a 1499 px (laptop): código y estado en dos líneas y sin la descripción al lado, para que quepa todo */
+@media (min-width:1024px) and (max-width:1499px){
+  .rtab.compacta td.tcod>*{display:block;margin:0}
+  .rtab.compacta td.tcod .st,.rtab.compacta td.tcod .pend-tag{margin:3px 0 0}
+  .rtab.compacta .tl>span{display:none}
+  .rtab.compacta .tl>b{max-width:100%}
+  .rtab.compacta td.tfr{max-width:130px}
+  .rtab.compacta td,.rtab.compacta .hcb{padding-left:7px;padding-right:7px}
+  .rgrid{grid-template-columns:220px minmax(0,1fr)}
+}
+.fsel{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:var(--accent);color:#fff;font:700 11px var(--f-body);padding:0 5px;letter-spacing:0}
+@media (min-width:1200px){
+  .rgrid{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start}
+  .rmain{min-width:0}
+  .fcol{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding:12px 12px 6px;display:flex;flex-direction:column;gap:2px}
+  .fcol-h{display:flex;align-items:center;gap:8px;padding:0 2px 6px;border-bottom:1px solid var(--line);margin-bottom:4px}
+  .fcol-h b{font-size:14px}
+  .fcol-h .btn-txt{margin-left:auto;font-size:12.5px}
+  .fcol .f{margin:4px 0 6px}
+  .fcol .f label,.fcol .flabel{font-size:11px}
+  .fcol .f select,.fcol .f input{min-height:36px;font-size:13px;padding:5px 8px;width:100%}
+  .fquick{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 6px}
+  .fquick button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;min-height:28px;color:var(--ink)}
+  .fquick button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-strong)}
+  .fsec{border-bottom:1px solid var(--line);padding:4px 0}
+  .fsec:last-child{border-bottom:0}
+  .fsec>summary{list-style:none;display:flex;align-items:center;gap:6px;min-height:34px;cursor:pointer;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .fsec>summary::-webkit-details-marker{display:none}
+  .fsec>summary::after{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:-3px 4px 0 auto;transition:transform .15s}
+  .fsec[open]>summary::after{transform:rotate(-135deg);margin-top:3px}
+  .fsec>summary .btn-txt{font-size:11.5px;text-transform:none;letter-spacing:0}
+  .fsec .fbus{width:100%;border:1px solid var(--line);border-radius:6px;padding:4px 8px;min-height:30px;font-size:12.5px;margin:0 0 4px;background:var(--surface)}
+}
+.fops{display:flex;flex-direction:column}
+.fop{display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:center;padding:4px 4px;border-radius:6px;font-size:13px;cursor:pointer;min-height:30px}
+.fop:hover{background:var(--surface-2)}
+.fop input{width:16px;height:16px;accent-color:var(--accent);margin:0}
+.fop span:nth-child(2){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fop .c{font:600 11.5px var(--f-mono);color:var(--muted)}
+.fop.cero{opacity:.5}
+.fmas{font-size:12.5px;margin:2px 4px 4px}
+.hpop{position:fixed;z-index:84;width:290px;max-height:min(460px,calc(100vh - 24px));overflow:auto;padding:8px;box-shadow:var(--flota);animation:entra .15s both}
+.hpop h4{margin:8px 4px 4px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.hp-ord{display:flex;flex-direction:column;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:2px}
+.hp-ord button{border:0;background:transparent;text-align:left;padding:7px 8px;border-radius:6px;font-weight:600;font-size:13px;min-height:34px}
+.hp-ord button:hover{background:var(--surface-2)}
+.hp-ord button[aria-pressed="true"]{color:var(--accent-strong);background:var(--accent-soft)}
+.hpop .fbus{width:100%;border:1px solid var(--line);border-radius:6px;padding:4px 8px;min-height:32px;font-size:13px;margin:0 0 4px;background:var(--surface)}
+.hpop .fops{max-height:240px;overflow:auto}
+@media (min-width:1200px){
+  .ajgrid{display:grid;grid-template-columns:210px minmax(0,1fr);gap:20px;align-items:start}
+  .ajgrid>.tabs.ajnav{position:sticky;top:12px;display:flex;width:100%;flex-direction:column;align-items:stretch;gap:2px;padding:6px;margin:0}
+  .ajgrid>.tabs.ajnav button{justify-content:flex-start;text-align:left;min-height:40px;padding:0 12px}
+  .ajgrid #ajBody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;min-width:0}
+  .ajgrid #ajBody>*{margin:0;min-width:0}
+  .ajgrid #ajBody>p,.ajgrid #ajBody>.tabs,.ajgrid #ajBody>.ty-bar,.ajgrid #ajBody>.filters,.ajgrid #ajBody>.pinfo{grid-column:1/-1}
+  .ajgrid #ajBody[data-aj="usuarios"]>.card:last-child{grid-column:2;grid-row:2/span 2}
+  .ajgrid #ajBody[data-aj="topografos"]>*,.ajgrid #ajBody[data-aj="archivos"]>*,.ajgrid #ajBody[data-aj="lugares"]>*{grid-column:1/-1}
+  .ajgrid #ajBody[data-aj="topografos"] #tpList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px}
+  .ajgrid #ajBody[data-aj="tipos"]>#tyList{grid-column:1/-1}
+}
+@media (min-width:1200px) and (max-width:1499px){.ajgrid{grid-template-columns:170px minmax(0,1fr)}}
+@media (min-width:1500px){
+  .ajgrid #ajBody[data-aj="tipos"]>#tyList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+  .ajgrid #ajBody[data-aj="tipos"]>#tyList>*{margin:0;min-width:0}
+  .ajgrid #ajBody[data-aj="tipos"]>#tyList:not(:has(.tycard)){display:block}
+}
+@media (min-width:1700px){
+  .ajgrid #ajBody[data-aj="tipos"]>#tyList{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
 /* Mesa de trabajo del Modelo 2D: rueda para acercar, lectura de coordenadas, medir y superficies editables */
 .mcoord{position:absolute;left:48px;bottom:10px;font:600 11.5px var(--f-mono);color:var(--ink);background:rgba(255,255,255,.92);border-radius:6px;padding:3px 8px;pointer-events:none;white-space:nowrap}
 .msec .mcoord{left:54px;bottom:auto;top:8px;white-space:normal;max-width:calc(100% - 190px);line-height:1.5}
@@ -1491,7 +1583,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 32;
+const VERSION_APP = 33;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2677,27 +2769,117 @@ function textoFecha(fl) {
   const t = { hoy: "Hoy", ayer: "Ayer", sem: "Esta semana", "7d": "Últimos 7 días", mes: "Este mes", dia: a ? dd(a) : "", rango: a && b ? `${dd(a)} al ${dd(b)}` : a ? "Desde " + dd(a) : b ? "Hasta " + dd(b) : "" }[fl.fecha] || "";
   return t && fl.fc ? (fl.fc === "ent" ? "Entregados: " : "Liberados: ") + t : t;
 }
-function pasaFiltrosReg(fl, r) {
+/* Filtros de varias opciones (versión 33): cada campo guarda una lista separada por comas; en el celular sigue siendo una sola */
+const lstF = v => v ? String(v).split(",").filter(Boolean) : [];
+const FAC = {
+  sub: { t: "Frente", v: r => r.subestructuraId || "", n: id => nom(L.sub(id) || L.est(id), id) || "Sin frente" },
+  tipo: { t: "Tipo", v: r => r.tipoId || (r.actividad === "LIB" ? "~" : ""), n: id => id === "~" ? "Sin tipo" : nom(L.tipo(id), id) },
+  capa: { t: "Capa", v: r => capaDe(r) || (r.actividad === "LIB" ? "~" : ""), n: id => id === "~" ? "Sin capa" : id },
+  topo: { t: "Topógrafo", v: r => claveTopo(r.topografoId), n: id => nom(L.topo(id), id) },
+  act: { t: "Actividad", v: r => r.actividad || "", n: id => nom(L.act(id), id) },
+  equipo: { t: "Equipo", v: r => r.equipo || "~", n: id => id === "~" ? "Sin equipo" : nom(L.equipo(id), id) },
+};
+function pasaFac(fl, k, r) {
+  const s = lstF(fl[k]); if (!s.length) return true;
+  return s.includes(FAC[k].v(r)) || (k === "sub" && s.includes(r.estructuraId));
+}
+function pasaFechaReg(fl, r) {
   const rg = rangoFecha(fl);
   if (rg) { const t = toDate(r[campoFecha(fl)]); if (!t || t < rg[0] || t >= rg[1]) return false; }
-  if (fl.capa === "~" && (r.actividad !== "LIB" || capaDe(r))) return false;
-  if (fl.tipo && r.tipoId !== fl.tipo) return false;
-  if (fl.sub && r.subestructuraId !== fl.sub && r.estructuraId !== fl.sub) return false;
-  if (fl.topo && claveTopo(r.topografoId) !== fl.topo) return false;
-  if (fl.act && r.actividad !== fl.act) return false;
-  if (fl.equipo && (fl.equipo === "~" ? r.equipo : r.equipo !== fl.equipo)) return false;
   return true;
+}
+const pasaFiltrosReg = (fl, r) => pasaFechaReg(fl, r) && Object.keys(FAC).every(k => pasaFac(fl, k, r));
+// Cuántos hay de cada opción, con todos los demás filtros puestos (así el número dice cuántos quedarían al marcarla)
+function contarFac(rs, fl, keys) {
+  const C = {}, sets = keys.map(k => lstF(fl[k])); keys.forEach(k => { C[k] = new Map(); });
+  for (const r of rs) {
+    let n = 0, falla = -1;
+    for (let i = 0; i < keys.length && n < 2; i++) if (sets[i].length && !pasaFac(fl, keys[i], r)) { n++; falla = i; }
+    if (n > 1) continue;
+    keys.forEach((k, i) => { if (n === 1 && i !== falla) return; const v = FAC[k].v(r); if (v !== "") C[k].set(v, (C[k].get(v) || 0) + 1); });
+  }
+  return C;
+}
+// Opciones de un filtro con su conteo; las marcadas primero, luego las de más registros
+function opsFac(k, fl, C, corte = 0) {
+  const sel = lstF(fl[k]), nm = v => k === "sub" && L.est(v) && !L.sub(v) ? "Toda " + nom(L.est(v)) : FAC[k].n(v) || v;
+  let m = C[k] || new Map();
+  // Frente: «Toda Presa Principal» cuando la estructura tiene varios frentes en la lista
+  if (k === "sub") { m = new Map(m); const pe = new Map(); [...m.keys()].forEach(id => { const e = S.listas.estructuras.find(x => (x.subs || []).some(y => y.id === id)); if (e) pe.set(e.id, [...(pe.get(e.id) || []), id]); }); pe.forEach((ids, e) => { if (ids.length > 1) m.set(e, ids.reduce((t, id) => t + (m.get(id) || 0), 0)); }); }
+  const vals = [...new Set([...m.keys(), ...sel])].sort((a, b) => (sel.includes(b) - sel.includes(a)) || (m.get(b) || 0) - (m.get(a) || 0) || natural(nm(a), nm(b)));
+  return { n: vals.length, html: vals.map((v, i) => `<label class="fop ${m.get(v) ? "" : "cero"}" ${corte && i >= corte ? "hidden data-extra" : ""} data-txt="${esc(normTxt(nm(v)))}"><input type="checkbox" data-fk="${k}" value="${esc(v)}" ${sel.includes(v) ? "checked" : ""}><span title="${esc(nm(v))}">${esc(nm(v))}</span><span class="c">${(m.get(v) || 0).toLocaleString("es-PE")}</span></label>`).join("") };
+}
+const normTxt = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+function alternarF(fl, k, v, on) { const s = new Set(lstF(fl[k])); on ? s.add(v) : s.delete(v); fl[k] = [...s].join(","); }
+// Columna de filtros de la computadora (Registros y Bandeja)
+function colFiltros(fl, C, keys, fecha) {
+  const U = S._facUI ||= {}, nAct = keys.filter(k => lstF(fl[k]).length).length + (fecha && rangoFecha(fl) ? 1 : 0);
+  const sec = k => {
+    const o = opsFac(k, fl, C, U[k + "+"] ? 0 : 8), nSel = lstF(fl[k]).length; if (!o.n) return "";
+    return `<details class="fsec" data-fsec="${k}" ${U[k] === false ? "" : "open"}><summary>${FAC[k].t}${nSel ? ` <span class="fsel">${nSel}</span><button type="button" class="btn-txt" data-fx="${k}" style="margin-left:auto">Quitar</button>` : ""}</summary>
+      ${o.n > 8 ? `<input type="search" class="fbus" data-fbus placeholder="Buscar ${FAC[k].t.toLowerCase()}…" aria-label="Buscar ${FAC[k].t.toLowerCase()}">` : ""}<div class="fops">${o.html}</div>
+      ${o.n > 8 ? `<button type="button" class="btn-txt fmas" data-fmas="${k}">${U[k + "+"] ? "Ver menos" : `Ver todos (${o.n})`}</button>` : ""}</details>`;
+  };
+  const tituloF = (FECHA_CAMPO[fl.fc || ""] || FECHA_CAMPO[""])[1];
+  const fe = !fecha ? "" : `<details class="fsec" data-fsec="fecha" ${U.fecha === false ? "" : "open"}><summary>Fecha${rangoFecha(fl) ? ' <span class="fsel">1</span>' : ""}</summary>
+    <div class="f"><label for="rfFc">Filtrar por</label><select id="rfFc" data-rf="fc">${Object.entries(FECHA_CAMPO).map(([k, [, t]]) => `<option value="${k}" ${(fl.fc || "") === k ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+    <div class="fquick" role="group" aria-label="${esc(tituloF)}">${FECHAS_RF.filter(([k]) => !["dia", "rango"].includes(k)).map(([k, t]) => `<button type="button" data-fe="${k}" aria-pressed="${(fl.fecha || "") === k}">${t}</button>`).join("")}</div>
+    <div class="f"><label for="rfFecha">${tituloF}</label><select id="rfFecha" data-rf="fecha">${FECHAS_RF.map(([k, t]) => `<option value="${k}" ${(fl.fecha || "") === k ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+    ${fl.fecha === "dia" ? `<div class="f"><label for="rfF1">Día</label><input id="rfF1" type="date" data-rf="f1" value="${esc(fl.f1 || "")}"></div>` : fl.fecha === "rango" ? `<div class="f"><label for="rfF1">Desde</label><input id="rfF1" type="date" data-rf="f1" value="${esc(fl.f1 || "")}"></div><div class="f"><label for="rfF2">Hasta</label><input id="rfF2" type="date" data-rf="f2" value="${esc(fl.f2 || "")}"></div>` : ""}</details>`;
+  return `<div class="fcol-h"><b>Filtros</b>${nAct ? ` <span class="fsel">${nAct}</span>` : ""}${nAct ? '<button type="button" class="btn-txt" id="rfX">Limpiar todo</button>' : ""}</div>${fe}${keys.map(sec).join("")}`;
+}
+// Eventos de la columna de filtros: marcar opciones, buscar dentro de una, ver todas, plegar y recordar lo plegado
+function ligarColFiltros(box, fl, repintar) {
+  if (!box) return; const U = S._facUI ||= {};
+  box.addEventListener("change", e => { const c = e.target.closest("[data-fk]"); if (!c) return; alternarF(fl, c.dataset.fk, c.value, c.checked); repintar(); });
+  box.addEventListener("click", e => {
+    const x = e.target.closest("[data-fx]"); if (x) { e.preventDefault(); fl[x.dataset.fx] = ""; repintar(); return; }
+    const m = e.target.closest("[data-fmas]"); if (m) { U[m.dataset.fmas + "+"] = !U[m.dataset.fmas + "+"]; repintar(); return; }
+    const q = e.target.closest("[data-fe]"); if (q) { fl.fecha = q.dataset.fe; fl.f1 = ""; fl.f2 = ""; repintar(); }
+  });
+  box.addEventListener("input", e => { if (!e.target.matches("[data-fbus]")) return; const t = normTxt(e.target.value.trim()); e.target.closest(".fsec").querySelectorAll(".fop").forEach(l => { l.hidden = t ? !l.dataset.txt.includes(t) : l.hasAttribute("data-extra"); }); });
+  box.addEventListener("toggle", e => { const d = e.target.closest?.("[data-fsec]"); if (d) U[d.dataset.fsec] = d.open; }, true);
+}
+/* Cabeceras de la tabla: clic abre ordenar y filtrar esa columna (como en Excel) */
+function thCol(fl, col, def) {
+  const [c, d] = (fl.ord || "").split(":"), act = c === col, nf = (def.fk || []).reduce((t, k) => t + lstF(fl[k]).length, 0) + (def.st ? lstF(fl.st).length : 0);
+  return `<th class="hc ${def.cls || ""} ${act ? "ord" : ""} ${nf ? "filt" : ""}" ${act ? `aria-sort="${d === "asc" ? "ascending" : "descending"}"` : ""}><button type="button" class="hcb" data-hc="${col}" title="Ordenar${def.fk || def.st ? " y filtrar" : ""}">${def.t}${act ? (d === "asc" ? " ↑" : " ↓") : ""}${nf ? ` <span class="fsel">${nf}</span>` : ""}</button></th>`;
+}
+function ordenarCol(rs, ord, cols) {
+  const [c, d] = (ord || "").split(":"), def = cols[c]; if (!def) return rs;
+  const k = new Map(rs.map(r => [r, def.k(r)])), f = d === "asc" ? 1 : -1;
+  return rs.slice().sort((a, b) => { const x = k.get(a), y = k.get(b); return f * (typeof x === "number" && typeof y === "number" ? x - y : natural(x, y)); });
+}
+function cerrarPop() { const d = $("#hPop"); if (!d) return; d._fin?.(); d.remove(); }
+function popColumna(btn, fl, col, def, C, estados, repintar) {
+  cerrarPop();
+  const [c, d] = (fl.ord || "").split(":"), act = c === col;
+  const box = document.createElement("div"); box.className = "hpop card"; box.id = "hPop"; box.setAttribute("role", "dialog"); box.setAttribute("aria-label", def.t);
+  const est = def.st ? `<h4>Estado</h4><div class="fops">${estados.map(([k, t, n]) => `<label class="fop ${n ? "" : "cero"}"><input type="checkbox" data-fst="${esc(k)}" ${lstF(fl.st).includes(k) ? "checked" : ""}><span>${esc(t)}</span><span class="c">${n}</span></label>`).join("")}</div>` : "";
+  const fac = (def.fk || []).map(k => { const o = opsFac(k, fl, C); return o.n ? `<h4>${FAC[k].t}</h4>${o.n > 8 ? `<input type="search" class="fbus" data-fbus placeholder="Buscar…" aria-label="Buscar ${FAC[k].t.toLowerCase()}">` : ""}<div class="fops">${o.html}</div>` : ""; }).join("");
+  box.innerHTML = `<div class="hp-ord"><button type="button" data-po="${col}:asc" aria-pressed="${act && d === "asc"}">${def.az ? "A → Z" : "Menor a mayor"} ↑</button><button type="button" data-po="${col}:desc" aria-pressed="${act && d === "desc"}">${def.az ? "Z → A" : "Mayor a menor"} ↓</button>${fl.ord ? '<button type="button" data-po="">Orden original</button>' : ""}</div>${est}${fac}`;
+  document.body.appendChild(box);
+  const r = btn.getBoundingClientRect(); box.style.left = Math.max(8, Math.min(innerWidth - box.offsetWidth - 8, r.left)) + "px"; box.style.top = Math.min(r.bottom + 4, innerHeight - box.offsetHeight - 8) + "px";
+  box.addEventListener("click", e => { const o = e.target.closest("[data-po]"); if (o) { fl.ord = o.dataset.po; cerrarPop(); repintar(); } });
+  box.addEventListener("change", e => {
+    const t = e.target;
+    if (t.matches("[data-fk]")) alternarF(fl, t.dataset.fk, t.value, t.checked);
+    else if (t.matches("[data-fst]")) { const s = new Set(lstF(fl.st)); lstF(t.dataset.fst).forEach(v => t.checked ? s.add(v) : s.delete(v)); fl.st = [...s].join(","); }
+    else return;
+    S._popSigue = true; repintar();
+  });
+  box.addEventListener("input", e => { if (!e.target.matches("[data-fbus]")) return; const q = normTxt(e.target.value.trim()); e.target.nextElementSibling.querySelectorAll(".fop").forEach(l => { l.hidden = q && !l.dataset.txt.includes(q); }); });
+  const fuera = e => { if (!box.contains(e.target) && !e.target.closest?.("[data-hc]")) cerrarPop(); };
+  const tecla = e => { if (e.key === "Escape") { e.stopPropagation(); cerrarPop(); btn.isConnected && btn.focus(); } };
+  setTimeout(() => { document.addEventListener("pointerdown", fuera, true); document.addEventListener("keydown", tecla, true); });
+  box._fin = () => { document.removeEventListener("pointerdown", fuera, true); document.removeEventListener("keydown", tecla, true); };
+  (box.querySelector("[data-fbus]") || box.querySelector("button"))?.focus({ preventScroll: true });
 }
 // Lo que está filtrado, como lista [clave, texto] (para el renglón y los chips del celular)
 function activosReg(fl, cual) {
   const it = [];
   if (rangoFecha(fl)) it.push(["fecha", textoFecha(fl)]);
-  if (fl.tipo) it.push(["tipo", nom(L.tipo(fl.tipo), fl.tipo)]);
-  if (fl.sub) it.push(["sub", nom(L.sub(fl.sub) || L.est(fl.sub), fl.sub)]);
-  if (fl.topo && cual === "todos") it.push(["topo", nom(L.topo(fl.topo), fl.topo)]);
-  if (fl.act) it.push(["act", nom(L.act(fl.act), fl.act)]);
-  if (fl.equipo) it.push(["equipo", fl.equipo === "~" ? "Sin equipo" : nom(L.equipo(fl.equipo), fl.equipo)]);
-  if (fl.capa === "~") it.push(["capa", "Sin capa"]);
+  ["tipo", "sub", "topo", "act", "equipo", "capa"].forEach(k => { const s = lstF(fl[k]); if (s.length && (k !== "topo" || cual === "todos")) it.push([k, s.map(v => FAC[k].n(v) || v).join(" o ")]); });
   if (fl.st) it.push(["st", fl.st.split(",").map(etqEstado).join(" + ")]);
   return it;
 }
@@ -2735,7 +2917,7 @@ function controlesReg(fl, cual, hoja) {
     ${cual === "todos" ? `<div class="f"><label for="rfTopo">Topógrafo</label><select id="rfTopo" data-rf="topo">${ops(S.listas.topografos, fl.topo)}</select></div>` : ""}
     <div class="f"><label for="rfAct">Actividad</label><select id="rfAct" data-rf="act">${ops(S.listas.actividades, fl.act, "Todas")}</select></div>
     <div class="f"><label for="rfEq">Equipo</label><select id="rfEq" data-rf="equipo">${ops(equipos, fl.equipo)}<option value="~" ${fl.equipo === "~" ? "selected" : ""}>Sin equipo</option></select></div>
-    <div class="f"><label for="rfCapa">Capa</label><select id="rfCapa" data-rf="capa"><option value="">Todas</option><option value="~" ${fl.capa === "~" ? "selected" : ""}>Sin capa</option></select></div>`;
+    <div class="f"><label for="rfCapa">Capa</label><select id="rfCapa" data-rf="capa"><option value="">Todas</option><option value="~" ${fl.capa === "~" ? "selected" : ""}>Sin capa</option>${[...new Set([...(S.todos || []), ...(S.mis || [])].map(capaDe).filter(Boolean)), ...lstF(fl.capa).filter(c => c !== "~")].filter((c, i, a) => a.indexOf(c) === i).sort(natural).map(c => `<option value="${esc(c)}" ${fl.capa === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></div>`;
 }
 function abrirFiltrosReg(cual) {
   const fl = S.filtro[cual], F = {}; CAMPOS_RF.forEach(k => { F[k] = fl[k] || ""; });
@@ -2781,8 +2963,17 @@ function pintarLista(cual) {
   const nPend = (cuenta.PT || 0) + (cuenta.OB || 0);
   const chips = [["", "Todos", ante.length], ...(nPend && (cuenta.OB || 0) && (cuenta.PT || 0) ? [["PT,OB", "Pendientes + observados", nPend]] : []), ...["PT", "EP", "EC", "OB", "RE", "NA"].map(k => [k, ESTADOS[k], cuenta[k] || 0]), ...Object.keys(SEGUIM).map(k => [k, SEGUIM[k][1], cuenta[k] || 0])].filter(c => c[0] === "" || c[2] > 0 || c[0] === fl.st);
   const tabla = tablaPC(), ns = sel.size, selRegs = vis.filter(r => sel.has(r.id));
+  // Computadora: columna de filtros con conteos y cabeceras que ordenan y filtran
+  const colFil = tabla && !pap && innerWidth >= 1200, keysF = cual === "todos" ? ["sub", "tipo", "capa", "topo", "act", "equipo"] : ["sub", "tipo", "capa", "act"];
+  const pre = tabla && !pap ? base.filter(r => pasaFechaReg(fl, r) && (r.estado !== "X" || esAdmin()) && coincide(r, qs) && (!sts.length || sts.includes(r.estado) || sts.includes(seguimientoDe(r)))) : [];
+  const C = tabla && !pap ? contarFac(pre, fl, keysF) : {};
+  const fechaDe = r => r[campoFecha(fl)] || r.fechaCampo;
+  const COLR = { cod: { t: "Código y estado", k: r => numDe(r.numero), st: true }, lib: { t: "Liberación", az: true, k: r => `${nom(L.tipo(r.tipoId)) || nom(L.act(r.actividad), r.actividad) || ""} ${capaDe(r)}`, fk: ["tipo", "capa", "act"] },
+    fr: { t: "Frente", az: true, k: r => nom(L.sub(r.subestructuraId)) || "", fk: ["sub"] }, pk: { t: "Progresiva", k: r => r.pkInicio ?? 1e12 },
+    fe: { t: pap ? "Borrado" : cual === "todos" ? "Fecha y topógrafo" : "Fecha", k: r => toDate(pap ? r.borradoEn : fechaDe(r))?.getTime() || 0, fk: cual === "todos" ? ["topo"] : [] } };
+  if (tabla && fl.ord) vis = ordenarCol(vis, fl.ord, COLR);
   const parcial = cual === "todos" && !pap && !porFecha && !hist && !loteF && S.todosLleno && (activos.length || qs.length) && poder();
-  const hayFiltro = activos.length || qs.length;
+  const hayFiltro = activos.length || qs.length || (tablaPC() && innerWidth >= 1200 && fl.st);
   const vacio = `<div class="empty card"><b>${pap ? (S.papelera ? "La papelera está vacía" : "Cargando papelera…") : datos.length ? "Nada coincide con el filtro" : cargandoFecha ? "Buscando…" : activos.length ? "No hay registros con esos filtros" : "Aún no hay registros"}</b>${pap ? (S.papelera ? "Lo que se borre aparecerá aquí y se podrá restaurar." : "") : datos.length ? "Prueba con otra búsqueda." : cual === "mis" ? "Lo que guardes en «Nueva» aparecerá aquí." : "Los registros de campo aparecerán aquí al instante."}</div>`;
   // La barra de acciones en grupo se arma aparte para actualizarla al marcar sin redibujar toda la lista
   const bulkHtml = () => { const ns = sel.size, selRegs = vis.filter(r => sel.has(r.id)); return !tabla ? "" : `<div class="cap-bulk ${ns ? "on" : ""}" id="rBulk"><span><b>${ns}</b> ${ns === 1 ? "seleccionado" : "seleccionados"}</span>${pap
@@ -2790,14 +2981,15 @@ function pintarLista(cual) {
     : `${esGab() && ns && selRegs.every(r => r.actividad === "LIB" && ["PT", "OB"].includes(r.estado)) ? '<button type="button" class="mini ok-btn" data-rk="aceptar">Aceptar y generar códigos</button>' : ""}${esGab() && ns && selRegs.every(r => r.estado === "EP") ? '<button type="button" class="mini ok-btn" data-rk="entregar">Entregar a Calidad</button>' : ""}<button type="button" class="mini" data-rk="exportar">Exportar CSV</button>`}<button type="button" class="mini" data-rk="limpiar">Deseleccionar</button>${pap ? (puedeAjustes() ? '<button type="button" class="mini warn-mini aparte" data-rk="siempre">Borrar para siempre</button>' : "") : selRegs.some(puedeBorrar) ? '<button type="button" class="mini warn-mini aparte" data-rk="papelera">Mandar a la papelera</button>' : ""}</div>`; };
   const filaT = r => `<tr data-id="${esc(r.id)}" class="${sel.has(r.id) ? "sel" : ""}"><td class="ck"><input type="checkbox" data-ck ${sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar ${esc(r.numero || r.descripcion || "")}"></td>
     <td class="tcod"><span class="mono">${r.numero ? esc(r.numero) + masCodigos(r) : '<span class="muted">—</span>'}</span>${chipsReg(r)}${marcaCorr(r)}${r._pend ? '<span class="pend-tag">Por subir</span>' : ""}</td>
-    <td class="tdesc"><b>${esc(nom(L.tipo(r.tipoId)) || r.descripcion || "")}${capaDe(r) ? " · " + esc(capaDe(r)) : ""}</b><span>${esc(r.nombreLiberacion || r.descripcion || "")}</span>${r.estado === "OB" && r.notaObservacion ? `<span class="tn">Observación: ${esc(r.notaObservacion)}</span>` : ""}${r.estado === "RE" && r.notaRechazo ? `<span class="tn re">Rechazo: ${esc(r.notaRechazo)}</span>` : ""}${pap ? `<small class="tq">${esc(["Borrado " + fechaCorta(r.borradoEn), r.borradoNombre || r.borradoPor || ""].filter(Boolean).join(" · "))}</small>` : lineaQuien(r, r.fechaCampo)}</td>
-    ${tdFrente(r)}<td class="mono nw">${esc(rangoPk(r.pkInicio, r.pkFin))}</td>${tdMas(r)}</tr>`;
+    <td class="tdesc" title="${esc(r.nombreLiberacion || r.descripcion || "")}"><div class="tl"><b>${esc(nom(L.tipo(r.tipoId)) || r.descripcion || "")}${capaDe(r) ? " · " + esc(capaDe(r)) : ""}</b><span>${esc(r.nombreLiberacion || r.descripcion || "")}</span></div>${r.estado === "OB" && r.notaObservacion ? `<span class="tn">Observación: ${esc(r.notaObservacion)}</span>` : ""}${r.estado === "RE" && r.notaRechazo ? `<span class="tn re">Rechazo: ${esc(r.notaRechazo)}</span>` : ""}</td>
+    ${tdFrente(r)}<td class="mono nw">${esc(rangoPk(r.pkInicio, r.pkFin))}</td><td class="tqd">${pap ? `<small class="tq">${esc(["Borrado " + fechaCorta(r.borradoEn), r.borradoNombre || r.borradoPor || ""].filter(Boolean).join(" · "))}</small>` : lineaQuien(r, fechaDe(r), cual === "todos")}</td>${tdMas(r)}</tr>`;
   $("#view").innerHTML = `
   <h1 class="view-title">${cual === "mis" ? "Mis registros" : pap ? "Papelera" : "Registros"}</h1>
   <p class="lead">${cual === "mis" ? "Lo que registraste. Puedes editar lo que está pendiente u observado, y mandar a la papelera lo que aún no tiene código." : pap ? `Lo borrado no sale en las listas ni en el panel. ${puedeAjustes() ? "Restaura o borra para siempre." : "Puedes restaurar lo que no tiene código."}` : porFecha ? `${datos.length} ${datos.length === 1 ? "registro" : "registros"} · ${esc(textoFecha(fl))}.` : hist ? `${BUS.todos ? `${datos.length.toLocaleString("es-PE")} de ${base.length.toLocaleString("es-PE")} registros de todo el historial.` : "Cargando todo el historial…"}` : `${activos.length ? datos.length + " de los" : "Los"} últimos ${base.length} registros de todos. Para ver más antiguos filtra por fechas.${poder() ? " Busca en todo el histórico con Ctrl+K." : ""}`}</p>
   ${cual === "todos" && poder() ? `<div class="tabs" role="group" aria-label="Registros o papelera"><button type="button" data-pap="0" aria-pressed="${!pap}">Registros</button><button type="button" data-pap="1" aria-pressed="${pap}">Papelera${S.papelera ? ` <span class="cnt">${S.papelera.length}</span>` : ""}</button></div>` : ""}
+  ${colFil ? `<div class="rgrid"><aside class="card fcol" id="rFil" aria-label="Filtros">${colFiltros(fl, C, keysF, cual === "todos")}</aside><div class="rmain">` : ""}
   <div class="tools"><input class="search" id="q" type="search" placeholder="Buscar N°, PK, tipo, frente…" value="${esc(fl.q)}" aria-label="Buscar">${cual === "mis" ? `<button type="button" class="mini wsp-btn" id="rWsp">${ICON_WSP}Resumen WhatsApp</button>` : ""}${pap && puedeAjustes() && datos.length ? '<button type="button" class="mini warn-mini" id="rVaciar">Vaciar papelera</button>' : ""}${!pap && vis.length ? `<button type="button" class="mini" id="rExp" title="Exporta a CSV lo que se ve con estos filtros">Exportar ${hayFiltro || sts.length ? "lo filtrado" : "lista"} (${vis.length})</button>` : ""}${cual === "todos" && !pap && puedeAjustes() ? `<button type="button" class="mini sup-btn" id="rSup" title="Abre Panel → Modelo 2D, donde se ven las superficies XML de las liberaciones">${ICON_SUP}Superficies (XML)</button>` : ""}</div>
-  ${pap ? "" : pcFil ? `<div class="rfil" id="rFil">${controlesReg(fl, cual, false)}${hayFiltro ? '<button type="button" class="btn-txt" id="rfX">Limpiar filtros</button>' : ""}</div>`
+  ${pap || colFil ? "" : pcFil ? `<div class="rfil" id="rFil">${controlesReg(fl, cual, false)}${hayFiltro ? '<button type="button" class="btn-txt" id="rfX">Limpiar filtros</button>' : ""}</div>`
     : `<button type="button" class="fil-btn" id="rFilBtn" style="margin:0 0 8px;border-top:0;padding-top:0"><span class="fil-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg></span><b>${activos.length ? `${activos.length} ${activos.length === 1 ? "filtro" : "filtros"}` : "Filtrar por fecha, tipo, frente…"}</b>${CHEV}</button>${activos.length ? `<div class="fchips" id="rChips" style="margin-top:0">${activos.map(([k, t]) => `<button type="button" class="chip on" data-quitar="${k}" aria-label="Quitar filtro ${esc(t)}">${esc(t)}<span class="x" aria-hidden="true">✕</span></button>`).join("")}</div>` : ""}`}
   ${cargandoFecha ? '<p class="rf-nota">Buscando los registros de esas fechas…</p>' : porFecha && S.todosFechaLleno ? '<p class="rf-nota">Hay muchos registros en esas fechas; se muestran los 3000 más recientes. Acorta el rango para verlos todos.</p>' : ""}
   ${fl.fecha === "rango" && fl.f1 && fl.f2 && fl.f1 > fl.f2 ? '<p class="rf-nota">«Desde» era posterior a «Hasta»: se tomaron al revés.</p>' : ""}
@@ -2807,10 +2999,15 @@ function pintarLista(cual) {
   ${cual === "mis" && (cuenta.OB || 0) && !sts.includes("OB") ? `<div class="pinfo aviso mis-obs" role="note"><span><b>Tienes ${cuenta.OB === 1 ? "1 observado" : cuenta.OB + " observados"} por corregir.</b> ${cuenta.OB === 1 ? "Está primero" : "Están primero"} en la lista.</span><button type="button" class="btn-txt" id="rVerObs">Ver solo ${cuenta.OB === 1 ? "ese" : "esos"}</button></div>` : ""}
   ${pap ? "" : `<div class="chips" id="rSt" role="group" aria-label="Filtrar por estado (Ctrl o Mayús + clic para elegir varios)">${chips.map(([k, t, n]) => `<button type="button" class="chip" data-st="${k}" aria-pressed="${fl.st === k}">${esc(t)}<span class="c">${n}</span></button>`).join("")}</div>`}
   ${bulkHtml()}
-  ${!vis.length ? vacio : tabla ? `<div class="card twrap"><table class="rtab" id="lista"><thead><tr><th class="ck"><input type="checkbox" id="rAll" ${vis.slice(0, lim).every(r => sel.has(r.id)) ? "checked" : ""} aria-label="Seleccionar todos"></th><th>Código y estado</th><th>Liberación</th><th>Frente</th><th>Progresiva</th>${thMas()}</tr></thead><tbody>${vis.slice(0, lim).map(filaT).join("")}</tbody></table></div><p class="nota-g">Clic derecho sobre una fila para ver sus acciones. Marca varias para trabajarlas juntas.</p>`
+  ${!vis.length ? vacio : tabla ? `<div class="card twrap"><table class="rtab compacta" id="lista"><thead><tr><th class="ck"><input type="checkbox" id="rAll" ${vis.slice(0, lim).every(r => sel.has(r.id)) ? "checked" : ""} aria-label="Seleccionar todos"></th>${Object.entries(COLR).map(([k, d]) => thCol(fl, k, d)).join("")}${thMas()}</tr></thead><tbody>${vis.slice(0, lim).map(filaT).join("")}</tbody></table></div><p class="nota-g">Clic en el título de una columna para ordenar o filtrar. Clic derecho sobre una fila para ver sus acciones. Marca varias para trabajarlas juntas.</p>`
     : `<div class="list" id="lista">${vis.slice(0, lim).map((r, i) => conMas(tarjeta(r, i), r)).join("")}</div>`}
   ${cual === "mis" ? `<p class="ver-app" style="text-align:center;margin:18px 0 0">Versión ${VERSION_APP}</p>` : ""}
-  ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : cual === "todos" && !pap && !porFecha && !hist && !loteF && S.todosLleno ? `<button class="btn sec more" id="bMasSrv" type="button">Cargar registros más antiguos</button>` : ""}`;
+  ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : cual === "todos" && !pap && !porFecha && !hist && !loteF && S.todosLleno ? `<button class="btn sec more" id="bMasSrv" type="button">Cargar registros más antiguos</button>` : ""}
+  ${colFil ? "</div></div>" : ""}`;
+  if (!S._popSigue) cerrarPop(); S._popSigue = false;
+  const repR = () => pintarLista(cual);
+  if (colFil) ligarColFiltros($("#rFil"), fl, repR);
+  $("#lista thead")?.addEventListener("click", e => { const b = e.target.closest("[data-hc]"); if (!b) return; e.stopPropagation(); if ($("#hPop")?.dataset.col === b.dataset.hc) { cerrarPop(); return; } popColumna(b, fl, b.dataset.hc, COLR[b.dataset.hc], C, chips.filter(c => c[0] && !c[0].includes(",")), repR); $("#hPop").dataset.col = b.dataset.hc; });
   // Se redibuja cuando se deja de escribir (150 ms), no con cada letra
   $("#rWsp")?.addEventListener("click", () => abrirResumenWsp(vis, activos.length > 0 || !!fl.st || qs.length > 0));
   buscadorDiferido($("#q"), v => { fl.q = v; }, () => pintarLista(cual), () => S.view === cual);
@@ -2831,7 +3028,7 @@ function pintarLista(cual) {
   $("#rVaciar")?.addEventListener("click", () => borrarSiempre(datos, "Vaciar papelera"));
   // Filtros: en computadora se aplican al cambiar; en el celular, desde la hoja con «Aplicar»
   $("#rFil")?.addEventListener("change", e => { const k = e.target.dataset.rf; if (!k) return; fl[k] = e.target.value; if (k === "fecha") { if (fl.fecha === "dia" || fl.fecha === "rango") fl.f1 ||= hoyISO(); else { fl.f1 = ""; fl.f2 = ""; } } pintarLista(cual); });
-  $("#rfX")?.addEventListener("click", () => { CAMPOS_RF.forEach(k => { fl[k] = ""; }); fl.st = ""; fl.q = ""; fl.hist = false; fl.lote = ""; S._loteId = ""; pintarLista(cual); });
+  $("#rfX")?.addEventListener("click", () => { CAMPOS_RF.forEach(k => { fl[k] = ""; }); fl.st = ""; fl.q = ""; fl.hist = false; fl.lote = ""; fl.ord = ""; S._loteId = ""; pintarLista(cual); });
   $("#rFilBtn")?.addEventListener("click", () => abrirFiltrosReg(cual));
   $("#rChips")?.addEventListener("click", e => { const c = e.target.closest("[data-quitar]"); if (!c) return; const k = c.dataset.quitar; if (k === "fecha") { fl.fecha = ""; fl.f1 = ""; fl.f2 = ""; fl.fc = ""; } else fl[k] = ""; pintarLista(cual); });
   const lista = $("#lista");
@@ -5930,8 +6127,9 @@ function pintarSeguimiento(k) {
   ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : ""}` };
 }
 // La Bandeja recuerda la pestaña y los filtros de frente y topógrafo (por persona)
-const guardarBandeja = () => { const B = S.bandeja; ls.set("lib.bandeja." + S.email, { tab: B.tab, fr: B.fr || "", topo: B.topo || "" }); };
-const cargarBandeja = () => { const g = ls.get("lib.bandeja." + S.email, null); if (g) Object.assign(S.bandeja, { tab: g.tab || "PT", fr: g.fr || "", topo: g.topo || "" }); };
+const guardarBandeja = () => { const B = S.bandeja; ls.set("lib.bandeja." + S.email, { tab: B.tab, f: B.f || {} }); };
+// Filtros de la Bandeja (versión 33): frente, tipo, capa y topógrafo, de varias opciones; antes solo frente y topógrafo
+const cargarBandeja = () => { const g = ls.get("lib.bandeja." + S.email, null); if (g) Object.assign(S.bandeja, { tab: g.tab || "PT", f: g.f || { sub: g.fr || "", topo: g.topo || "" } }); };
 // Fila «actual» para el teclado (j/k)
 const marcarCur = () => { document.querySelectorAll("#blist [data-rid].cur").forEach(x => x.classList.remove("cur")); const id = S.bandeja.cur; if (id) document.querySelector(`#blist [data-rid="${CSS.escape(id)}"]`)?.classList.add("cur"); };
 // Atajos de la Bandeja (computadora): j/k moverse, x marcar, Enter abrir, a aceptar, o observar, e entregar
@@ -5964,11 +6162,16 @@ function pintarBandeja() {
   const t = B.tab;
   if (t === "ASP" || t === "LEV") return pintarBandejaSeg(t);
   const fuente = t === "EP" ? [...B.ep, ...B.epHist] : B.pend.filter(r => r.estado === t);
-  const q = terminos(B.q);
-  // Filtros de la Bandeja (se recuerdan): frente (o toda la estructura) y topógrafo
-  const pasaB = r => (!B.fr || r.subestructuraId === B.fr || r.estructuraId === B.fr) && (!B.topo || r.topografoId === B.topo);
-  const vis = fuente.filter(r => pasaB(r) && coincide(r, q))
-    .sort((a, b) => (toDate(t === "EP" ? b.fechaLiberacion || b.fechaCampo : a.fechaCampo)?.getTime() || 0) - (toDate(t === "EP" ? a.fechaLiberacion || a.fechaCampo : b.fechaCampo)?.getTime() || 0));
+  const q = terminos(B.q), F = B.f ||= {}, KB = ["sub", "tipo", "capa", "topo"], fB = r => t === "EP" ? r.fechaLiberacion || r.fechaCampo : r.fechaCampo;
+  // Filtros de la Bandeja (se recuerdan): frente (o toda la estructura), tipo, capa y topógrafo
+  const pasaB = r => KB.every(k => pasaFac(F, k, r));
+  let vis = fuente.filter(r => pasaB(r) && coincide(r, q))
+    .sort((a, b) => (toDate(t === "EP" ? fB(b) : fB(a))?.getTime() || 0) - (toDate(t === "EP" ? fB(a) : fB(b))?.getTime() || 0));
+  const pcB = tablaPC(), colFil = pcB && innerWidth >= 1200, C = pcB ? contarFac(fuente.filter(r => coincide(r, q)), F, KB) : {}, nFil = KB.filter(k => lstF(F[k]).length).length;
+  const COLB = { ...(t === "EP" ? { cod: { t: "Código", k: r => numDe(r.numero) } } : {}), lib: { t: "Liberación", az: true, k: r => `${nom(L.tipo(r.tipoId)) || nom(L.act(r.actividad), r.actividad) || ""} ${capaDe(r)}`, fk: ["tipo", "capa"] },
+    fr: { t: "Frente", az: true, k: r => nom(L.sub(r.subestructuraId)) || "", fk: ["sub"] }, pk: { t: "Progresiva", k: r => r.pkInicio ?? 1e12 },
+    fe: { t: t === "EP" ? "Aceptada y topógrafo" : "Fecha y topógrafo", k: r => toDate(fB(r))?.getTime() || 0, fk: ["topo"] } };
+  if (pcB && F.ord) vis = ordenarCol(vis, F.ord, COLB);
   B.sel = new Set([...B.sel].filter(id => vis.some(r => r.id === id)));
   const nPT = B.pend.filter(r => r.estado === "PT").length, nOB = B.pend.length - nPT, nEP = B.ep.length + B.epHist.length, ns = B.sel.size;
   const lim = B.ver || 60;
@@ -5976,26 +6179,33 @@ function pintarBandeja() {
   <h1 class="view-title">Bandeja de gabinete</h1>
   <p class="lead">Lo que llega de campo. Al aceptar se genera el código único para el protocolo; luego se entrega a Calidad.</p>
   ${tabsBandeja(t)}
+  ${colFil ? `<div class="rgrid"><aside class="card fcol" id="bFil" aria-label="Filtros">${colFiltros(F, C, KB, false)}</aside><div class="rmain">` : ""}
   <div class="tools"><input class="search" id="bq" type="search" placeholder="Buscar N°, PK, tipo, frente, topógrafo…" value="${esc(B.q)}" aria-label="Buscar">
-    <select id="bFr" aria-label="Frente" class="bsel">${opcionesFrente(B.fr || "", "Todos los frentes")}</select>
-    <select id="bTopo" aria-label="Topógrafo" class="bsel"><option value="">Todos los topógrafos</option>${S.listas.topografos.filter(x => x.activo !== false).map(x => `<option value="${esc(x.id)}" ${B.topo === x.id ? "selected" : ""}>${esc(x.id)} · ${esc(x.nombre)}</option>`).join("")}</select>
-    ${B.fr || B.topo || B.q ? '<button type="button" class="btn-txt" id="bLimpiar">Limpiar</button>' : ""}</div>
-  ${(B.fr || B.topo) && fuente.length !== vis.length ? `<p class="rf-nota">${vis.length} de ${fuente.length} con estos filtros.</p>` : ""}
+    ${colFil ? "" : `<select id="bFr" aria-label="Frente" class="bsel">${opcionesFrente(lstF(F.sub).length === 1 ? F.sub : "", lstF(F.sub).length > 1 ? `${lstF(F.sub).length} frentes` : "Todos los frentes")}</select>
+    <select id="bTopo" aria-label="Topógrafo" class="bsel"><option value="">${lstF(F.topo).length > 1 ? `${lstF(F.topo).length} topógrafos` : "Todos los topógrafos"}</option>${S.listas.topografos.filter(x => x.activo !== false).map(x => `<option value="${esc(x.id)}" ${F.topo === x.id ? "selected" : ""}>${esc(x.id)} · ${esc(x.nombre)}</option>`).join("")}</select>`}
+    ${nFil || B.q ? '<button type="button" class="btn-txt" id="bLimpiar">Limpiar</button>' : ""}</div>
+  ${nFil && fuente.length !== vis.length ? `<p class="rf-nota">${vis.length} de ${fuente.length} con estos filtros.</p>` : ""}
   ${t === "EP" && B.errEP ? `<p class="pinfo" style="margin:0 0 12px">${esc(B.errEP)}</p>` : ""}
   <div class="cap-bulk ${ns ? "on" : ""}" id="bBulk"><label class="ck" style="margin-right:4px"><input type="checkbox" id="bAll" ${vis.length && vis.slice(0, lim).every(r => B.sel.has(r.id)) ? "checked" : ""} aria-label="Seleccionar todo"></label><span><b>${ns}</b> ${ns === 1 ? "seleccionada" : "seleccionadas"}</span>
     ${t === "EP" ? `<button type="button" class="mini ok-btn" data-bk="entregar">Entregar a Calidad</button><button type="button" class="mini" data-bk="exportar">Exportar CSV</button>` : `<button type="button" class="mini ok-btn" data-bk="aceptar">Aceptar y generar códigos</button><button type="button" class="mini" data-bk="observar">Observar</button>${t === "OB" ? '<button type="button" class="mini" data-bk="reabrir">Devolver a pendientes</button>' : ""}<button type="button" class="mini" data-bk="exportar">Exportar CSV</button>`}<button type="button" class="mini" data-bk="limpiar">Deseleccionar</button>${t === "EP" ? "" : '<button type="button" class="mini warn-mini aparte" data-bk="rechazar">Rechazar</button><button type="button" class="mini warn-mini" data-bk="papelera">Mandar a la papelera</button>'}</div>
   ${!ns && vis.length ? `<label class="check small muted" style="padding:0 0 8px"><input type="checkbox" id="bAll2" aria-label="Seleccionar todo">Seleccionar ${Math.min(vis.length, lim)} para ${t === "EP" ? "entregar" : "aceptar"} en grupo</label>` : ""}
-  ${tablaPC() && vis.length ? `<div class="card twrap"><table class="rtab btab" id="blist"><thead><tr><th class="ck"></th>${t === "EP" ? "<th>Código</th>" : ""}<th>Liberación</th><th>Frente</th><th>Progresiva</th><th class="tacc">Acciones</th></tr></thead><tbody>${vis.slice(0, lim).map(r => `<tr data-rid="${esc(r.id)}" class="${B.sel.has(r.id) ? "sel" : ""}"><td class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></td>${t === "EP" ? `<td class="mono nw">${r.numero ? esc(r.numero) + masCodigos(r) : '<span class="muted">—</span>'}</td>` : ""}<td class="tdesc"><b>${esc(nom(L.tipo(r.tipoId)) || (r.actividad !== "LIB" ? nom(L.act(r.actividad), r.actividad) : ""))}${capaDe(r) ? " · " + esc(capaDe(r)) : ""}</b><span>${esc(r.nombreLiberacion || r.descripcion || "")}</span>${r.estado === "OB" && r.notaObservacion ? `<span class="tn">Observación: ${esc(r.notaObservacion)}</span>` : ""}${marcasFila(r)}${lineaQuien(r, t === "EP" ? r.fechaLiberacion || r.fechaCampo : r.fechaCampo)}</td>${tdFrente(r)}<td class="mono nw">${esc(rangoPk(r.pkInicio, r.pkFin))}</td><td class="tacc"><div class="bact">${t === "EP" ? '<button type="button" class="mini ok-btn" data-a="entregar" title="Entregar a Calidad" aria-label="Entregar a Calidad">Entregar</button>' : '<button type="button" class="mini ok-btn" data-a="aceptar" title="Aceptar y generar código" aria-label="Aceptar y generar código">Aceptar</button>'}${btnMas(r)}</div></td></tr>`).join("")}</tbody></table></div><p class="nota-g">Usa ⋯ o el clic derecho para ver todas las acciones. Teclado: <kbd>j</kbd>/<kbd>k</kbd> moverse · <kbd>x</kbd> marcar (Mayús+clic marca un rango) · <kbd>Enter</kbd> abrir · <kbd>a</kbd> aceptar · <kbd>o</kbd> observar · <kbd>e</kbd> entregar · <kbd>←</kbd>/<kbd>→</kbd> en la ficha.</p>` : `<div class="list" id="blist">${vis.length ? vis.slice(0, lim).map((r, i) => `<div class="brow ${B.sel.has(r.id) ? "sel" : ""}" data-rid="${esc(r.id)}"><label class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></label><div class="bcard">${conMas(tarjeta(r, i), r)}<div class="bact">${t === "EP" ? `<button type="button" class="mini ok-btn" data-a="entregar">Entregar a Calidad</button><button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini ok-btn" data-a="aceptar">Aceptar y generar código</button>${t === "PT" ? `<button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini" data-a="reabrir">Devolver a pendientes</button>`}`}</div></div></div>`).join("") : `<div class="empty card"><b>${fuente.length ? "Nada coincide con la búsqueda" : t === "PT" ? "No hay registros por aceptar" : t === "OB" ? "No hay observadas" : "No hay liberaciones en proceso"}</b>${fuente.length ? "" : "Cuando lleguen de campo aparecerán aquí al instante."}</div>`}</div>`}
+  ${tablaPC() && vis.length ? `<div class="card twrap"><table class="rtab btab compacta" id="blist"><thead><tr><th class="ck"></th>${Object.entries(COLB).map(([k, d]) => thCol(F, k, d)).join("")}<th class="tacc">Acciones</th></tr></thead><tbody>${vis.slice(0, lim).map(r => `<tr data-rid="${esc(r.id)}" class="${B.sel.has(r.id) ? "sel" : ""}"><td class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></td>${t === "EP" ? `<td class="mono nw">${r.numero ? esc(r.numero) + masCodigos(r) : '<span class="muted">—</span>'}</td>` : ""}<td class="tdesc" title="${esc(r.nombreLiberacion || r.descripcion || "")}"><div class="tl"><b>${esc(nom(L.tipo(r.tipoId)) || (r.actividad !== "LIB" ? nom(L.act(r.actividad), r.actividad) : ""))}${capaDe(r) ? " · " + esc(capaDe(r)) : ""}</b><span>${esc(r.nombreLiberacion || r.descripcion || "")}</span></div>${r.estado === "OB" && r.notaObservacion ? `<span class="tn">Observación: ${esc(r.notaObservacion)}</span>` : ""}${marcasFila(r)}</td>${tdFrente(r)}<td class="mono nw">${esc(rangoPk(r.pkInicio, r.pkFin))}</td><td class="tqd">${lineaQuien(r, fB(r))}</td><td class="tacc"><div class="bact">${t === "EP" ? '<button type="button" class="mini ok-btn" data-a="entregar" title="Entregar a Calidad" aria-label="Entregar a Calidad">Entregar</button>' : '<button type="button" class="mini ok-btn" data-a="aceptar" title="Aceptar y generar código" aria-label="Aceptar y generar código">Aceptar</button>'}${btnMas(r)}</div></td></tr>`).join("")}</tbody></table></div><p class="nota-g">Clic en el título de una columna para ordenar o filtrar. Usa ⋯ o el clic derecho para ver todas las acciones. Teclado: <kbd>j</kbd>/<kbd>k</kbd> moverse · <kbd>x</kbd> marcar (Mayús+clic marca un rango) · <kbd>Enter</kbd> abrir · <kbd>a</kbd> aceptar · <kbd>o</kbd> observar · <kbd>e</kbd> entregar · <kbd>←</kbd>/<kbd>→</kbd> en la ficha.</p>` : `<div class="list" id="blist">${vis.length ? vis.slice(0, lim).map((r, i) => `<div class="brow ${B.sel.has(r.id) ? "sel" : ""}" data-rid="${esc(r.id)}"><label class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></label><div class="bcard">${conMas(tarjeta(r, i), r)}<div class="bact">${t === "EP" ? `<button type="button" class="mini ok-btn" data-a="entregar">Entregar a Calidad</button><button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini ok-btn" data-a="aceptar">Aceptar y generar código</button>${t === "PT" ? `<button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini" data-a="reabrir">Devolver a pendientes</button>`}`}</div></div></div>`).join("") : `<div class="empty card"><b>${fuente.length ? "Nada coincide con la búsqueda" : t === "PT" ? "No hay registros por aceptar" : t === "OB" ? "No hay observadas" : "No hay liberaciones en proceso"}</b>${fuente.length ? "" : "Cuando lleguen de campo aparecerán aquí al instante."}</div>`}</div>`}
   ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : ""}
-  ${t === "EP" && !B.epHistOk ? `<button class="btn sec more" id="bHist" type="button">Cargar también las del histórico sin entregar</button>` : ""}`;
+  ${t === "EP" && !B.epHistOk ? `<button class="btn sec more" id="bHist" type="button">Cargar también las del histórico sin entregar</button>` : ""}
+  ${colFil ? "</div></div>" : ""}`;
+  if (!S._popSigue) cerrarPop(); S._popSigue = false;
+  const repB = () => { guardarBandeja(); pintarBandeja(); };
+  if (colFil) ligarColFiltros($("#bFil"), F, repB);
+  $("#bFil")?.addEventListener("click", e => { if (e.target.closest("#rfX")) { KB.forEach(k => { F[k] = ""; }); F.ord = ""; B.q = ""; repB(); } });
+  $("#blist thead")?.addEventListener("click", e => { const b = e.target.closest("[data-hc]"); if (!b) return; e.stopPropagation(); if ($("#hPop")?.dataset.col === b.dataset.hc) { cerrarPop(); return; } popColumna(b, F, b.dataset.hc, COLB[b.dataset.hc], C, [], repB); $("#hPop").dataset.col = b.dataset.hc; });
   $("#bHist")?.addEventListener("click", async e => { e.target.disabled = true; e.target.textContent = "Cargando…";
     try { const sn = await getDocs(query(collection(db, "liberaciones"), where("estado", "==", "EP"), where("origen", "==", "excel"))); B.epHist = sn.docs.map(fila).filter(vivo); B.epHistOk = true; pintarBandeja(); toast(`${B.epHist.length.toLocaleString("es-PE")} del histórico cargadas`); }
     catch (er) { toast("No se pudo cargar: " + er.message, "bad"); e.target.disabled = false; } });
   $(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-bt]"); if (b) { B.tab = b.dataset.bt; B.sel.clear(); B.ver = 60; B.cur = ""; guardarBandeja(); pintarBandeja(); } });
   buscadorDiferido($("#bq"), v => { B.q = v; }, pintarBandeja, () => S.view === "bandeja");
-  $("#bFr").addEventListener("change", e => { B.fr = e.target.value; guardarBandeja(); pintarBandeja(); });
-  $("#bTopo").addEventListener("change", e => { B.topo = e.target.value; guardarBandeja(); pintarBandeja(); });
-  $("#bLimpiar")?.addEventListener("click", () => { B.fr = ""; B.topo = ""; B.q = ""; guardarBandeja(); pintarBandeja(); });
+  $("#bFr")?.addEventListener("change", e => { F.sub = e.target.value; guardarBandeja(); pintarBandeja(); });
+  $("#bTopo")?.addEventListener("change", e => { F.topo = e.target.value; guardarBandeja(); pintarBandeja(); });
+  $("#bLimpiar")?.addEventListener("click", () => { KB.forEach(k => { F[k] = ""; }); F.ord = ""; B.q = ""; guardarBandeja(); pintarBandeja(); });
   const visLim = vis.slice(0, lim);
   // Marcar actualiza las filas y la barra sin redibujar la lista (no se pierde la posición)
   const actSel = () => {
@@ -6156,8 +6366,8 @@ function pintarAjustes() {
   $("#view").innerHTML = `
   <h1 class="view-title">Ajustes</h1>
   <p class="lead">Solo el administrador y el jefe de área ven esta sección. Cada cambio se guarda solo. <span class="ver-app">Versión ${VERSION_APP}</span></p>
-  <div class="tabs" role="group" aria-label="Secciones de ajustes">${AJ_TABS.map(([k, t]) => `<button type="button" data-tab="${k}" aria-pressed="${A.tab === k}">${t}${k === "usuarios" && S.solicitudes.length ? ` (${S.solicitudes.length})` : ""}${k === "tipos" && [...S.listas.tipos, ...S.listas.elementos].some(x => x.nuevo && x.activo !== false) ? ` (${[...S.listas.tipos, ...S.listas.elementos].filter(x => x.nuevo && x.activo !== false).length})` : ""}</button>`).join("")}</div>
-  <div id="ajBody"></div>`;
+  <div class="ajgrid"><div class="tabs ajnav" role="group" aria-label="Secciones de ajustes">${AJ_TABS.map(([k, t]) => `<button type="button" data-tab="${k}" aria-pressed="${A.tab === k}">${t}${k === "usuarios" && S.solicitudes.length ? ` (${S.solicitudes.length})` : ""}${k === "tipos" && [...S.listas.tipos, ...S.listas.elementos].some(x => x.nuevo && x.activo !== false) ? ` (${[...S.listas.tipos, ...S.listas.elementos].filter(x => x.nuevo && x.activo !== false).length})` : ""}</button>`).join("")}</div>
+  <div id="ajBody" data-aj="${A.tab}"></div></div>`;
   $(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b && b.dataset.tab !== A.tab) { A.tab = b.dataset.tab; pintarAjustes(); } });
   ({ usuarios: pintarUsuarios, lugares: ajLugares, capas: ajCapas, topografos: ajTopografos, tipos: ajTipos, protocolos: ajProtocolos, historico: ajHistorico, archivos: ajArchivos, exportar: ajExportar })[A.tab]();
 }

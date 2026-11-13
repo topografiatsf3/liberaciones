@@ -152,15 +152,15 @@ const estadoDe = (p, desc) => p.evaluate(d => { const s = window.__fakeStore(); 
   await d.keyboard.press('Escape'); await d.waitForTimeout(250);
   // Registros: filtro de frente y estado se recuerdan al recargar; exportar lo filtrado
   await d.click('[data-v="todos"]'); await d.waitForSelector('#rFil');
-  await d.selectOption('#rfSub', 'pp-oeste'); await d.waitForTimeout(200);
+  await d.$eval('#rFil [data-fk="sub"][value="pp-oeste"]', i => i.click()); await d.waitForTimeout(200);
   await d.click('#rSt [data-st="PT"]'); await d.waitForTimeout(200);
   ok(!!(await d.$('#rExp')) && (await d.textContent('#rExp')).includes('lo filtrado'), 'botón «Exportar lo filtrado»');
   await d.click('#rSt [data-st="EP"]', { modifiers: ['Control'] }); await d.waitForTimeout(200);
   ok(await d.evaluate(() => [...document.querySelectorAll('#lista tr[data-id] .st')].every(s => s.classList.contains('PT') || s.classList.contains('EP'))), 'Ctrl+clic en un estado suma varios (Pendiente + En proceso)');
   await d.reload(); await d.waitForSelector('#rFil');
-  ok(await d.inputValue('#rfSub') === 'pp-oeste', 'el filtro de frente se recuerda al recargar');
+  ok(await d.$eval('#rFil [data-fk="sub"][value="pp-oeste"]', i => i.checked), 'el filtro de frente se recuerda al recargar');
   await d.click('#rfX'); await d.waitForTimeout(200);
-  ok(await d.inputValue('#rfSub') === '' && await d.getAttribute('#rSt [data-st=""]', 'aria-pressed') === 'true', '«Limpiar filtros» quita también el estado');
+  ok(!(await d.$('#rFil [data-fk="sub"]:checked')) && await d.getAttribute('#rSt [data-st=""]', 'aria-pressed') === 'true', '«Limpiar filtros» quita también el estado');
   await d.selectOption('#rfFecha', 'sem'); await d.waitForTimeout(400);
   ok((await d.textContent('.lead')).includes('Esta semana'), 'filtro de fecha «Esta semana»');
   await d.selectOption('#rfFecha', ''); await d.waitForTimeout(200);
