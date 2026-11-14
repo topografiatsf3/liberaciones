@@ -11,6 +11,17 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 38: exportar a Excel con la marca de la app
+
+No cambia las reglas de Firebase.
+
+- Lo que se exporta desde **Registros** (lista o lo filtrado), la **selección** (Registros y Bandeja), una **capa del Panel** (clic derecho) y una **importación** ahora baja como **Excel (.xlsx)**, no como CSV.
+- **Hoja «Liberaciones»:** título con la marca, de qué es y desde dónde salió (pantalla y filtros, o frente y capa del Panel), quién lo exportó y cuándo, y un resumen (cuántas por estado, metros de eje y tramo de PK). Cabecera de color, líneas, filas alternadas, **estado con su color**, fechas como fechas, PK como 2+340, largo en metros, columnas a su ancho, filtro en la cabecera y N° y código fijos al desplazarse. Se imprime apaisado y a una página de ancho.
+- **El código va una sola vez** (con los otros códigos del mismo levantamiento, si los hay); «Protocolos» muestra solo el nombre del protocolo. Ya no salen «Key_Status» repetido ni columnas vacías.
+- **Hoja «Resumen»:** por estado y por frente · tipo · capa (liberaciones, metros, tramo y última fecha), con total.
+- «Exportar lo que falta liberar» de una capa también baja en Excel con la misma marca y su total.
+- **Ajustes → Exportar** sigue en CSV con las columnas del Excel de protocolos, porque es el formato para el «Log».
+
 ## Versión 37: Planta con avance, rueda con Ctrl y exportar una capa
 
 No cambia las reglas de Firebase.

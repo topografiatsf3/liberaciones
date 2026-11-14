@@ -71,14 +71,16 @@ const eje = (e0, n0, largo, ang) => { const p = []; for (let k = 0; k <= largo; 
   const items = await p.$$eval('#ctx .ctx-i', x => x.map(b => b.textContent.trim()));
   ok(items[0].startsWith('Exportar sus') && items.includes('Ver en Registros') && items.includes('Ocultar esta capa'), 'clic derecho en el nombre: ' + items.join(' · '));
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#ctx .ctx-i >> nth=0')]);
-  const csv = fs.readFileSync(await dl.path(), 'utf8'); const lineas = csv.trim().split(/\r?\n/);
+  const xl = require('./xlsx')(await dl.path()), iC = xl.findIndex(r => r && r[0] === 'N°'), datos = xl.slice(iC + 1).filter(r => r && r.length);
   const n = +items[0].match(/\d+/)[0];
-  ok(lineas.length === n + 1 && /SKT-TOP-\d+/.test(csv) && lineas[0].split(',').length > 10, `exporta las ${n} liberaciones con todas sus columnas (${lineas[0].split(',').length} columnas): ${dl.suggestedFilename()}`);
+  ok(/\.xlsx$/.test(dl.suggestedFilename()) && datos.length === n && datos.every(r => /SKT-TOP-\d+/.test(r[1])) && xl[iC].length >= 10, `exporta a Excel las ${n} liberaciones con sus columnas (${xl[iC].length}): ${dl.suggestedFilename()}`);
+  ok(/^LIBERACIONES TSF3/.test(xl[0][0]) && /desde el Panel/.test(xl[1][0]) && /^Exportado por /.test(xl[2][0]) && /liberaci/.test(xl[3][0]), 'el Excel dice qué es, desde dónde, quién lo exportó y un resumen');
+  ok(xl[iC].filter(t => t === 'Código').length === 1 && (!xl[iC].includes('Protocolos') || datos.some(r => r[xl[iC].indexOf('Protocolos')])), 'el código va una sola vez y no salen columnas vacías');
   if (items.some(t => t.startsWith('Exportar lo que falta'))) {
     await lab.click({ button: 'right' }); await p.waitForSelector('#ctx .ctx-i');
     const [dl2] = await Promise.all([p.waitForEvent('download'), p.click('#ctx .ctx-i:has-text("Exportar lo que falta")')]);
-    const c2 = fs.readFileSync(await dl2.path(), 'utf8');
-    ok(c2.includes('PK desde') && /\d\+\d{3}/.test(c2), 'exporta los tramos que faltan liberar de esa capa');
+    const x2 = require('./xlsx')(await dl2.path());
+    ok(x2.some(r => r && r.includes('PK desde')) && x2.some(r => r && r[0] === 'Total'), 'exporta a Excel los tramos que faltan liberar de esa capa, con su total');
   }
   await lab.click({ button: 'right' }); await p.waitForSelector('#ctx .ctx-i');
   await p.click('#ctx .ctx-i:has-text("Ver en Registros")'); await p.waitForSelector('#lista', { timeout: 20000 }); await p.waitForTimeout(1500);

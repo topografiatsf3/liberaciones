@@ -125,8 +125,8 @@ let b;
 
   // CSV con la carpeta
   await p.click('[data-v="todos"]'); await p.waitForSelector('#rExp');
-  const dl = p.waitForEvent('download'); await p.click('#rExp'); const f = await dl; const csv = fs.readFileSync(await f.path(), 'utf8');
-  ok(csv.split('\n')[0].includes('Carpeta OneDrive') && csv.includes('Cargo 13'), 'el CSV exportado trae la carpeta de OneDrive');
+  const dl = p.waitForEvent('download'); await p.click('#rExp'); const f = await dl; const xl = require('./xlsx')(await f.path()), cab = xl.find(r => r && r[0] === 'N°') || [];
+  ok(/\.xlsx$/.test(f.suggestedFilename()) && cab.includes('Carpeta OneDrive') && xl.some(r => r && r.some(c => String(c).includes('Cargo 13'))), 'el Excel exportado trae la carpeta de OneDrive');
 
   // Jefe: no se cambia a sí mismo ni crea administradores; un correo existente pide confirmar
   await p.click('#btnSalir'); await p.waitForSelector('#gEntrar'); await p.evaluate(u => { window.__fakeLogin = u; }, JEFE); await p.click('#gEntrar'); await p.waitForSelector('#nav button');

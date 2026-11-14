@@ -144,7 +144,7 @@ async function entrarComo(p, u) { await p.click('#btnSalir'); await p.waitForSel
   await p.waitForSelector('#rBulk.on');
   ok((await p.textContent('#rBulk')).includes('2 seleccionados'), 'casillas: 2 seleccionados con acciones en grupo');
   const dl = p.waitForEvent('download'); await p.click('#rBulk [data-rk="exportar"]'); const f = await dl;
-  ok(/registros_seleccion_/.test(f.suggestedFilename()), 'exportar los seleccionados a CSV: ' + f.suggestedFilename());
+  ok(/registros_seleccion_/.test(f.suggestedFilename()), 'exportar los seleccionados a Excel: ' + f.suggestedFilename());
   await p.click('#rBulk [data-rk="papelera"]'); await p.waitForSelector('.dlg .dlg-p'); await p.click('.dlg [type=submit]'); await p.waitForTimeout(500);
   const st2 = await store(p), borr = Object.entries(st2).filter(([k, v]) => k.startsWith('liberaciones/') && v.borrado).map(([k]) => k);
   ok(borr.length === 2, 'mandados a la papelera: ' + borr.join(', '));

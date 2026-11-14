@@ -68,9 +68,8 @@ const ponerClave = async (p, v) => { await p.fill('.dlg.on #dClave', v); await p
   await p.click('[data-v="todos"]'); await p.waitForSelector('#lista tr[data-id="l4"]');
   ok(/G\. Navarro/.test(await p.textContent('#lista tr[data-id="l4"]')), 'el registro con la clave vieja se ve con el nombre del topógrafo');
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#rExp')]);
-  const csv = fs.readFileSync(await dl.path(), 'utf8');
-  const filaL4 = csv.split(/\r?\n/).find(l => l.includes('Liberación l4')) || '';
-  ok(/[;,]GNV[;,]/.test(filaL4) && !/[;,]GN[;,]/.test(csv), 'en el Excel sale con la clave nueva (GNV), nunca con GN');
+  const xl = require('./xlsx')(await dl.path()), filaL4 = (xl.find(r => r && r.some(c => /Liberación l4/.test(c))) || []).join('|');
+  ok(/\(GNV\)|\|GNV\|/.test(filaL4) && !xl.some(r => r && r.some(c => /\(GN\)$|^GN$/.test(c))), 'en el Excel sale con la clave nueva (GNV), nunca con GN: ' + filaL4.slice(0, 140));
 
   // 4. Volver a la clave anterior también se puede
   await p.click('[data-v="ajustes"]:not([hidden])'); await p.click('[data-tab="topografos"]'); await p.waitForSelector('#tpList');
