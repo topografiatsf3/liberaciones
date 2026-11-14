@@ -901,6 +901,44 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
 }
 .plg-cerrado>.tygrp,.plg-cerrado>.est-h{border-bottom:0;margin-bottom:0;padding-bottom:0}
 .plg-h{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-weight:800;font-size:13px}
+/* Versión 37: planta recortada a su cuadro, barra de tipo y capa, avance por capa y frente, aviso de Ctrl + rueda */
+.plwrap>svg{overflow:hidden!important}
+.pl-bar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 14px;margin:8px 0 6px}
+.plsel{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.plsel select{border:1px solid var(--line-strong);border-radius:8px;padding:6px 10px;min-height:40px;background:var(--surface);color:var(--ink);font-size:14px;text-transform:none;letter-spacing:0;font-weight:600;min-width:200px;max-width:320px}
+.pl-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center;flex:1 1 100%}
+.pl-top>span{font-size:12px;font-weight:700;color:var(--muted)}
+.pl-top .chip{min-height:32px;font-size:12.5px}
+.pl-vacio{margin:10px 0;padding:14px 16px;border:1px dashed var(--line-strong);border-radius:8px;background:var(--surface-2);font-size:14px}
+.pl-vacio b{display:block;margin-bottom:4px}
+.plav{margin:12px 0 4px}
+.plav h3{font-size:14px;margin:0 0 6px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.plav h3 span{font-size:12px;font-weight:600;color:var(--muted)}
+.plav-w{overflow:auto;border:1px solid var(--line);border-radius:8px;max-height:420px}
+.plav table{width:100%;border-collapse:collapse;font-size:13px}
+.plav th{position:sticky;top:0;background:var(--surface-2);text-align:right;font-size:11.5px;font-weight:600;color:var(--muted);padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}
+.plav th:first-child,.plav td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:2}
+.plav th:first-child{background:var(--surface-2);z-index:3}
+.plav th small{display:block;font-weight:600;text-transform:none;letter-spacing:0}
+.plav th .linkbtn{font-size:11.5px}
+.plav td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:right;font:600 12.5px var(--f-mono);white-space:nowrap}
+.plav td:first-child{font:700 13px var(--f-body)}
+.plav td.c-pct{background:linear-gradient(90deg,var(--accent-soft) var(--p),transparent var(--p));}
+.plav td.c-no{color:var(--muted);font-weight:400}
+.plav td.c-tot{font-weight:800;color:var(--accent-strong)}
+.plav tr[data-plcapa]{cursor:pointer}
+.plav tr[data-plcapa]:hover td{background-color:var(--surface-2)}
+.plav tr.on td:first-child{box-shadow:inset 3px 0 0 var(--accent);color:var(--accent-strong)}
+.plav .plav-mas{display:inline-block;margin:6px 2px 0}
+.rueda-aviso{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;background:rgba(17,28,25,.82);color:#fff;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;pointer-events:none;opacity:0;transition:opacity .2s;white-space:nowrap}
+.rueda-aviso.on{opacity:1}
+.rueda-aviso kbd{background:#fff;color:var(--ink);border:0}
+#chart{position:relative}
+@media (max-width:1023px){.plav th .linkbtn{display:none}.plav .plav-mas{min-height:44px}}
+@media (max-width:759px){.plsel,.pl-top>span,.plav h3 span,.plav th,.plav th small,.plav td,.plav td:first-child,.pl-top .chip,.pl-top .chip .c,.pl-vacio .chip .c{font-size:13px}}
+.mws{position:relative}
+#chart .lab2[data-banda]{cursor:context-menu}
+#chart .lab2[data-banda]:hover{fill:var(--accent-strong)}
 /* Panel en computadora (versión 34): rueda para acercar, regla fija, filas compactas y columnas */
 .pf-bar{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin:4px 0 6px;font-size:12.5px;color:var(--muted)}
 .pf-bar .seg button{min-height:30px;font-size:12.5px;padding:0 10px}
@@ -1659,7 +1697,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 36;
+const VERSION_APP = 37;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -3822,15 +3860,17 @@ function pintarPanel() {
   const grafico = `<div class="card chartbox">
     <div class="chart-h">
       <div class="tabs" style="margin:0" role="group" aria-label="Vista">${tabsPanel()}</div>
-      ${planta ? `<div class="pl-ctl"><select id="pTipoPl" aria-label="Tipo a mostrar en planta"></select><select id="pCapaPl" aria-label="Capa a mostrar en planta"></select></div>` : ""}
+
     </div>
     <div class="fchips" id="pActivos" hidden></div>
     <h2 class="chart-t${planta ? "" : " solo-pc"}" id="pTit"></h2>
+    ${planta ? `<div class="pl-bar"><label class="plsel"><span>Tipo</span><select id="pTipoPl" aria-label="Tipo a mostrar en planta"></select></label><label class="plsel" id="pCapaW"><span>Capa</span><select id="pCapaPl" aria-label="Capa a mostrar en planta"></select></label><div class="pl-top" id="plTop"></div></div>` : ""}
     ${movilP ? `<details class="ley-d"${P._leyAbierta ? " open" : ""}><summary>Leyenda<span class="ley-mini" aria-hidden="true"><i class="falta-i"></i><i class="nolib"></i>${["PT", "EP", "EC", "OB"].map(k => `<i style="background:${fondoLey(k)}"></i>`).join("")}</span></summary>${leyenda}</details>` : leyenda}
     <div id="pAvisos"></div><div id="pUlt"></div>
     <div id="chart"></div>
     <div class="pinfo" id="pInfo" hidden></div>
     <p class="nota-g" id="pNota"></p>
+    ${planta ? '<div id="plAvance"></div>' : ""}
   </div>`;
   // Los números van arriba en todos los tamaños (versión 29) y dicen de qué frente o estructura son
   const numeros = '<p class="stats-de" id="pStatsDe"></p><div class="stats" id="pStats"></div>';
@@ -3849,8 +3889,16 @@ function pintarPanel() {
   $("#pActivos").addEventListener("click", e => { const c = e.target.closest("[data-quitar]"); if (c) quitarFiltro(c.dataset.quitar); });
   $("#pFilBtn")?.addEventListener("click", abrirHojaFiltros);
   if (planta) {
-    $("#pTipoPl").addEventListener("change", e => { P.tipoPl = e.target.value; P.capa = ""; actualizarPanel(); });
-    $("#pCapaPl").addEventListener("change", e => { P.capa = e.target.value; actualizarPanel(); });
+    const elegirTipo = t => { P.tipoPl = t; P.capa = ""; P.plVB = null; actualizarPanel(); };
+    $("#pTipoPl").addEventListener("change", e => elegirTipo(e.target.value));
+    $("#pCapaPl").addEventListener("change", e => { P.capa = e.target.value; P.plVB = null; actualizarPanel(); });
+    $("#plTop").addEventListener("click", e => { const b = e.target.closest("[data-pltipo]"); if (b) elegirTipo(b.dataset.pltipo); });
+    $("#chart").addEventListener("click", e => { const b = e.target.closest("[data-pltipo]"); if (b) elegirTipo(b.dataset.pltipo); });
+    $("#plAvance").addEventListener("click", e => {
+      if (e.target.closest("[data-irejes]")) { S.aj.tab = "lugares"; ir("ajustes"); return; }
+      if (e.target.closest("[data-plmas]")) { P.plTodas = !P.plTodas; actualizarPanel(); return; }
+      const tr = e.target.closest("[data-plcapa]"); if (tr) { P.capa = tr.dataset.plcapa; P.plVB = null; actualizarPanel(); $("#pTit")?.scrollIntoView({ behavior: "smooth", block: "start" }); }
+    });
   } else {
     $("#pFalta").addEventListener("click", clickFalta);
     $("#pFalta").addEventListener("change", e => { if (e.target.id === "ftAgr") { S.panel.ft.agrupar = e.target.checked; ls.set("lib.ft", { orden: S.panel.ft.orden, dir: S.panel.ft.dir, agrupar: S.panel.ft.agrupar }); pintarFalta(); } });
@@ -4054,17 +4102,24 @@ function actualizarPanel() {
   let lst;
   if (planta) {
     const tipos = S.listas.tipos.filter(t => t.enGrafico);
-    const conDatos = tipos.filter(t => recs.some(r => r.tipoId === t.id));
-    if (!P.tipoPl || !tipos.some(t => t.id === P.tipoPl)) P.tipoPl = (conDatos[0] || tipos[0] || {}).id || "";
-    $("#pTipoPl").innerHTML = tipos.map(t => `<option value="${esc(t.id)}" ${t.id === P.tipoPl ? "selected" : ""}>${esc(t.nombre)}${recs.some(r => r.tipoId === t.id) ? "" : " (sin registros)"}</option>`).join("");
+    // Tipos con registros primero (de más a menos); al entrar a una estructura se elige el que más tiene
+    const nT = new Map(); recs.forEach(r => nT.set(r.tipoId, (nT.get(r.tipoId) || 0) + 1));
+    const conDatos = tipos.filter(t => nT.get(t.id)).sort((a, b) => nT.get(b.id) - nT.get(a.id)), sinDatos = tipos.filter(t => !nT.get(t.id));
+    if (P._plIni !== est.id || !P.tipoPl || !tipos.some(t => t.id === P.tipoPl)) { P._plIni = est.id; P.tipoPl = (conDatos[0] || tipos[0] || {}).id || ""; P.capa = ""; P.plVB = null; }
+    const opT = t => `<option value="${esc(t.id)}" ${t.id === P.tipoPl ? "selected" : ""}>${esc(t.nombre)}${nT.get(t.id) ? ` (${nT.get(t.id)})` : ""}</option>`;
+    $("#pTipoPl").innerHTML = (conDatos.length ? `<optgroup label="Con liberaciones">${conDatos.map(opT).join("")}</optgroup>` : "") + (sinDatos.length ? `<optgroup label="Sin liberaciones">${sinDatos.map(opT).join("")}</optgroup>` : "");
+    $("#plTop").innerHTML = conDatos.length > 1 ? `<span>Más liberados:</span>${conDatos.slice(0, 6).map(t => `<button type="button" class="chip" data-pltipo="${esc(t.id)}" aria-pressed="${t.id === P.tipoPl}">${esc(t.nombre)}<span class="c">${nT.get(t.id)}</span></button>`).join("")}` : "";
     const delTipo = recs.filter(r => r.tipoId === P.tipoPl);
     const capas = [...new Set([...delTipo.map(r => capaDe(r)), ...(est.subs || []).flatMap(s => cfgTipo(s.id, P.tipoPl).capas.map(c => c.nombre.trim()))].filter(Boolean))].sort(natural);
     if (P.capa && !capas.includes(P.capa)) P.capa = "";
     $("#pCapaPl").innerHTML = `<option value="">Todas las capas</option>` + capas.map(c => `<option ${c === P.capa ? "selected" : ""}>${esc(c)}</option>`).join("");
-    $("#pCapaPl").hidden = !capas.length;
+    $("#pCapaW").hidden = !capas.length;
     $("#pTit").textContent = `${est.nombre} · ${nom(L.tipo(P.tipoPl))}${P.capa ? " · " + P.capa : ""}`;
     lst = delTipo.filter(r => !P.capa || capaDe(r) === P.capa);
     dibujarPlanta(est, lst, !!P.capa || capas.length <= 1);
+    // Un tipo sin liberaciones en esta estructura: se dice y se ofrecen los que sí tienen
+    if (!delTipo.length && $("#chart .plwrap")) $("#chart").insertAdjacentHTML("afterbegin", `<div class="pl-vacio"><b>${esc(nom(L.tipo(P.tipoPl)))} no tiene liberaciones en ${esc(est.nombre)}${resumenFil(filtrosDe()).length ? " con estos filtros" : ""}.</b>${conDatos.length ? `Prueba con: ${conDatos.slice(0, 4).map(t => `<button type="button" class="chip" data-pltipo="${esc(t.id)}">${esc(t.nombre)} <span class="c">${nT.get(t.id)}</span></button>`).join(" ")}` : "Aún no hay liberaciones con progresiva en esta estructura."}</div>`);
+    dibujarAvancePlanta(est, delTipo, capas);
   } else {
     const bandas = construirBandas(sub, recs); P._bandas = bandas;
     pintarAvisos(sub, recs);
@@ -4207,16 +4262,17 @@ function dibujarPerfil(sub, recs, bandas, totalBandas) {
       out.push(`<rect class="seg${animar ? " seg-anim" : ""}" data-id="${esc(r.id)}" x="${xa.toFixed(1)}" y="${y + 2}" width="${w.toFixed(1)}" height="${bh - 4}" rx="3" fill="${relleno(r.estado) || COLOR.PT}" stroke="${esHoy ? TOK.ink : "#fff"}" stroke-width="${esHoy ? 1.8 : 1.2}" style="animation-delay:${Math.min(i * 25, 400)}ms"/>`);
     });
     // El nombre solo se lee; para ocultar la capa está el ojo a su izquierda
-    out.push(`<g class="ojo" data-oculta="${esc(b.key)}" role="button" aria-label="Ocultar ${esc(b.nombre)}"><title>Ocultar esta capa</title><rect x="0" y="${movil ? y0 - 4 : y}" width="${OJO}" height="${movil ? LH + 2 : bh}" fill="transparent"/><g transform="translate(4 ${movil ? y0 + LH / 2 - 9 : y + bh / 2 - 8})"><path d="M1 8s3.2-5.5 9-5.5S19 8 19 8s-3.2 5.5-9 5.5S1 8 1 8z" fill="none" stroke-width="1.6"/><circle cx="10" cy="8" r="2.6" fill="none" stroke-width="1.6"/></g></g>${movil ? `<text class="lab2" x="${OJO + 2}" y="${y0 + LH / 2 + 3}"><title>${esc(b.nombre)}</title>${esc(corta(fp.grupo ? b.corto : b.nombre, Math.floor((W - OJO - 60) / 7.5)))}</text>` : `<text class="lab2" x="${gx0 - 8}" y="${y + bh / 2 + 4}" text-anchor="end"><title>${esc(b.nombre)}</title>${esc(corta(fp.grupo ? b.corto : b.nombre, 34))}</text>`}`);
+    out.push(`<g class="ojo" data-oculta="${esc(b.key)}" role="button" aria-label="Ocultar ${esc(b.nombre)}"><title>Ocultar esta capa</title><rect x="0" y="${movil ? y0 - 4 : y}" width="${OJO}" height="${movil ? LH + 2 : bh}" fill="transparent"/><g transform="translate(4 ${movil ? y0 + LH / 2 - 9 : y + bh / 2 - 8})"><path d="M1 8s3.2-5.5 9-5.5S19 8 19 8s-3.2 5.5-9 5.5S1 8 1 8z" fill="none" stroke-width="1.6"/><circle cx="10" cy="8" r="2.6" fill="none" stroke-width="1.6"/></g></g>${movil ? `<text class="lab2" x="${OJO + 2}" y="${y0 + LH / 2 + 3}"><title>${esc(b.nombre)}</title>${esc(corta(fp.grupo ? b.corto : b.nombre, Math.floor((W - OJO - 60) / 7.5)))}</text>` : `<text class="lab2" data-banda="${esc(b.key)}" x="${gx0 - 8}" y="${y + bh / 2 + 4}" text-anchor="end"><title>${esc(b.nombre)} · clic derecho: exportar sus liberaciones o verlas en Registros</title>${esc(corta(fp.grupo ? b.corto : b.nombre, 34))}</text>`}`);
     out.push(`<text class="pct ${pct >= 100 ? "full" : ""}" x="${W - 2}" y="${movil ? y0 + LH / 2 + 3 : y + bh / 2 + 4}" text-anchor="end">${b.rs.length || lib ? pct + "%" : baseLen <= 0.2 ? "N/A" : "0%"}</text>`);
   });
   if (!movil) out.push(`<line x1="${gx0}" x2="${gx0}" y1="${top}" y2="${fondo - gap}" stroke="${TOK.ink}" stroke-width="1.8"/><line x1="${gx1}" x2="${gx1}" y1="${top}" y2="${fondo - gap}" stroke="${TOK.ink}" stroke-width="1.8"/>`);
   const acercado = pcP && (P.pkDesde || P.pkHasta);
-  const barra = !pcP ? "" : `<div class="pf-bar"><div class="seg" role="group" aria-label="Alto de las filas"><button type="button" data-pfc="0" aria-pressed="${!comp}">Filas normales</button><button type="button" data-pfc="1" aria-pressed="${comp}">Compactas</button></div>${acercado ? `<span class="pf-rg">PK ${fmtPk(x0)} a ${fmtPk(x1)}</span><button type="button" class="mini" data-pftodo>Ver todo el frente</button>` : ""}<span class="pf-ayuda">Rueda del ratón para acercar · arrastra para moverte · doble clic: todo el frente</span></div>`;
+  const barra = !pcP ? "" : `<div class="pf-bar"><div class="seg" role="group" aria-label="Alto de las filas"><button type="button" data-pfc="0" aria-pressed="${!comp}">Filas normales</button><button type="button" data-pfc="1" aria-pressed="${comp}">Compactas</button></div>${acercado ? `<span class="pf-rg">PK ${fmtPk(x0)} a ${fmtPk(x1)}</span><button type="button" class="mini" data-pftodo>Ver todo el frente</button>` : ""}<span class="pf-ayuda"><kbd>Ctrl</kbd> + rueda para acercar · arrastra para moverte · doble clic: todo el frente · clic derecho en una capa: exportar</span></div>`;
   const regla = !pcP ? "" : `<div class="pf-regla"><svg viewBox="0 0 ${W} 24" height="24" aria-hidden="true">${ticks.map(v => `<text class="tick" x="${X(v).toFixed(1)}" y="16" text-anchor="middle">${fmtPk(v)}</text>`).join("")}<line x1="${gx0}" x2="${gx1}" y1="23.5" y2="23.5" stroke="${TOK.line}"/></svg></div>`;
   box.classList.toggle("pf-on", pcP); box.classList.toggle("pf-comp", comp);
   box.innerHTML = `${barra}${regla}<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="Perfil de capas liberadas en ${esc(sub.nombre)}">${out.join("")}</svg>`;
   box._pf = { gx0, gx1, x0, x1, fr0, fr1 };
+  box.oncontextmenu = e => { const l = e.target.closest("[data-banda]"); if (!l) return; e.preventDefault(); e.stopPropagation(); menuBanda(l.dataset.banda, e.clientX, e.clientY); };
   if (pcP) conectarZoomPerfil(box);
   P._huecos = huecosT;
   $("#pInfo").hidden = true;
@@ -4232,6 +4288,13 @@ function dibujarPerfil(sub, recs, bandas, totalBandas) {
 }
 /* Rueda, arrastre y doble clic en el perfil (computadora). Acercar es lo mismo que filtrar la progresiva: el % y
    «Qué falta liberar» quedan para ese tramo y el filtro «Progresiva» de la izquierda lo muestra. */
+/* Rueda: con Ctrl (o ⌘) acerca; sin Ctrl la página baja normal y se avisa cómo acercar (no se acerca sin querer) */
+const conCtrl = e => e.ctrlKey || e.metaKey;
+function avisoRueda(cont) {
+  if (!cont) return; let a = cont.querySelector(":scope > .rueda-aviso");
+  if (!a) { a = document.createElement("div"); a.className = "rueda-aviso"; a.innerHTML = "Mantén <kbd>Ctrl</kbd> y gira la rueda para acercar"; cont.appendChild(a); }
+  a.classList.add("on"); clearTimeout(a._t); a._t = setTimeout(() => a.classList.remove("on"), 1100);
+}
 function conectarZoomPerfil(box) {
   if (box._zoomOk) return; box._zoomOk = true;
   const P = S.panel; let raf = 0, tAcc = 0, arr = null;
@@ -4246,7 +4309,9 @@ function conectarZoomPerfil(box) {
   const pkEn = e => { const z = box._pf, sv = box.querySelector(":scope > svg[role=img]"); if (!z || !sv) return null; const r = sv.getBoundingClientRect(), x = (e.clientX - r.left) * sv.viewBox.baseVal.width / r.width; return { pk: z.x0 + (x - z.gx0) / (z.gx1 - z.gx0) * (z.x1 - z.x0), x, r, sv }; };
   box.addEventListener("wheel", e => {
     if (S.panel.vista !== "perfil" || !box.classList.contains("pf-on") || !box._pf) return;
-    const m = pkEn(e); if (!m || m.x < box._pf.gx0 - 4) return; e.preventDefault();
+    const m = pkEn(e); if (!m || m.x < box._pf.gx0 - 4) return;
+    if (!conCtrl(e)) { avisoRueda(box); return; }
+    e.preventDefault();
     const z = box._pf, f = Math.exp(e.deltaY * (e.deltaMode ? 0.05 : 0.0015)), pk = Math.max(z.x0, Math.min(z.x1, m.pk));
     aplicar(pk - (pk - z.x0) * f, pk + (z.x1 - pk) * f);
   }, { passive: false });
@@ -4266,6 +4331,38 @@ function conectarZoomPerfil(box) {
     if (e.target.closest("[data-pftodo]")) { e.stopPropagation(); aplicar(-Infinity, Infinity); }
   }, true);
   box.addEventListener("dblclick", e => { if (S.panel.vista === "perfil" && box.classList.contains("pf-on") && !e.target.closest(".pf-bar,.seg,[data-id],[data-gap],[data-na]")) aplicar(-Infinity, Infinity); });
+}
+// Menú de una capa del perfil: exportar todos los datos de sus liberaciones, lo que falta, verlas en Registros u ocultarla
+function menuBanda(key, x, y) {
+  const P = S.panel, b = (P._bandas || []).find(q => q.key === key); if (!b) return;
+  const sub = L.sub(P.subId), gs = (P._huecos || []).filter(g => g.key === key), n = b.rs.length;
+  abrirMenu({ titulo: esc(b.nombre), sub: `${esc(sub?.nombre || "")} · ${n} ${n === 1 ? "liberación" : "liberaciones"}`, x, y, items: [
+    { t: `Exportar sus ${n} ${n === 1 ? "liberación" : "liberaciones"} (CSV)`, fn: () => exportarBanda(b) },
+    ...(gs.length ? [{ t: `Exportar lo que falta liberar (${gs.length} ${gs.length === 1 ? "tramo" : "tramos"})`, fn: () => exportarFaltaBanda(b, gs) }] : []),
+    { t: "Ver en Registros", fn: () => verBandaEnRegistros(b) },
+    { sep: 1 },
+    { t: "Ocultar esta capa", fn: () => alternarCapa(key) }
+  ] });
+}
+// Todos los datos (las mismas columnas que «Exportar» de Registros): se leen completos de Firebase; sin señal, lo del resumen
+async function exportarBanda(b) {
+  const P = S.panel, ids = new Set(b.rs.map(r => r.id)); if (!ids.size) { toast("Esta capa no tiene liberaciones."); return; }
+  const nombre = slug(`${L.sub(P.subId)?.nombre || ""}-${b.nombre}`).slice(0, 60);
+  toast("Preparando el CSV…");
+  try {
+    const sn = await getDocs(query(collection(db, "liberaciones"), where("subestructuraId", "==", P.subId), where("tipoId", "==", b.t.id)));
+    const regs = sn.docs.map(fila).filter(r => ids.has(r.id)).sort((a, c) => (a.pkInicio ?? 0) - (c.pkInicio ?? 0));
+    exportarSel(regs.length ? regs : b.rs, nombre);
+  } catch (e) { console.warn("exportar capa", e); exportarSel(b.rs, nombre); toast("Sin señal: se exportó lo que hay en el panel (datos resumidos).", "bad"); }
+}
+function exportarFaltaBanda(b, gs) {
+  const sub = L.sub(S.panel.subId), filas = [["Frente", "Tipo", "Capa", "PK desde", "PK hasta", "Largo (m)"], ...gs.slice().sort((p, q) => p.a - q.a).map(g => [sub?.nombre || "", b.t.nombre, b.capa || "", fmtPk(g.a), fmtPk(g.b), (g.b - g.a).toFixed(2)])];
+  descargar(`falta_liberar_${slug(`${sub?.nombre || ""}-${b.nombre}`).slice(0, 60)}_${hoyISO()}.csv`, "\ufeff" + filas.map(csvLinea).join("\r\n"), "text/csv;charset=utf-8");
+  toast(`${gs.length} ${gs.length === 1 ? "tramo exportado" : "tramos exportados"}`);
+}
+function verBandaEnRegistros(b) {
+  const fl = S.filtro.todos; CAMPOS_RF.forEach(k => { fl[k] = ""; }); Object.assign(fl, { st: "", q: "", ord: "", hist: true, lote: "", pap: false, tipo: b.t.id, sub: S.panel.subId, capa: b.capa ? b.capa : (S.panel._bandas || []).some(q => q.t.id === b.t.id && q.capa) ? "~" : "" });
+  ir("todos");
 }
 function pintarFalta() {
   const P = S.panel, box = $("#pFalta"), huecosT = P._huecos || [], bandas = P._ftBandas || [], [x0, x1] = P._ftRango || [0, 0];
@@ -4364,10 +4461,33 @@ function dibujarPlanta(est, recs, conPct = true) {
   const vb = SP.plVB || [0, 0, W, H];
   box.innerHTML = `<div class="plwrap"><svg viewBox="${vb.join(" ")}" height="${H}" role="img" aria-label="Planta de ${esc(est.nombre)}">${HATCH}${out.join("").replace(/<path /g, '<path vector-effect="non-scaling-stroke" ')}</svg>${pcPl ? '<div class="rzoom" role="group" aria-label="Acercar o alejar la planta"><button type="button" data-pz="+" aria-label="Acercar">+</button><button type="button" data-pz="-" aria-label="Alejar">−</button><button type="button" data-pz="0" aria-label="Ver todo">Todo</button></div>' : ""}</div>`;
   const faltan = (est.subs || []).filter(x => x.activo !== false && !puntosEje(x.id)).map(x => x.nombre);
-  $("#pNota").textContent = `Norte arriba.${pcPl ? " Rueda del ratón para acercar, arrastra para moverte y doble clic para ver todo." : ""} Toca un tramo para ver su ficha.${faltan.length ? " Sin eje: " + faltan.join(", ") + "." : ""}`;
+  $("#pNota").textContent = `Norte arriba.${pcPl ? " Ctrl + rueda para acercar, arrastra para moverte y doble clic para ver todo." : ""} Toca un tramo para ver su ficha.${faltan.length ? " Sin eje: " + faltan.join(", ") + "." : ""}`;
   const svg = box.querySelector(".plwrap>svg");
   conectarTramos(svg, "path.tramo");
   if (pcPl) conectarZoomPlanta(svg, W, H);
+}
+/* Avance de la planta: % liberado de cada capa en cada frente (y el total), sin contar lo que no se libera.
+   Se toca una fila para ver esa capa en la planta. */
+function dibujarAvancePlanta(est, delTipo, capas) {
+  const P = S.panel, box = $("#plAvance"); if (!box) return;
+  const subs = (est.subs || []).filter(s => s.activo !== false);
+  if (!subs.length || !P.tipoPl) { box.innerHTML = ""; return; }
+  const filasC = capas.length ? capas.slice().sort((a, b) => natural(b, a)) : [""];
+  const rango = sb => { const e = puntosEje(sb.id), v = delTipo.filter(r => r.subestructuraId === sb.id && r.pkInicio != null).flatMap(r => ivDe(r)); let a = sb.pkMin ?? (e ? e[0][0] : v.length ? Math.min(...v) : null), b = sb.pkMax ?? (e ? e[e.length - 1][0] : v.length ? Math.max(...v) : null); return a != null && b != null && b > a ? [a, b] : null; };
+  const rgs = new Map(subs.map(sb => [sb.id, rango(sb)]));
+  const celda = (sb, capa) => {
+    const rg = rgs.get(sb.id); if (!rg) return null;
+    const rs = delTipo.filter(r => r.subestructuraId === sb.id && r.pkInicio != null && (!capas.length || capaDe(r) === capa));
+    const na = cfgTipo(sb.id, P.tipoPl).noAplica.filter(x => !capas.length || !x.capa || x.capa === capa).map(x => [x.pkInicio, x.pkFin]);
+    const a = avance(rs.map(ivDe), na, rg[0], rg[1]); return { ...a, n: rs.length };
+  };
+  const conFilas = filasC.map(c => { const cs = subs.map(sb => celda(sb, c)), lib = cs.reduce((t, x) => t + (x?.lib || 0), 0), base = cs.reduce((t, x) => t + (x?.base || 0), 0), n = cs.reduce((t, x) => t + (x?.n || 0), 0); return { c, cs, lib, base, n, pct: base > 0 ? Math.round(lib / base * 100) : null }; });
+  const lim = P.plTodas ? conFilas.length : 12, vis = conFilas.slice(0, lim);
+  const td = x => x == null ? '<td class="c-no" title="Sin rango de PK ni eje">—</td>' : `<td class="c-pct" style="--p:${Math.min(100, x.pct)}%" title="${mts(x.lib)} de ${mts(x.base)} · ${x.n} ${x.n === 1 ? "liberación" : "liberaciones"}">${x.pct}%</td>`;
+  box.innerHTML = `<div class="plav"><h3>Avance de ${esc(nom(L.tipo(P.tipoPl)))} <span>% liberado de cada ${capas.length ? "capa" : "frente"} en cada frente, sin contar lo que no se libera${capas.length ? " · toca una capa para verla en la planta" : ""}</span></h3>
+    <div class="plav-w"><table><thead><tr><th>${capas.length ? "Capa" : "Tipo"}</th>${subs.map(sb => `<th>${esc(sb.nombre)}${puntosEje(sb.id) ? "" : `<small>sin eje${puedeAjustes() ? ' · <button type="button" class="linkbtn" data-irejes>subir</button>' : ""}</small>`}</th>`).join("")}<th>Total</th></tr></thead>
+    <tbody>${vis.map(f => `<tr ${capas.length ? `data-plcapa="${esc(f.c)}"` : ""} class="${capas.length && f.c === P.capa ? "on" : ""}"><td>${esc(f.c || nom(L.tipo(P.tipoPl)))}</td>${f.cs.map(td).join("")}<td class="c-tot">${f.pct == null ? "—" : f.pct + "%"}</td></tr>`).join("")}</tbody></table></div>
+    ${conFilas.length > 12 ? `<button type="button" class="btn-txt plav-mas" data-plmas>${P.plTodas ? "Ver menos" : `Ver las ${conFilas.length} capas`}</button>` : ""}</div>`;
 }
 // Planta: acercar con la rueda (sin deformar), arrastrar y botones; textos y marcas del mismo tamaño en pantalla
 function conectarZoomPlanta(svg, W, H) {
@@ -4375,7 +4495,7 @@ function conectarZoomPlanta(svg, W, H) {
   const poner = () => { const v = P.plVB || [0, 0, W, H], f = v[2] / W; svg.setAttribute("viewBox", v.join(" ")); svg.querySelectorAll("text").forEach(t => { t.dataset.fs ??= parseFloat(getComputedStyle(t).fontSize) || 11; t.style.fontSize = (t.dataset.fs * f).toFixed(3) + "px"; t.style.strokeWidth = (4 * f).toFixed(3); }); svg.querySelectorAll("circle").forEach(c => c.setAttribute("r", (2.6 * f).toFixed(3))); };
   const zoom = (g, cx, cy) => { const v = P.plVB || [0, 0, W, H], nw = Math.min(W, Math.max(W / 200, v[2] * g)), k = nw / v[2], mx = cx ?? v[0] + v[2] / 2, my = cy ?? v[1] + v[3] / 2; P.plVB = nw >= W ? null : [mx - (mx - v[0]) * k, my - (my - v[1]) * k, nw, nw * H / W]; poner(); };
   const mundo = e => { const r = svg.getBoundingClientRect(), v = P.plVB || [0, 0, W, H]; return [v[0] + (e.clientX - r.left) / r.width * v[2], v[1] + (e.clientY - r.top) / r.height * v[3]]; };
-  svg.addEventListener("wheel", e => { e.preventDefault(); const [x, y] = mundo(e); zoom(Math.exp(e.deltaY * (e.deltaMode ? 0.05 : 0.0015)), x, y); }, { passive: false });
+  svg.addEventListener("wheel", e => { if (!conCtrl(e)) { avisoRueda(wrap); return; } e.preventDefault(); const [x, y] = mundo(e); zoom(Math.exp(e.deltaY * (e.deltaMode ? 0.05 : 0.0015)), x, y); }, { passive: false });
   let ini = null;
   svg.addEventListener("pointerdown", e => { ini = e.button ? null : { x: e.clientX, y: e.clientY, v: (P.plVB || [0, 0, W, H]).slice(), movio: false }; });
   svg.addEventListener("pointermove", e => {
@@ -5171,6 +5291,7 @@ function dibujarPlantaReal() {
   // Rueda del ratón: acerca o aleja sin deformar, dejando fijo el punto que está bajo el cursor
   let rafZ = 0;
   svg.addEventListener("wheel", e => {
+    if (!P.mFull && !conCtrl(e)) { avisoRueda(cont); return; }
     e.preventDefault();
     const r = svg.getBoundingClientRect(), v = P.mVB || [0, 0, W, H], f = Math.exp(e.deltaY * (e.deltaMode ? 0.05 : 0.0015));
     const nw = Math.min(W * 1.5, Math.max(W / 800, v[2] * f)), g = nw / v[2], mx = v[0] + (e.clientX - r.left) / r.width * v[2], my = v[1] + (e.clientY - r.top) / r.height * v[3];
@@ -5376,7 +5497,7 @@ function dibujarModelo() {
       <div class="legend">${leyEst}${P.mGrupo && base ? '<span><i class="falta-i"></i>Falta liberar</span><span><i class="crz"></i>Cruce</span><span><i class="fue"></i>Fuera de la base</span>' : ""}${eje ? '<span><i style="background:${TOK.ink};height:2px"></i>Eje</span>' : ""}</div>
       <div class="mbar">${seg}<span class="mbar-sp"></span>${P.mGrupo ? `<button type="button" class="mini" data-base>${base ? "Reemplazar base" : "Subir base"}</button>${base ? '<button type="button" class="mini warn-mini" data-quitabase>Quitar base</button>' : ""}` : '<button type="button" class="mini" data-base>Subir base de una capa</button>'}</div>
       <div class="mreal" id="mPlanBox"><div id="mPlan"></div><div class="rzoom" role="group" aria-label="Acercar o alejar"><button type="button" data-rz="+" aria-label="Acercar">+</button><button type="button" data-rz="-" aria-label="Alejar">−</button><button type="button" data-rz="0" aria-label="Ver todo">Todo</button></div></div>
-      <p class="nota-g">Planta real a escala, girada${eje ? " a lo largo del eje" : " según la forma de la capa"}. Rueda del ratón para acercar, arrastra para moverte y doble clic para ver todo; toca una liberación para elegirla y otra vez para ver sus datos${eje && mod ? "; toca cualquier punto para ver esa sección" : ""}.${base ? ` Base: ${esc(base.nombre || "")}.` : ""}</p>`;
+      <p class="nota-g">Planta real a escala, girada${eje ? " a lo largo del eje" : " según la forma de la capa"}. ${P.mFull ? "Rueda" : "Ctrl + rueda"} para acercar, arrastra para moverte y doble clic para ver todo; toca una liberación para elegirla y otra vez para ver sus datos${eje && mod ? "; toca cualquier punto para ver esa sección" : ""}.${base ? ` Base: ${esc(base.nombre || "")}.` : ""}</p>`;
   } else {
     const lim = mod ? [mod.pk0, mod.pk1] : [eje[0][0], eje[eje.length - 1][0]];
     const vp = vis.filter(x => x.pk0 != null);
@@ -5388,7 +5509,7 @@ function dibujarModelo() {
       <div class="legend">${leyEst}<span><i class="hatch"></i>Diseño</span><span><i style="background:var(--accent);height:3px"></i>Sección elegida</span></div>
       <div class="mbar">${seg}<span class="mbar-sp"></span><button type="button" class="mini" data-mz="-" aria-label="Alejar" ${(P.mZoom || 1) <= 1 ? "disabled" : ""}>−</button><button type="button" class="mini" data-mz="+" aria-label="Acercar">+</button><button type="button" class="mini" data-mz="0">Todo</button></div>
       <div class="mscroll" id="mPlanBox"><div id="mPlan"></div></div>
-      <p class="nota-g">Planta desarrollada: progresiva y desfase desde el eje (izquierda arriba, derecha abajo). Rueda del ratón para acercar y arrastra para moverte. Toca una liberación para ir a su sección y otra vez para ver sus datos.</p>`;
+      <p class="nota-g">Planta desarrollada: progresiva y desfase desde el eje (izquierda arriba, derecha abajo). ${P.mFull ? "Rueda" : "Ctrl + rueda"} para acercar y arrastra para moverte. Toca una liberación para ir a su sección y otra vez para ver sus datos.</p>`;
   }
   if (P.mSta == null && mod?.est.length) { P.mSta = mod.est[0]; irPrimera(); }
   // Mesa de trabajo: planta arriba, sección abajo (con divisor en pantalla completa) y, si la pantalla es ancha, leyenda y tabla al costado
@@ -5454,7 +5575,7 @@ function dibujarPlanModelo(mod, eje, vis, todas, lim) {
   const svg = box.querySelector("svg");
   // Rueda: acerca a lo largo del eje dejando fija la progresiva bajo el cursor. Con el ratón se arrastra para moverse.
   cont.onwheel = e => {
-    if (!e.deltaY || e.shiftKey) return; e.preventDefault();
+    if (!e.deltaY || e.shiftKey) return; if (!P.mFull && !conCtrl(e)) { avisoRueda(cont.parentElement); return; } e.preventDefault();
     const r = cont.getBoundingClientRect(), xIn = e.clientX - r.left, sC = lim[0] + (cont.scrollLeft + xIn - padL) / kx;
     const z = Math.min(64, Math.max(1, (P.mZoom || 1) * (e.deltaY < 0 ? 1.25 : 0.8))); if (z === (P.mZoom || 1)) return;
     P.mZoom = z; dibujarPlanModelo(mod, eje, vis, todas, lim);
@@ -5631,7 +5752,7 @@ function conectarSeccion(box) {
     co.hidden = false; co.innerHTML = `<b>${fmtOff2(q[0])} · cota ${q[1].toFixed(2)}</b>` + (mejor && mejor.d < 40 ? `<br>${esc(mejor.nombre)}: ${mejor.z.toFixed(2)}${mejor.extra}` : "");
     const goma = box.querySelector("#sGoma"); if (goma) { goma.setAttribute("x2", x); goma.setAttribute("y2", (s.cy - (q[1] - s.V.z) * s.V.ky).toFixed(1)); }
   };
-  box.addEventListener("wheel", e => { const m = mundo(e); if (!m) return; e.preventDefault(); zoom(Math.exp(-e.deltaY * (e.deltaMode ? 0.05 : 0.0015)), m); }, { passive: false });
+  box.addEventListener("wheel", e => { const m = mundo(e); if (!m) return; if (!P.mFull && !conCtrl(e)) { avisoRueda(box); return; } e.preventDefault(); zoom(Math.exp(-e.deltaY * (e.deltaMode ? 0.05 : 0.0015)), m); }, { passive: false });
   box.addEventListener("pointerdown", e => { movio = false; ini = e.button || e.target.closest(".rzoom") || !box._s ? null : { x: e.clientX, y: e.clientY, V: { ...box._s.V } }; });
   box.addEventListener("pointermove", e => {
     const s = box._s; if (!s) return;

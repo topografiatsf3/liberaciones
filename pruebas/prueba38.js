@@ -7,6 +7,8 @@ const URL = 'http://127.0.0.1:8765/';
 const D = f => path.join(__dirname, 'datos', f);
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const errores = [];
+// La rueda acerca con Ctrl (versión 37)
+const rueda = async (p, dx, dy) => { await p.keyboard.down('Control'); await p.mouse.wheel(dx, dy); await p.keyboard.up('Control'); };
 const ok = (c, m) => { if (!c) { console.log('FALLA:', m); process.exitCode = 1; } else console.log('ok  -', m); };
 async function preparar(ctx) {
   await ctx.route(/gstatic\.com\/firebasejs\/.*\/(firebase-[a-z]+\.js)/, r => { const f = r.request().url().match(/(firebase-[a-z]+\.js)/)[1]; r.fulfill({ path: path.join(__dirname, 'fake', f), contentType: 'application/javascript' }); });
@@ -47,7 +49,7 @@ const rotulos = (p, sel) => p.$$eval(sel, x => x.map(t => t.textContent));
   const mundo = async () => p.evaluate(([x, y]) => { const s = document.querySelector('#mReal'), r = s.getBoundingClientRect(), v = s.getAttribute('viewBox').split(' ').map(Number); return [v[0] + (x - r.left) / r.width * v[2], v[1] + (y - r.top) / r.height * v[3]]; }, [cx, cy]);
   await p.mouse.move(cx, cy); const antes = await mundo();
   const pk0 = (await rotulos(p, '#mReal .rlab.pk')).length;
-  for (let i = 0; i < 6; i++) { await p.mouse.wheel(0, -300); await p.waitForTimeout(40); }
+  for (let i = 0; i < 6; i++) { await rueda(p, 0, -300); await p.waitForTimeout(40); }
   await p.waitForTimeout(150);
   const vb1 = await vbDe(p), despues = await mundo();
   ok(vb1[2] < vb0[2] / 5, `la rueda acerca la planta real (${(vb0[2] / vb1[2]).toFixed(1)}×)`);
@@ -59,7 +61,7 @@ const rotulos = (p, sel) => p.$$eval(sel, x => x.map(t => t.textContent));
   ok(/E \d+\.\d\d · N \d+\.\d\d · PK \d\+\d{3}/.test(await p.textContent('#mCoord')), 'lectura de Este, Norte, progresiva y desfase bajo el cursor: ' + await p.textContent('#mCoord'));
   await p.screenshot({ path: OUT + '/01-planta-acercada.png' });
   await p.click('[data-rz="0"]'); await p.mouse.move(sv.x + 12, sv.y + 12);
-  for (let i = 0; i < 3; i++) { await p.mouse.wheel(0, -300); await p.waitForTimeout(40); }
+  for (let i = 0; i < 3; i++) { await rueda(p, 0, -300); await p.waitForTimeout(40); }
   ok((await vbDe(p))[2] < vb0[2] / 2, 'se acerca también en una esquina vacía');
   await p.mouse.dblclick(sv.x + 12, sv.y + 12); await p.waitForTimeout(200);
   ok((await vbDe(p))[2] === vb0[2], 'doble clic fuera de las liberaciones vuelve a ver todo');
@@ -70,7 +72,7 @@ const rotulos = (p, sel) => p.$$eval(sel, x => x.map(t => t.textContent));
   const cotas0 = await rotulos(p, '#sSvg text.mlab[text-anchor=end]');
   await p.mouse.move(sx, sy); await p.waitForTimeout(80);
   ok(/[ID] \d+\.\d\d · cota \d+\.\d\d/.test(await p.textContent('#sCoord')), 'sección: lectura de desfase y cota bajo el cursor: ' + (await p.textContent('#sCoord')).slice(0, 60));
-  for (let i = 0; i < 5; i++) { await p.mouse.wheel(0, -300); await p.waitForTimeout(40); }
+  for (let i = 0; i < 5; i++) { await rueda(p, 0, -300); await p.waitForTimeout(40); }
   await p.waitForTimeout(200);
   const cotas1 = await rotulos(p, '#sSvg text.mlab[text-anchor=end]');
   const pasoDe = c => Math.abs(parseFloat(c[1]) - parseFloat(c[0]));
@@ -149,7 +151,7 @@ const rotulos = (p, sel) => p.$$eval(sel, x => x.map(t => t.textContent));
   await p.click('[data-modo="des"]'); await p.waitForSelector('#mPlan svg .msup');
   const pb = await (await p.$('#mPlanBox')).boundingBox(), w0 = await p.$eval('#mPlan svg', s => +s.getAttribute('width'));
   await p.mouse.move(pb.x + pb.width * 0.8, pb.y + 100);
-  for (let i = 0; i < 6; i++) { await p.mouse.wheel(0, -200); await p.waitForTimeout(40); }
+  for (let i = 0; i < 6; i++) { await rueda(p, 0, -200); await p.waitForTimeout(40); }
   const w1 = await p.$eval('#mPlan svg', s => +s.getAttribute('width')), sl1 = await p.$eval('#mPlanBox', c => c.scrollLeft);
   ok(w1 > w0 * 3 && sl1 > 0, `desarrollada: la rueda acerca a lo largo del eje, hacia donde está el cursor (${(w1 / w0).toFixed(1)}×)`);
   await p.mouse.down(); await p.mouse.move(pb.x + pb.width * 0.8 - 200, pb.y + 100, { steps: 5 }); await p.mouse.up(); await p.waitForTimeout(100);

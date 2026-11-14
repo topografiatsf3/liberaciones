@@ -11,6 +11,15 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 37: Planta con avance, rueda con Ctrl y exportar una capa
+
+No cambia las reglas de Firebase.
+
+- **Planta:** el dibujo ya no se sale de su cuadro al acercar o mover. «Tipo» y «Capa» van con su etiqueta bajo el título; los tipos con liberaciones salen primero (con cuántas tienen) y al entrar se elige el que más tiene. «Más liberados» deja cambiar de tipo en un toque. Si el tipo no tiene liberaciones en la estructura, lo dice y ofrece los que sí tienen.
+- **Avance de la planta:** debajo, una tabla con el % liberado de cada capa en cada frente y el total (sin contar lo que no se libera). Tocar una capa la muestra en la planta. Los frentes sin eje lo dicen, con «subir».
+- **Rueda con Ctrl:** en el Perfil, la Planta y el Modelo 2D la rueda sola baja la página como siempre; para acercar se mantiene Ctrl (o ⌘) y se gira la rueda (un aviso lo recuerda). En el Modelo 2D en pantalla completa la rueda acerca directo.
+- **Clic derecho en el nombre de una capa** (Perfil): exportar todos los datos de sus liberaciones (CSV con las mismas columnas que Registros), exportar los tramos que faltan liberar, verla en Registros (con frente, tipo y capa ya filtrados) u ocultarla.
+
 ## Versión 36: columna de filtros más ordenada
 
 No cambia las reglas de Firebase.

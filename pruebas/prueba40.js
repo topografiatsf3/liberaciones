@@ -5,6 +5,8 @@ const OUT = path.join(__dirname, 'capturas', 'prueba40'); fs.mkdirSync(OUT, { re
 const URL = 'http://127.0.0.1:8765/';
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const errores = [];
+// La rueda acerca con Ctrl (versión 37)
+const rueda = async (p, dx, dy) => { await p.keyboard.down('Control'); await p.mouse.wheel(dx, dy); await p.keyboard.up('Control'); };
 const ok = (c, m) => { if (!c) { console.log('FALLA:', m); process.exitCode = 1; } else console.log('ok  -', m); };
 const escuchar = (p, n) => { p.on('pageerror', e => { errores.push(n + ': ' + e.message); console.log('PAGEERROR', n, e.message); }); p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts/.test(m.text())) { errores.push(n + ': ' + m.text()); console.log('CONSOLE', n, m.text()); } }); };
 // Ejes inventados (líneas rectas) para que la planta se dibuje
@@ -34,7 +36,7 @@ async function abrir(b, opts) {
   const ticks0 = await p.$$eval('#chart .pf-regla .tick', x => x.map(t => t.textContent));
   const sv = await (await p.$('#chart svg[role=img]')).boundingBox();
   await p.mouse.move(sv.x + sv.width * 0.6, sv.y + 60);
-  for (let i = 0; i < 6; i++) { await p.mouse.wheel(0, -300); await p.waitForTimeout(60); }
+  for (let i = 0; i < 6; i++) { await rueda(p, 0, -300); await p.waitForTimeout(60); }
   await p.waitForTimeout(500);
   const ticks1 = await p.$$eval('#chart .pf-regla .tick', x => x.map(t => t.textContent));
   const rg = await p.textContent('#chart .pf-rg');
@@ -62,7 +64,7 @@ async function abrir(b, opts) {
   await p.screenshot({ path: OUT + '/01-perfil-acercado.png' });
   await p.click('#chart [data-pftodo]'); await p.waitForTimeout(400);
   ok(!(await p.$('#chart .pf-rg')) && (await p.textContent('#pAcc')).includes('Todo el frente'), '«Ver todo el frente» quita el acercamiento');
-  await p.mouse.move(sv.x + sv.width * 0.5, sv.y + 60); for (let i = 0; i < 4; i++) { await p.mouse.wheel(0, -300); await p.waitForTimeout(60); }
+  await p.mouse.move(sv.x + sv.width * 0.5, sv.y + 60); for (let i = 0; i < 4; i++) { await rueda(p, 0, -300); await p.waitForTimeout(60); }
   await p.waitForTimeout(400); ok(!!(await p.$('#chart .pf-rg')), 'se vuelve a acercar');
   const y0 = (await (await p.$('#chart svg[role=img]')).boundingBox()).y;
   await p.mouse.dblclick(sv.x + 5, y0 + 5); await p.waitForTimeout(400);
@@ -86,7 +88,7 @@ async function abrir(b, opts) {
   const vb0 = await p.$eval('.plwrap svg', s => s.getAttribute('viewBox'));
   const pb = await (await p.$('.plwrap svg')).boundingBox();
   await p.mouse.move(pb.x + pb.width * 0.4, pb.y + pb.height * 0.5);
-  for (let i = 0; i < 5; i++) { await p.mouse.wheel(0, -300); await p.waitForTimeout(40); }
+  for (let i = 0; i < 5; i++) { await rueda(p, 0, -300); await p.waitForTimeout(40); }
   const vb1 = (await p.$eval('.plwrap svg', s => s.getAttribute('viewBox'))).split(' ').map(Number);
   ok(vb1[2] < +vb0.split(' ')[2] / 3 && Math.abs(vb1[2] / vb1[3] - pb.width / pb.height) < 0.05, 'planta: la rueda acerca sin deformar');
   const tam = await p.$eval('.plwrap .lab-pl', t => { const sv = t.ownerSVGElement, r = sv.getBoundingClientRect(), v = sv.getAttribute('viewBox').split(' ').map(Number); return parseFloat(getComputedStyle(t).fontSize) * r.width / v[2]; });
