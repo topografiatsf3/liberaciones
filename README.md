@@ -11,6 +11,18 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 42: lo escrito y lo adjuntado ya no se pierde
+
+No cambia las reglas de Firebase.
+
+- **Fotos y archivos del borrador**: se guardan en el teléfono (IndexedDB) junto con el borrador de «Nueva» y vuelven solos si la página se recarga o el sistema cierra la pestaña (por ejemplo al abrir la cámara). Si el teléfono no deja guardarlos, un aviso dice cuáles hay que volver a adjuntar. Se borran al guardar, al «Limpiar» y al salir de la sesión.
+- **PK «2,500» o «2.500»** (sin «+»): el formulario ya no lo toma como 2,5 m; muestra las dos lecturas («2+500» · «0+002.50») y no guarda hasta elegir.
+- **Fecha de campo futura**: no se puede guardar (10 minutos de margen).
+- **Recargar mientras se edita** un registro vuelve a «Editar registro» con lo escrito; si el registro ya no se puede editar, lo avisa.
+- **«Nueva» mientras se edita** pregunta si seguir editando o descartar y abrir uno nuevo.
+- **Ajustes → Usuarios**: lo escrito en «Agregar por correo» no se borra cuando llega una solicitud o cambia un usuario.
+- **Ajustes**: un guardado rechazado (Lugares, Topógrafos, Tipos, Protocolos, Capas, «no se libera») vuelve a lo que había, en vez de quedar en pantalla como guardado.
+
 ## Versión 41: el Panel ya no muestra datos falsos
 
 No cambia las reglas de Firebase ni los datos guardados.

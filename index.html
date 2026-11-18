@@ -405,6 +405,9 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 #chart .pct.full{fill:var(--ec)}
 .pinfo{margin:8px 0 0;background:var(--ob-bg);color:var(--ob);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700}
 #view > .pinfo{margin:0 0 12px;font-size:14px;font-weight:400;line-height:1.45}
+#view > .adj-falta{border:2px solid var(--ob)}
+.pk-amb{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;font-size:13px;font-weight:700;color:var(--ob)}
+.pk-amb .mini{font-family:var(--mono, ui-monospace, monospace)}
 /* «Corregido» no es un estado: etiqueta neutra (no usa el verde de «Entregado») */
 .st-corr{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:6px;font-size:12px;font-weight:700;background:var(--surface-2);color:var(--ink);border:1px solid var(--line-strong)}
 @media (max-width:859px){.st-corr{font-size:13px}}
@@ -1704,7 +1707,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 41;
+const VERSION_APP = 42;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -1715,7 +1718,7 @@ function hayAlgoEscrito() {
 }
 let recargando = false, hayVersionNueva = false;
 // La versión nueva se aplica sola: al momento si no hay nada escrito; si lo hay, en cuanto se vuelva a la app sin nada pendiente
-function recargarApp() { if (recargando) return; recargando = true; if (S.view === "nueva" && !S.editando) guardarBorrador(); ls.set("lib.actualizada", VERSION_APP); location.reload(); }
+function recargarApp() { if (recargando) return; recargando = true; if (S.view === "nueva") guardarBorrador(); ls.set("lib.actualizada", VERSION_APP); location.reload(); }
 document.addEventListener("version-nueva", () => {
   if (recargando) return;
   hayVersionNueva = true;
@@ -1871,7 +1874,7 @@ onAuthStateChanged(auth, async u => {
       // Si le cambian el rol (o el topógrafo asignado) con la app abierta, se vuelve a entrar con lo nuevo:
       // el menú, la bandeja y lo que se escucha dependen del rol
       if (S.dentro && S.perfil && (d.rol !== S.perfil.rol || (d.topografoId || "") !== (S.perfil.topografoId || ""))) {
-        if (S.view === "nueva" && !S.editando) { leerCampos(); guardarBorrador(); }
+        if (S.view === "nueva") guardarBorrador();
         ls.set("lib.avisoRol", d.rol !== S.perfil.rol ? `Tu acceso cambió: ahora entras como ${ROLES[d.rol] || d.rol}.` : "Se actualizó tu topógrafo asignado.");
         location.reload(); return;
       }
@@ -1963,8 +1966,8 @@ function entrarApp() {
     if (S.view === "ajustes" && S.aj.tab === "lugares" && !document.activeElement?.closest?.("#ajBody")) ajLugares();
   }, e => console.warn("ejes", e)));
   if (puedeAjustes()) {
-    S.subs.push(onSnapshot(collection(db, "solicitudes"), snap => { S.solicitudes = snap.docs.map(d => ({ id: d.id, ...d.data() })); pintarNav(); if (S.view === "ajustes" && S.aj.tab === "usuarios") render(); }, e => console.warn("solicitudes", e)));
-    S.subs.push(onSnapshot(collection(db, "usuarios"), snap => { S.usuarios = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.nombre || a.id).localeCompare(b.nombre || b.id)); if (S.view === "ajustes" && S.aj.tab === "usuarios") render(); }, e => console.warn("usuarios", e)));
+    S.subs.push(onSnapshot(collection(db, "solicitudes"), snap => { S.solicitudes = snap.docs.map(d => ({ id: d.id, ...d.data() })); pintarNav(); if (S.view === "ajustes" && S.aj.tab === "usuarios") repintarAjSuave(); }, e => console.warn("solicitudes", e)));
+    S.subs.push(onSnapshot(collection(db, "usuarios"), snap => { S.usuarios = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.nombre || a.id).localeCompare(b.nombre || b.id)); if (S.view === "ajustes" && S.aj.tab === "usuarios") repintarAjSuave(); }, e => console.warn("usuarios", e)));
   }
   getDoc(doc(db, "config", "general")).then(d => {
     S.config = d.exists() ? d.data() : {};
@@ -2059,16 +2062,34 @@ $("#nav").addEventListener("click", e => {
   const b = e.target.closest("button[data-v]"); if (!b) return;
   // «Mis registros» abre siempre en «Todos» (versión 29): lo recién guardado se ve; los observados van primero y un recuadro los avisa
   if (b.dataset.v === "mis" && S.view !== "mis" && S.filtro.mis.st === "OB") S.filtro.mis.st = "";
+  // «Nueva» mientras se edita un registro: se pregunta (antes seguía en «Editar registro» y parecía uno nuevo)
+  if (b.dataset.v === "nueva" && S.view === "nueva" && S.editando) { preguntarNuevaEditando(); return; }
   ir(b.dataset.v);
 });
+function preguntarNuevaEditando() {
+  const E = S.editando, f = S.form; if (!E) return;
+  const abrirNueva = () => { borrarEdicion(); S.editando = null; S.form = null; ir("nueva"); };
+  leerCampos();
+  if (!f || !cambioEdicion(E, f)) { abrirNueva(); return; }
+  const d0 = toDate(E.fechaCampo), hoy = d0 && d0.toDateString() === new Date().toDateString();
+  const cual = E.numero ? `<b class="mono">${esc(E.numero)}</b>` : d0 ? `el registro ${hoy ? "de las " + esc(fmtFecha(d0).slice(11)) : "del " + esc(fmtFecha(d0))}` : "un registro";
+  const d = dialogo("Estás editando un registro", `<p class="dlg-p">Estás editando ${cual}. ¿Seguir editando o descartar los cambios y abrir uno nuevo?</p>
+    <button type="button" class="btn warn" style="width:100%;margin-top:4px" data-descartar>Descartar los cambios y abrir uno nuevo</button>`, () => {}, "Seguir editando", { soloCerrar: true, ancho: "corto", sinFoco: true });
+  d.querySelector("[data-descartar]").addEventListener("click", () => { d.cerrar(true); abrirNueva(); toast("Cambios descartados"); });
+}
 $("#btnSalir").addEventListener("click", async () => {
   const pend = new Set([...S.mis, ...S.todos].filter(r => r._pend).map(r => r.id)).size;
   if (pend && !await confirmar("Salir", `Hay ${pend === 1 ? "1 registro" : pend + " registros"} sin subir. ${pend === 1 ? "Se subirá" : "Se subirán"} recién cuando vuelvas a entrar en este teléfono con señal.`, "Salir de todos modos", true)) return;
+  // Lo escrito queda en el borrador de esta persona; sus archivos adjuntos no se quedan en el teléfono (puede ser compartido).
+  // Al volver a entrar, el formulario avisa cuáles había que adjuntar otra vez.
+  if (S.view === "nueva") guardarBorrador();
+  if (S.email) { adjBorrar(ADJ_NUEVA()); adjBorrar(ADJ_EDI()); }
   cortar(); signOut(auth);
 });
 
 function ir(v, desdeHistorial) {
-  if (S.view === "nueva" && v !== "nueva") { if (S.editando) S.form = null; else guardarBorrador(); }
+  // Salir del formulario mientras se edita descarta la edición (también su borrador); el de «Nueva» se guarda
+  if (S.view === "nueva" && v !== "nueva") { if (S.editando) { borrarEdicion(); S.form = null; } else guardarBorrador(); }
   const conFicha = !$("#sheet").hidden && history.state && history.state.ficha;
   S.view = v; ls.set("lib.vista", v); document.body.className = document.body.className.replace(/\bv-\S+/g, "").trim() + " v-" + v;
   if (!desdeHistorial && conFicha) history.replaceState(null, "", "#" + v);
@@ -2122,8 +2143,110 @@ function formDesde(r) {
     linksCsv: (r.linksCsv || []).slice(), linksFotos: (r.linksFotos || []).slice(),
     archivos: (r.archivos || []).map(a => ({ ...a })), borrarArchivos: [] };
 }
-// El borrador local no guarda los archivos (pueden pesar varios MB); se avisan al volver.
-function guardarBorrador() { if (S.form && !S.editando) { leerCampos(); ls.set(BORR(), { ...S.form, archivos: [], borrarArchivos: [] }); } }
+// Borradores: lo escrito va a localStorage (por persona); los archivos adjuntos (ya comprimidos, pueden pesar varios MB)
+// van a IndexedDB con la lista de sus nombres en el borrador. Si al volver falta alguno, el formulario lo avisa.
+// La edición en curso de un registro tiene su propio borrador (id del registro y lo cambiado).
+const EDI = () => "lib.edicion." + S.email;
+const ADJ_NUEVA = () => "nueva|" + S.email, ADJ_EDI = () => "edita|" + S.email;
+let adjDbP = null, adjAvisado = false;
+const adjFirma = {};
+function adjDb() {
+  return adjDbP ||= new Promise((ok, mal) => {
+    let r; try { r = window.indexedDB.open("lib-adjuntos", 1); } catch (e) { mal(e); return; }
+    r.onupgradeneeded = () => r.result.createObjectStore("b");
+    r.onsuccess = () => ok(r.result); r.onerror = () => mal(r.error || new Error("IndexedDB")); r.onblocked = () => mal(new Error("IndexedDB bloqueado"));
+  }).catch(e => { adjDbP = null; throw e; });
+}
+function adjOp(modo, fn) {
+  return adjDb().then(db => new Promise((ok, mal) => {
+    let rq; const tx = db.transaction("b", modo);
+    tx.oncomplete = () => ok(rq && rq.result); tx.onerror = tx.onabort = () => mal(tx.error || new Error("IndexedDB"));
+    rq = fn(tx.objectStore("b"));
+  }));
+}
+// Se escribe solo cuando cambia qué archivos hay (no en cada tecla)
+function adjGuardar(clave, arch) {
+  const firma = arch.map(a => a.id).join(",");
+  if (adjFirma[clave] === firma) return; adjFirma[clave] = firma;
+  (arch.length ? adjOp("readwrite", st => st.put({ archivos: arch.map(a => ({ ...a })), t: Date.now() }, clave)) : adjOp("readwrite", st => st.delete(clave)))
+    .catch(e => {
+      console.warn("adjuntos del borrador", e); if (adjFirma[clave] === firma) adjFirma[clave] = null;
+      if (arch.length && !adjAvisado) { adjAvisado = true; toast("El teléfono no dejó guardar una copia de los archivos adjuntos: si la app se cierra o se recarga antes de guardar, habrá que volver a adjuntarlos.", "bad"); }
+    });
+}
+function adjBorrar(clave) { adjFirma[clave] = ""; adjOp("readwrite", st => st.delete(clave)).catch(() => {}); }
+// Devuelve al formulario los archivos del borrador (f.adjuntos: sus nombres); los que no estén quedan en el aviso
+function recuperarAdjuntos(f, clave) {
+  const pend = f.adjuntos || []; delete f.adjuntos;
+  if (!pend.length) return;
+  f._adjPend = pend;
+  adjOp("readonly", st => st.get(clave)).catch(e => { console.warn("adjuntos del borrador", e); return null; }).then(v => {
+    const hay = new Map(((v && v.archivos) || []).map(a => [a.id, a])), ya = new Set(f.archivos.map(a => a.id)), vuelven = [], faltan = [];
+    pend.forEach(m => { const a = hay.get(m.id); if (a && a.datos) { if (!ya.has(a.id)) vuelven.push({ ...a, nuevo: true }); } else faltan.push(m.nombre || "archivo"); });
+    delete f._adjPend;
+    f.archivos = [...f.archivos.filter(a => !a.nuevo), ...vuelven, ...f.archivos.filter(a => a.nuevo)].slice(0, MAX_ARCH);
+    if (faltan.length) f._faltan = [...new Set([...(f._faltan || []), ...faltan])];
+    if (S.form !== f) return;
+    if (S.view === "nueva") repintarFormSuave();
+    guardarBorrador();
+  });
+}
+// ¿La edición cambió algo respecto del registro?
+function cambioEdicion(E, f) { const a = formDesde(E); return Object.keys(a).some(k => JSON.stringify(a[k]) !== JSON.stringify(f[k])); }
+function borrarEdicion() { if (!S.email) return; ls.set(EDI(), null); adjBorrar(ADJ_EDI()); }
+// Al volver a la app con una edición sin guardar: si el registro todavía se puede editar, se abre con lo escrito;
+// si no (cambió de estado, lo borraron), se avisa qué se había cambiado y se sigue con el borrador de «Nueva»
+const ETQ_ED = { fechaCampo: "Fecha", topografoId: "Topógrafo", equipo: "Equipo", subestructuraId: "Frente", tipoId: "Tipo", detalle: "Detalle", pkInicio: "PK inicio", pkFin: "PK final", cota: "Cota", capa: "Capa", area: "Área", descripcion: "Descripción", observaciones: "Observaciones" };
+function recuperarEdicion() {
+  const d = ls.get(EDI(), null); if (!d || !d.id) return;
+  S._recEd = true;
+  const quien = S.email, local = [...S.mis, ...S.todos].find(r => r.id === d.id);
+  const leer = local ? Promise.resolve(local) : Promise.race([getDoc(doc(db, "liberaciones", d.id)).then(s => s.exists() ? fila(s) : null), new Promise(ok => setTimeout(() => ok(undefined), 6000))]).catch(() => undefined);
+  leer.then(r => {
+    S._recEd = false;
+    if (S.email !== quien) return;
+    const seguir = () => { if (S.view === "nueva" && !S.form) pintarForm(); };
+    const nombre = d.numero || "el registro que estabas editando";
+    if (r === undefined) { S._edPospuesta = d.id; seguir(); toast(`Tenías cambios sin guardar en ${nombre}; no se pudo abrir ahora (¿sin señal?). Se recuperan la próxima vez que abras la app.`, "bad"); return; }
+    if (!r || r.borrado || !puedeEditar(r)) {
+      const f = d.form || {}, a = r ? formDesde(r) : {};
+      const lis = Object.keys(ETQ_ED).filter(k => String(f[k] ?? "").trim() && JSON.stringify(f[k]) !== JSON.stringify(a[k]))
+        .map(k => `<li><b>${ETQ_ED[k]}:</b> ${esc(k === "tipoId" ? nom(L.tipo(f[k]), f[k]) : k === "subestructuraId" ? nom(L.sub(f[k]), f[k]) : k === "topografoId" ? nom(L.topo(f[k]), f[k]) : k === "fechaCampo" ? fmtFecha(f[k]) : f[k])}</li>`);
+      const porque = !r ? "ya no existe" : r.borrado ? "lo mandaron a la papelera" : `ahora está «${esc(ESTADOS[r.estado] || r.estado)}» y ya no se puede editar`;
+      borrarEdicion(); seguir();
+      dialogo("No se pudo recuperar la edición", `<p class="dlg-p">Tenías cambios sin guardar en <b>${esc(nombre)}</b>, pero ${porque}.</p>${lis.length ? `<p class="dlg-p small">Lo que habías escrito:</p><ul class="solist">${lis.join("")}</ul>` : ""}${(d.form?.adjuntos || []).length ? `<p class="dlg-p small">También tenías ${d.form.adjuntos.length === 1 ? "1 archivo nuevo" : d.form.adjuntos.length + " archivos nuevos"}: ${d.form.adjuntos.map(x => "«" + esc(x.nombre) + "»").join(", ")}.</p>` : ""}<p class="muted small" style="margin:8px 0 0">Habla con gabinete si hace falta corregirlo. Tu borrador de «Nueva» sigue igual.</p>`, () => {}, "Entendido", { soloCerrar: true });
+      return;
+    }
+    if (S.view !== "nueva" || S.form || S.editando) return; // la persona ya se fue a otra parte: se recupera cuando vuelva
+    const base = d.base || 0, t1 = toDate(r.editadoEn)?.getTime() || 0;
+    // Si alguien lo cambió después, al guardar sale el aviso de siempre («Alguien cambió este registro»)
+    S.editando = base && t1 && base !== t1 ? { ...r, editadoEn: new Date(base) } : r;
+    S.form = { ...formDesde(r), ...d.form };
+    S.form.archivos ||= []; S.form.borrarArchivos ||= [];
+    recuperarAdjuntos(S.form, ADJ_EDI());
+    pintarNav(); pintarForm();
+    toast(`Se recuperó lo que estabas editando${d.numero ? " en " + d.numero : ""}. Aún no se guarda.`);
+  });
+}
+function guardarBorrador() {
+  const f = S.form; if (!f) return;
+  leerCampos();
+  const E = S.editando, nuevos = (f.archivos || []).filter(a => a.nuevo && a.datos);
+  const copia = { ...f, archivos: (f.archivos || []).filter(a => !a.nuevo), borrarArchivos: E ? (f.borrarArchivos || []).slice() : [],
+    adjuntos: f._adjPend || nuevos.map(a => ({ id: a.id, nombre: a.nombre, tipo: a.tipo })) };
+  delete copia._adjPend;
+  if (E) {
+    if (!cambioEdicion(E, f) && !f._adjPend) { borrarEdicion(); return; }
+    ls.set(EDI(), { id: E.id, numero: E.numero || "", base: toDate(E.editadoEn)?.getTime() || 0, form: copia, t: Date.now() });
+    if (!f._adjPend) adjGuardar(ADJ_EDI(), nuevos);
+  } else {
+    ls.set(BORR(), copia);
+    if (!f._adjPend) adjGuardar(ADJ_NUEVA(), nuevos);
+  }
+}
+// En Android la pestaña se puede cerrar sola al abrir la cámara: lo escrito se guarda al salir de la app
+addEventListener("pagehide", () => { if (S.dentro && S.view === "nueva") guardarBorrador(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && S.dentro && S.view === "nueva") guardarBorrador(); });
 
 /* ---------- Archivos (CSV y fotos guardados en Firestore, sin plan de pago) ---------- */
 const MAX_CSV = 900000;      // caracteres; un documento de Firestore admite hasta 1 MB
@@ -2202,7 +2325,7 @@ async function tomarArchivos(input) {
   return res.filter(r => r.status === "fulfilled").map(r => r.value);
 }
 async function leerArchivos(files, tipo) {
-  const f = S.form; leerCampos();
+  const f = S.form; leerCampos(); const n0 = f.archivos.length;
   for (const file of files) {
     if (f.archivos.length >= MAX_ARCH) { toast(`Máximo ${MAX_ARCH} archivos por registro.`, "bad"); break; }
     try {
@@ -2217,7 +2340,11 @@ async function leerArchivos(files, tipo) {
       }
     } catch (e) { toast(msgLectura([file.name], e), "bad"); }
   }
-  pintarForm();
+  // Al adjuntar se quita el aviso de archivos que no se pudieron recuperar; la copia del borrador se guarda ya
+  // (en Android la pestaña puede cerrarse al abrir la cámara para la foto siguiente)
+  if (S.form !== f) return;
+  if (f.archivos.length > n0) f._faltan = null;
+  if (S.view === "nueva") pintarForm(); guardarBorrador();
 }
 function archRow(a, i) {
   if (a.purgado) return `<div class="arch purg"><span class="ext">JPG</span><div class="an"><b>${esc(a.nombre)}</b><span>Foto depurada</span></div></div>`;
@@ -2264,7 +2391,12 @@ function refrescarDesc(f) {
   f.descripcion = n; f._descAuto = n; return true;
 }
 function pintarForm() {
-  if (!S.form) { S.form = S.editando ? formDesde(S.editando) : (ls.get(BORR(), null) || formVacio()); if (!S.editando && !S.form.topografoId) S.form.topografoId = S.perfil?.topografoId || ""; }
+  if (!S.form) {
+    // Se recargó la app mientras se editaba un registro: se vuelve a «Editar registro» con lo escrito
+    if (!S.editando && (S._recEd || (ls.get(EDI(), null)?.id && ls.get(EDI(), null).id !== S._edPospuesta))) { if (!S._recEd) recuperarEdicion(); $("#view").innerHTML = '<div class="card section"><p class="muted">Recuperando lo que estabas editando…</p></div>'; return; }
+    S.form = S.editando ? formDesde(S.editando) : (ls.get(BORR(), null) || formVacio()); if (!S.editando && !S.form.topografoId) S.form.topografoId = S.perfil?.topografoId || "";
+    if (!S.editando) recuperarAdjuntos(S.form, ADJ_NUEVA());
+  }
   const f = S.form, E = S.editando;
   // Registro nuevo: si nadie cambió la fecha a mano, se pone la hora actual (la app o el borrador pueden venir de ayer)
   if (!E && !f._fechaTocada) f.fechaCampo = localInput(new Date());
@@ -2282,6 +2414,7 @@ function pintarForm() {
   ${E && E.estado === "OB" && E.notaObservacion ? `<div class="pinfo aviso nota-obs" role="note"><b>Gabinete pidió corregir:</b> ${esc(E.notaObservacion)}<span class="small" style="display:block;margin-top:4px">Al guardar vuelve a «Pendiente» y gabinete lo ve como corregido.</span></div>` : ""}
   ${E && E.estado === "EC" ? `<div class="pinfo aviso" role="note"><b>Ya se entregó a Calidad.</b> Al guardar se pide el motivo de la corrección; queda en el historial.</div>` : ""}
   ${!listo ? '<div class="card section"><p class="muted">Cargando listas…</p></div>' : ""}
+  ${(f._faltan || []).length ? `<div class="pinfo aviso adj-falta" id="avAdj" role="alert"><b>Tenías ${f._faltan.length === 1 ? "1 archivo adjunto" : f._faltan.length + " archivos adjuntos"} (${f._faltan.map(n => "«" + esc(n) + "»").join(", ")}): vuelve a adjuntarlos.</b> No se pudieron recuperar del teléfono. <button type="button" class="btn-txt" id="bAvAdj">Entendido</button></div>` : ""}
   <form id="fLib" novalidate ${!listo ? "hidden" : ""}>
     <div class="card section">
       <h2><span class="n">1</span>Qué se hizo</h2>
@@ -2289,7 +2422,7 @@ function pintarForm() {
         ${S.listas.actividades.map(a => `<button type="button" data-act="${esc(a.id)}" aria-pressed="${f.actividad === a.id}" title="${esc(a.nombre)}" aria-label="${esc(a.nombre)}">${esc(ACT_CORTO[a.id] || a.nombre)}</button>`).join("")}
       </div></div>
       <div class="grid">
-        <div class="f"><label for="iFecha">Fecha y hora de liberación</label><input id="iFecha" name="fechaCampo" type="datetime-local" value="${esc(f.fechaCampo)}" required></div>
+        <div class="f"><label for="iFecha">Fecha y hora de liberación</label><input id="iFecha" name="fechaCampo" type="datetime-local" value="${esc(f.fechaCampo)}" max="${maxFecha()}" required></div>
         <div class="f"><label for="iTopo">Topógrafo</label><select id="iTopo" name="topografoId">${opciones(S.listas.topografos, f.topografoId, "Elegir…")}</select></div>
         <div class="f full" id="fEquipo"><span class="flabel">Equipo</span><input type="hidden" name="equipo" value="${esc(f.actividad === "DRN" ? "DRN" : f.equipo || "")}">${f.actividad === "DRN"
           ? '<p class="muted" style="margin:0">Dron</p>'
@@ -2329,7 +2462,7 @@ function pintarForm() {
             <label class="upbtn"><input type="file" id="fCsv" accept=".csv,.txt,text/csv,text/plain" multiple hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>Subir CSV</label>
             <label class="upbtn"><input type="file" id="fFoto" accept="image/*" multiple hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Foto</label>
           </div>
-          <div class="archs">${f.archivos.map(archRow).join("")}</div>
+          <div class="archs">${f.archivos.map(archRow).join("")}${(f._adjPend || []).length ? `<p class="muted small" id="adjRec">Recuperando ${f._adjPend.length === 1 ? "1 archivo adjunto" : f._adjPend.length + " archivos adjuntos"}…</p>` : ""}</div>
           <div class="hint">Las fotos se reducen solas para que suban rápido. El CSV puede pesar hasta ${kb(MAX_CSV)}.</div></div>
       </div>
     </div>
@@ -2539,13 +2672,15 @@ function conectarForm() {
     if (f.actividad === "DRN") f.equipo = "DRN";
     // Al salir de «Levantamiento con dron» el dron no se queda marcado solo: vuelve el último equipo que no sea dron, o ninguno
     else if (antes === "DRN" && f.equipo === "DRN") { const u = ls.get(ULT(), {}).equipo; f.equipo = u && u !== "DRN" ? u : ""; }
-    pintarForm();
+    pintarForm(); guardarBorrador();
   });
   $("#fEquipo")?.addEventListener("click", e => { const b = e.target.closest("[data-eq]"); if (!b) return; leerCampos(); f.equipo = b.dataset.eq; pintarForm(); guardarBorrador(); });
   $("#iEst").addEventListener("change", () => { leerCampos(); f.subestructuraId = ""; pintarForm(); $("#iSub")?.focus(); });
   $("#iSub").addEventListener("change", () => { leerCampos(); pintarForm(); });
   conectarSelectorTipo(f);
-  $("#iSinPk").addEventListener("change", e => { $("#gPk").hidden = e.target.checked; });
+  $("#iSinPk").addEventListener("change", e => { $("#gPk").hidden = e.target.checked; pintarAmbPk(); });
+  $("#iFecha").addEventListener("focus", e => { e.target.max = maxFecha(); });
+  $("#bAvAdj")?.addEventListener("click", () => { leerCampos(); f._faltan = null; $("#avAdj")?.remove(); guardarBorrador(); });
   $("#bSig")?.addEventListener("click", () => { const u = ls.get(ULT(), {}); leerCampos(); f.pkInicio = fmtPk(u.pkFin); f.pkFin = fmtPk(u.pkFin + u.largo); if (!f.capa && u.capa) f.capa = u.capa; pintarForm(); $("#iDesc")?.focus(); });
   const descDesdeCampos = () => { leerCampos(); if (refrescarDesc(f)) { $("#iDesc").value = f.descripcion; guardarBorrador(); } };
   $("#iCapa").addEventListener("blur", e => { const v = normCapa(e.target.value, f.subestructuraId, f.tipoId); if (v !== e.target.value.trim()) e.target.value = v; descDesdeCampos(); });
@@ -2555,16 +2690,25 @@ function conectarForm() {
   $("#bVar").addEventListener("click", () => { $("#iCota").value = "Variable"; });
   // Al salir del PK se avisa si no se entiende o si el final queda antes que el inicio (sin bloquear lo que se escribe)
   const revisarPk = () => {
-    const p1 = leerPk($("#iPk1").value), p2 = leerPk($("#iPk2").value);
-    if (Number.isNaN(p1)) errCampo("pkInicio", "Escríbelo como 2+140 o 2140."); else limpiarErr("pkInicio");
-    if (Number.isNaN(p2)) errCampo("pkFin", "Escríbelo como 2+180 o 2180.");
-    else if (p1 != null && p2 != null && !isNaN(p1) && p2 < p1) errCampo("pkFin", "El PK final no puede ser menor que el inicio.");
+    const t1 = $("#iPk1").value, t2 = $("#iPk2").value, a1 = pkAmbiguo(t1), a2 = pkAmbiguo(t2), p1 = leerPk(t1), p2 = leerPk(t2);
+    if (a1) errCampo("pkInicio", msgAmbPk(t1, a1)); else if (Number.isNaN(p1)) errCampo("pkInicio", "Escríbelo como 2+140 o 2140."); else limpiarErr("pkInicio");
+    if (a2) errCampo("pkFin", msgAmbPk(t2, a2));
+    else if (Number.isNaN(p2)) errCampo("pkFin", "Escríbelo como 2+180 o 2180.");
+    else if (!a1 && p1 != null && p2 != null && !isNaN(p1) && p2 < p1) errCampo("pkFin", "El PK final no puede ser menor que el inicio.");
     else limpiarErr("pkFin");
+    pintarAmbPk();
   };
-  for (const id of ["iPk1", "iPk2"]) $("#" + id).addEventListener("blur", e => { const v = leerPk(e.target.value); if (v != null && !isNaN(v)) e.target.value = fmtPk(v); revisarPk(); });
+  for (const id of ["iPk1", "iPk2"]) {
+    $("#" + id).addEventListener("blur", e => { const v = leerPk(e.target.value); if (!pkAmbiguo(e.target.value) && v != null && !isNaN(v)) e.target.value = fmtPk(v); revisarPk(); });
+    // Si se corrige a mano, las dos lecturas se van
+    $("#" + id).addEventListener("input", e => { if (e.target.closest(".f").querySelector(".pk-amb") && !pkAmbiguo(e.target.value)) revisarPk(); });
+  }
+  pintarAmbPk();
   fm.addEventListener("click", async e => {
+    const pa = e.target.closest("[data-pkamb]");
+    if (pa) { const i = $("#" + pa.dataset.pkamb); if (i) { i.value = pa.dataset.v; leerCampos(); revisarPk(); guardarBorrador(); } return; }
     const da = e.target.closest("[data-delarch]");
-    if (da) { leerCampos(); const a0 = f.archivos[+da.dataset.delarch]; if (a0 && !a0.nuevo && !await confirmar("Quitar archivo", `«${esc(a0.nombre || "archivo")}» se borra al guardar el registro.`, "Quitar", true)) return; const [a] = f.archivos.splice(+da.dataset.delarch, 1); if (a && !a.nuevo) f.borrarArchivos.push(a.id); pintarForm(); }
+    if (da) { leerCampos(); const a0 = f.archivos[+da.dataset.delarch]; if (a0 && !a0.nuevo && !await confirmar("Quitar archivo", `«${esc(a0.nombre || "archivo")}» se borra al guardar el registro.`, "Quitar", true)) return; const [a] = f.archivos.splice(+da.dataset.delarch, 1); if (a && !a.nuevo) f.borrarArchivos.push(a.id); pintarForm(); guardarBorrador(); }
   });
   $("#fCsv").addEventListener("change", async e => { const fl = await tomarArchivos(e.target); if (fl.length) leerArchivos(fl, "csv"); });
   $("#fFoto").addEventListener("change", async e => { const fl = await tomarArchivos(e.target); if (fl.length) leerArchivos(fl, "foto"); });
@@ -2572,19 +2716,42 @@ function conectarForm() {
     leerCampos();
     if (S.editando) { const r = S.editando, a = formDesde(r), cambio = Object.keys(a).some(k => JSON.stringify(a[k]) !== JSON.stringify(f[k]));
       if (cambio && !await confirmar("Cancelar edición", "Los cambios que hiciste no se guardan.", "Descartar cambios", true)) return;
-      S.editando = null; S.form = null; ir(r.creadoPor === S.email ? "mis" : "todos"); return; }
+      borrarEdicion(); S.editando = null; S.form = null; ir(r.creadoPor === S.email ? "mis" : "todos"); return; }
     const v = formVacio(), lleno = ["pkInicio", "pkFin", "cota", "capa", "area", "descripcion", "observaciones"].some(k => String(f[k] || "").trim() && f[k] !== v[k]) || f.archivos.length;
     if (lleno && !await confirmar("Limpiar formulario", `Se borra lo escrito${f.archivos.length ? ` y ${f.archivos.length === 1 ? "el archivo adjunto" : `los ${f.archivos.length} archivos adjuntos`}` : ""}.`, "Limpiar", true)) return;
-    ls.set(BORR(), null); S.form = formVacio(); pintarForm();
+    ls.set(BORR(), null); adjBorrar(ADJ_NUEVA()); S.form = formVacio(); pintarForm();
   });
   fm.addEventListener("input", () => { clearTimeout(S._bt); S._bt = setTimeout(guardarBorrador, 600); });
   fm.addEventListener("submit", e => { e.preventDefault(); guardar(); });
 }
 
+// La fecha de campo no puede ser futura (10 minutos de margen por relojes desajustados)
+const MARGEN_FECHA = 10 * 60000;
+const maxFecha = () => localInput(new Date(Date.now() + MARGEN_FECHA));
+// Un PK sin «+» con coma o punto y justo tres cifras («2,500», «2.500») casi siempre es 2+500, pero se leería 2,5 m:
+// en el formulario no se acepta en silencio, se elige una de las dos lecturas (leerPk no cambia para el resto de la app)
+function pkAmbiguo(t) {
+  const s = String(t ?? "").trim().replace(/\s+/g, ""), m = s.match(/^(\d+)[.,](\d{3})$/);
+  return m ? [fmtPk(parseInt(m[1], 10) * 1000 + parseInt(m[2], 10)), fmtPk(leerPk(s))] : null;
+}
+const msgAmbPk = (t, a) => `Elige cómo se lee «${String(t).trim()}»: ${a[0]} o ${a[1]}.`;
+function pintarAmbPk() {
+  const sin = $("#iSinPk")?.checked;
+  for (const id of ["iPk1", "iPk2"]) {
+    const i = $("#" + id); if (!i) continue;
+    const box = i.closest(".f"), a = !sin && pkAmbiguo(i.value); let c = box.querySelector(".pk-amb");
+    if (!a) { c?.remove(); continue; }
+    if (!c) { c = document.createElement("div"); c.className = "pk-amb"; c.setAttribute("role", "group"); c.setAttribute("aria-label", "Cómo se lee el PK"); box.appendChild(c); }
+    // Si ya muestra estas dos lecturas no se rearma (un botón rearmado entre el toque y el clic no recibiría el clic)
+    if (c.dataset.k === a.join("|")) continue; c.dataset.k = a.join("|");
+    c.innerHTML = `<span>¿Cuál es?</span><button type="button" class="mini" data-pkamb="${id}" data-v="${esc(a[0])}" title="kilómetro y metros">${esc(a[0])}</button><button type="button" class="mini" data-pkamb="${id}" data-v="${esc(a[1])}" title="metros con decimales">${esc(a[1])}</button>`;
+  }
+}
 function validar(f) {
   const err = {};
   const esLib = f.actividad === "LIB";
   if (!f.fechaCampo || isNaN(new Date(f.fechaCampo))) err.fechaCampo = "Indica la fecha y hora.";
+  else if (new Date(f.fechaCampo).getTime() > Date.now() + MARGEN_FECHA) err.fechaCampo = "La fecha y hora no puede ser posterior a ahora: revisa el día y el año.";
   if (!f.topografoId) err.topografoId = "Elige el topógrafo.";
   if (!S.editando && f.actividad !== "DRN" && !f.equipo) err.equipo = "Marca con qué equipo se hizo.";
   if (!f.estructuraId) err.estructuraId = "Elige la estructura.";
@@ -2597,6 +2764,9 @@ function validar(f) {
     if (Number.isNaN(p2)) err.pkFin = "Escríbelo como 2+180 o 2180.";
     if (esLib && p1 == null) err.pkInicio = "Indica el PK inicio o marca «No aplica».";
     if (p1 != null && p2 != null && !isNaN(p1) && !isNaN(p2) && p2 < p1) err.pkFin = "El PK final no puede ser menor que el inicio.";
+    const a1 = pkAmbiguo(f.pkInicio), a2 = pkAmbiguo(f.pkFin);
+    if (a1) err.pkInicio = msgAmbPk(f.pkInicio, a1);
+    if (a2) err.pkFin = msgAmbPk(f.pkFin, a2);
   }
   const area = String(f.area).trim() === "" ? null : Number(String(f.area).replace(",", "."));
   if (area !== null && (isNaN(area) || area < 0)) err.area = "Solo números (m²).";
@@ -2634,8 +2804,9 @@ function guardar() {
   const bg0 = $("#bGuardar"); if (bg0 && bg0.disabled) return;
   leerCampos();
   const f = S.form, E = S.editando;
+  if ((f._adjPend || []).length) { toast("Espera un momento: se están recuperando los archivos adjuntos.", "pend"); return; }
   const { err, p1, p2, area } = validar(f);
-  if (Object.keys(err).length) { marcarErrores(err); toast("Revisa los campos marcados.", "bad"); return; }
+  if (Object.keys(err).length) { marcarErrores(err); pintarAmbPk(); toast("Revisa los campos marcados.", "bad"); return; }
   const esLib = f.actividad === "LIB";
   // Mientras se editaba, ¿alguien más cambió el registro? (gabinete puso capa, lo volvió a observar o lo aceptó)
   if (E && navigator.onLine && !E._pend && !S._choqueOk) {
@@ -2725,8 +2896,8 @@ function guardar() {
     if (E && navigator.onLine && (E.tipoId !== datos.tipoId || capaDe(E) !== datos.capa) && (esGab() || puedeAjustes())) pc.then(() => supDelRegistro(E, { tipoId: datos.tipoId, capa: datos.capa }), () => {});
     // Si era el último observado por corregir, la lista vuelve a mostrar todo (si no, quedaría vacía)
     if (E && E.estado === "OB" && S.filtro.mis.st === "OB" && !S.mis.some(r => r.estado === "OB" && r.id !== E.id)) S.filtro.mis.st = "";
-    if (E) { S.editando = null; S.form = null; if (S.view === "nueva") ir(E.creadoPor === S.email ? "mis" : "todos"); return; }
-    ls.set(BORR(), null);
+    if (E) { if (!S.editando || S.editando.id === E.id) borrarEdicion(); S.editando = null; S.form = null; if (S.view === "nueva") ir(E.creadoPor === S.email ? "mis" : "todos"); return; }
+    ls.set(BORR(), null); adjBorrar(ADJ_NUEVA());
     // La siguiente liberación toma la hora actual (no la de la anterior)
     S.form = formVacio(); if (S.view === "nueva") { pintarForm(); scrollTo({ top: 0, behavior: "smooth" }); }
     // Un segundo toque rápido no debe caer sobre el formulario nuevo
@@ -2742,6 +2913,7 @@ function guardar() {
     if (escrito && actual !== f && !await confirmar("No se pudo guardar", `${esc(msg)} ¿Recuperar «${esc(respaldo.descripcion.slice(0, 60))}» en lugar de lo que estás escribiendo?`, "Recuperar")) { toast(msg, "bad"); return; }
     S.editando = E || null; S.form = respaldo;
     if (S.view !== "nueva") ir("nueva"); else pintarForm();
+    guardarBorrador(); // lo recuperado vuelve a tener su borrador (y sus archivos) por si se cierra la app
     toast(msg + " Lo escrito sigue en el formulario.", "bad");
   };
   // Con señal se espera la respuesta un momento antes de decir «guardada»; sin señal queda en el teléfono y se sube sola
@@ -3241,7 +3413,12 @@ function tarjeta(r, i) {
 
 /* ---------- Ficha ---------- */
 // Abre un registro en el formulario pasando por ir(): queda bien la dirección (#nueva), el menú y la vista guardada
-function editarRegistro(r) { if (!r) return; S.editando = r; S.form = null; ir("nueva"); }
+function editarRegistro(r) {
+  if (!r) return;
+  // El borrador de «Nueva» se guarda antes de pasar a editar; si se editaba otro registro, esa edición se descarta
+  if (S.view === "nueva") { if (S.editando) { if (S.editando.id === r.id && S.form) { ir("nueva"); return; } borrarEdicion(); } else guardarBorrador(); }
+  S.editando = r; S.form = null; ir("nueva");
+}
 function puedeEditar(r) {
   // El administrador edita todo; gabinete solo lo que registró él mismo (lo de campo lo acepta, observa, rechaza o le pone capa)
   if (esAdmin()) return true;
@@ -3284,7 +3461,7 @@ async function proxFicha(ids) {
 const marcarFilaAbierta = id => { document.querySelectorAll("#view tr.abierta").forEach(t => t.classList.remove("abierta")); if (id) document.querySelector(`#view tr[data-id="${CSS.escape(id)}"], #view tr[data-rid="${CSS.escape(id)}"]`)?.classList.add("abierta"); };
 // Rechazado: se vuelve a registrar con los mismos datos (sin sus archivos) para corregirlo
 function duplicarComoNuevo(r) {
-  if (S.view === "nueva" && !S.editando) guardarBorrador();
+  if (S.view === "nueva") { if (S.editando) borrarEdicion(); else guardarBorrador(); }
   const f = formDesde(r); f.fechaCampo = localInput(new Date()); f.archivos = []; f.linksCsv = []; f.linksFotos = [];
   f.observaciones = [f.observaciones, r.notaRechazo ? "Rehecho tras rechazo: " + r.notaRechazo : ""].filter(Boolean).join(" · ");
   S.editando = null; ir("nueva"); S.form = f; pintarForm(); toast("Revisa los datos y guarda: se registra como nuevo.");
@@ -3800,9 +3977,11 @@ function accionHueco(g, sub, pos = {}) {
 function guardarNoAplica(subId, tipoId, lista, msg) {
   const cfg = S.capasCfg[subId] || {}, tipos = JSON.parse(JSON.stringify(cfg.tipos || {}));
   tipos[tipoId] = { ...(tipos[tipoId] || {}), capas: tipos[tipoId]?.capas || [], noAplica: lista };
-  S.capasCfg[subId] = { ...cfg, tipos }; S._cfgV = (S._cfgV || 0) + 1; actualizarPanel();
-  setDoc(doc(db, "capas", subId), { tipos: { [tipoId]: { noAplica: lista } }, editadoEn: serverTimestamp(), editadoPor: S.email }, { merge: true })
-    .catch(e => toast("No se guardó: " + (e.code === "permission-denied" ? "sin permiso." : e.message), "bad"));
+  const antes = S.capasCfg[subId], puesto = { ...cfg, tipos };
+  S.capasCfg[subId] = puesto; S._cfgV = (S._cfgV || 0) + 1; actualizarPanel();
+  const p = setDoc(doc(db, "capas", subId), { tipos: { [tipoId]: { noAplica: lista } }, editadoEn: serverTimestamp(), editadoPor: S.email }, { merge: true });
+  revertirSiNiega(p, puesto, antes, () => S.capasCfg[subId], v => { if (v) S.capasCfg[subId] = v; else delete S.capasCfg[subId]; S._cfgV = (S._cfgV || 0) + 1; });
+  p.catch(e => toast("No se guardó: " + (e.code === "permission-denied" ? "sin permiso." : e.message), "bad"));
   toast(msg);
 }
 function marcarNoLibera(sub, b, a, e, nota) {
@@ -3825,6 +4004,7 @@ document.addEventListener("menu-hueco", e => {
 });
 function irNuevaCon(sub, t, capa, a, b) {
   const est = estDeSub(sub.id);
+  if (S.editando) borrarEdicion();
   S.editando = null; S.form = formVacio();
   Object.assign(S.form, { actividad: "LIB", estructuraId: est.id, subestructuraId: sub.id, elementoId: t.elementoId || "", tipoId: t.id, capa: capa || "", pkInicio: fmtPk(a), pkFin: fmtPk(b), sinPk: false, descripcion: "" });
   S.form.descripcion = S.form._descAuto = descAuto(S.form);
@@ -6913,13 +7093,34 @@ const AJ_VALIDAR = {
   topografos: b => { const v = new Set(); for (const t of b) { if (!t.id.trim() || !t.nombre.trim()) return "Cada topógrafo necesita clave y nombre."; if (v.has(t.id)) return `La clave ${t.id} está repetida.`; v.add(t.id); } return ""; },
   tipos: b => b.some(t => !t.nombre.trim()) ? "El tipo necesita un nombre." : ""
 };
+// Si Firebase rechaza un guardado (permisos, reglas), lo que se puso en pantalla vuelve a lo de antes y se repinta.
+// No pisa un cambio posterior que sí se guardó (o que llegó de la nube); sin señal no se toca: queda por subir.
+const NEGADO = new WeakSet(), PREVIO = new WeakMap();
+function revertirSiNiega(p, puesto, antes, leer, poner) {
+  PREVIO.set(puesto, antes);
+  p.catch(() => {
+    NEGADO.add(puesto);
+    const ahora = leer(); if (ahora !== puesto && JSON.stringify(ahora) !== JSON.stringify(puesto)) return;
+    let v = antes; while (v && typeof v === "object" && NEGADO.has(v)) v = PREVIO.get(v);
+    poner(v); trasRechazo();
+  });
+}
+function trasRechazo() {
+  pintarNav();
+  // En Ajustes se repinta ya (render devuelve el foco), salvo que se esté escribiendo algo aún no guardado: entonces al salir del campo
+  if (S.view === "ajustes") { const a = document.activeElement; if (a?.closest?.("#ajBody") && a.matches?.("input:not([type=checkbox]):not([type=radio]),textarea") && a.value !== a.defaultValue) S.aj._sucio = true; else render(); }
+  else if (S.view === "nueva") repintarFormSuave();
+  else if (S.view === "panel") actualizarPanel();
+}
 function guardarLista(lista, items, msg = "Guardado") {
   const err = AJ_VALIDAR[lista]?.(items); if (err) { toast(err, "bad"); pintarAjustes(); return false; }
-  const limpio = clon(items);
-  S.listas[lista] = clon(limpio);
-  // «Guardado» solo cuando Firebase lo confirma; si falla, se avisa y la lista vuelve sola a lo que hay en la nube.
+  const limpio = clon(items), antes = S.listas[lista], puesto = clon(limpio);
+  S.listas[lista] = puesto;
+  // «Guardado» solo cuando Firebase lo confirma; si lo rechaza, se avisa y la lista vuelve a lo que había.
   // Devuelve la promesa de escribir (verdadera para quien solo pregunta si pasó la validación)
-  return escribir(setDoc(doc(db, "listas", lista), { items: limpio, editadoEn: serverTimestamp(), editadoPor: S.email }), msg, "No se guardó: ");
+  const p = setDoc(doc(db, "listas", lista), { items: limpio, editadoEn: serverTimestamp(), editadoPor: S.email });
+  revertirSiNiega(p, puesto, antes, () => S.listas[lista], v => { S.listas[lista] = v || []; });
+  return escribir(p, msg, "No se guardó: ");
 }
 function pintarAjustes() {
   if (!puedeAjustes()) { ir(vistas()[0].id); return; }
@@ -7267,9 +7468,11 @@ function ajCapas() {
     <div class="nrow" style="border-top:0"><select id="nCapa" aria-label="Capa">${optCapa("")}</select><input id="nPki" class="mono" inputmode="decimal" placeholder="PK inicio" aria-label="PK inicio"><input id="nPkf" class="mono" inputmode="decimal" placeholder="PK final" aria-label="PK final"><input id="nCota" inputmode="decimal" placeholder="Cota" aria-label="Cota"><input id="nNota" placeholder="Motivo (opcional)" aria-label="Motivo"><button type="button" class="mini ok-btn" id="nAdd">Marcar</button></div>
   </div>`;
   const guardar = (msg = "Guardado") => {
-    S.capasCfg[A.capSub] = clon(doc0); S._cfgV = (S._cfgV || 0) + 1;
-    setDoc(doc(db, "capas", A.capSub), { tipos: clon(doc0.tipos), editadoEn: serverTimestamp(), editadoPor: S.email })
-      .catch(e => toast("No se guardó: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"));
+    const sid = A.capSub, antes = S.capasCfg[sid], puesto = clon(doc0);
+    S.capasCfg[sid] = puesto; S._cfgV = (S._cfgV || 0) + 1;
+    const p = setDoc(doc(db, "capas", sid), { tipos: clon(doc0.tipos), editadoEn: serverTimestamp(), editadoPor: S.email });
+    revertirSiNiega(p, puesto, antes, () => S.capasCfg[sid], v => { if (v) S.capasCfg[sid] = v; else delete S.capasCfg[sid]; S._cfgV = (S._cfgV || 0) + 1; });
+    p.catch(e => toast("No se guardó: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"));
     toast(navigator.onLine ? msg : msg + " en el teléfono; se subirá con señal.");
   };
   plegarLista($("#cCapas .ctab"), { clave: "capas", filas: ":scope > .ct-row:not(.head)", n: 12, buscando: !!q });
@@ -8471,7 +8674,12 @@ document.addEventListener("focusout", () => setTimeout(() => {
   if (!S.aj?._sucio || S.view !== "ajustes" || document.activeElement?.closest?.("#ajBody") || $(".dlg.on") || $("#ctx")) return;
   S.aj._sucio = false; render();
 }, 0));
+// Datos que llegan solos a Ajustes (solicitudes, usuarios): si se está en un campo, se repinta al salir (no se borra lo escrito)
+// (lo escrito en «Agregar por correo» se guarda en S.aj.nu y render devuelve foco y cursor; solo se espera con un desplegable abierto o un diálogo)
+function repintarAjSuave() { const a = document.activeElement; if ($(".dlg.on") || (a?.closest?.("#ajBody") && (a.tagName === "SELECT" || (a.matches?.("input,textarea") && !a.id)))) S.aj._sucio = true; else render(); }
 function pintarUsuarios() {
+  // Lo escrito en «Agregar por correo» se recuerda aunque se repinte la pestaña
+  const NU = S.aj.nu ||= { mail: "", nom: "", rol: "topografo", topo: "" };
   $("#ajBody").innerHTML = `
   <p class="muted small" style="margin:0 0 12px">Quien entra por primera vez con Google aparece en «Solicitudes». Asígnale un rol y apruébalo.</p>
   <div class="card section"><h2>Solicitudes${S.solicitudes.length ? ` <span class="badge" style="background:var(--ob);color:#fff;border-radius:999px;padding:0 8px;font-size:12px">${S.solicitudes.length}</span>` : ""}</h2>
@@ -8479,10 +8687,10 @@ function pintarUsuarios() {
   </div>
   <div class="card section"><h2>Agregar por correo</h2>
     <div class="grid">
-      <div class="f"><label for="uMail">Correo de Google</label><input id="uMail" type="email" placeholder="nombre@gmail.com"></div>
-      <div class="f"><label for="uNom">Nombre</label><input id="uNom" placeholder="Nombre y apellido"></div>
-      <div class="f"><label for="uRol">Rol</label>${selRol("topografo", 'id="uRol"')}</div>
-      <div class="f"><label for="uTopo">Clave de topógrafo</label>${selTopo("", 'id="uTopo"')}</div>
+      <div class="f"><label for="uMail">Correo de Google</label><input id="uMail" type="email" placeholder="nombre@gmail.com" value="${esc(NU.mail)}"></div>
+      <div class="f"><label for="uNom">Nombre</label><input id="uNom" placeholder="Nombre y apellido" value="${esc(NU.nom)}"></div>
+      <div class="f"><label for="uRol">Rol</label>${selRol(NU.rol || "topografo", 'id="uRol"')}</div>
+      <div class="f"><label for="uTopo">Clave de topógrafo</label>${selTopo(NU.topo || "", 'id="uTopo"')}</div>
     </div>
     <div class="actions"><button type="button" class="btn pri" id="uAdd">Agregar usuario</button></div>
   </div>
@@ -8520,9 +8728,18 @@ function pintarUsuarios() {
       if (ya.rol === "admin" && !esAdmin()) { toast(`${ya.nombre || m} es administrador; solo otro administrador lo cambia.`, "bad"); return; }
       if (!await confirmar("Ya tiene acceso", `${esc(ya.nombre || m)} ya entra como <b>${esc(ROLES[ya.rol] || ya.rol)}</b>${ya.activo === false ? " (desactivado)" : ""}. ¿Cambiarlo a <b>${esc(ROLES[$("#uRol").value])}</b>${ya.activo === false ? " y activarlo" : ""}?`, "Cambiar")) return;
     }
+    const enviado = JSON.stringify(S.aj.nu || {});
     setDoc(doc(db, "usuarios", m), { nombre: $("#uNom").value.trim() || m, rol: $("#uRol").value, topografoId: $("#uTopo").value, activo: true, creadoEn: serverTimestamp() }, { merge: true })
-      .then(() => toast("Usuario agregado")).catch(err => toast("No se pudo agregar: " + err.message, "bad"));
+      .then(() => {
+        toast("Usuario agregado");
+        // Agregado: el recuadro queda vacío para el siguiente (salvo que ya se esté escribiendo otro)
+        if (JSON.stringify(S.aj.nu || {}) !== enviado) return;
+        S.aj.nu = null;
+        if ($("#uMail")) { $("#uMail").value = ""; $("#uNom").value = ""; $("#uRol").value = "topografo"; $("#uTopo").value = ""; }
+      })
+      .catch(err => toast("No se pudo agregar: " + err.message, "bad"));
   });
+  for (const [id, k] of [["uMail", "mail"], ["uNom", "nom"], ["uRol", "rol"], ["uTopo", "topo"]]) $("#" + id).addEventListener(id.startsWith("uM") || id === "uNom" ? "input" : "change", e => { (S.aj.nu ||= { mail: "", nom: "", rol: "topografo", topo: "" })[k] = e.target.value; });
   $("#usr").addEventListener("change", async e => {
     const row = e.target.closest("[data-mail]"); if (!row) return;
     const k = e.target.dataset.k; if (!k) return;
