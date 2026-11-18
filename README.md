@@ -11,6 +11,16 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 39: el buscador de Registros busca en todo el historial
+
+No cambia las reglas de Firebase.
+
+- En **Registros** (gabinete, jefe y administrador), al escribir en el buscador se busca **en todo el historial**, no solo en los últimos 100, sin pedirlo. El encabezado dice «N coincidencias en todo el historial» y una nota avisa que los registros antiguos traen datos resumidos (no se busca por descripción). Sin texto todo sigue igual.
+- Mientras llega el historial dice «Buscando en todo el historial…» (nunca «Nada coincide») y al terminar la lista se redibuja sin quitar el foco ni el cursor del buscador.
+- Si no hay resultados y hay **filtros o estado** puestos, lo dice («con los filtros puestos») y ofrece **«Buscar sin filtros»**, que los quita y conserva lo escrito.
+- Un **PK** escrito («2+500», «0+012.5») encuentra también el tramo que lo contiene (inicio y fin inclusive). Vale en Registros, en la Bandeja y en Ctrl+K.
+- «Mis registros» busca igual que antes.
+
 ## Versión 38: exportar a Excel con la marca de la app
 
 No cambia las reglas de Firebase.

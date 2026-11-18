@@ -1697,7 +1697,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 38;
+const VERSION_APP = 39;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2833,18 +2833,22 @@ function textoBusqueda(r) {
 }
 // Palabras de una búsqueda (sin tildes); un registro coincide si tiene todas
 const terminos = q => sinTilde(q).trim().split(/\s+/).filter(Boolean);
-const coincide = (r, qs) => { if (!qs.length) return true; const t = textoBusqueda(r); return qs.every(x => t.includes(x)); };
+// Un PK escrito («2+500», «0+060.5») coincide también si cae dentro del tramo del registro (inicio y fin inclusive)
+const pkTermino = x => /^\d+\+\d{3}(\.\d+)?$/.test(x) ? leerPk(x) : null;
+const enTramo = (r, p) => p != null && r.pkInicio != null && r.pkFin != null && p >= Math.min(r.pkInicio, r.pkFin) && p <= Math.max(r.pkInicio, r.pkFin);
+const coincide = (r, qs) => { if (!qs.length) return true; const t = textoBusqueda(r); return qs.every(x => t.includes(x) || enTramo(r, pkTermino(x))); };
 // Búsqueda que redibuja cuando se deja de escribir (150 ms) y devuelve el foco y el cursor al campo
 function buscadorDiferido(inp, guardar, repintar, sigue = () => true) {
   inp.addEventListener("input", () => {
     guardar(inp.value); clearTimeout(S._qt);
-    S._qt = setTimeout(() => {
-      if (!sigue() || !document.getElementById(inp.id)) return;
-      const v = document.getElementById(inp.id), pos = v.selectionStart, foco = document.activeElement === v;
-      repintar();
-      const n = document.getElementById(inp.id); if (foco && n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} }
-    }, 150);
+    S._qt = setTimeout(() => { if (sigue() && document.getElementById(inp.id)) conFoco(inp.id, repintar); }, 150);
   });
+}
+// Redibuja y, si el campo tenía el foco, se lo devuelve con el cursor (y la selección) donde estaba
+function conFoco(id, repintar) {
+  const v = document.getElementById(id), foco = !!v && document.activeElement === v, a = v?.selectionStart, b = v?.selectionEnd;
+  repintar();
+  const n = document.getElementById(id); if (foco && n) { n.focus(); try { n.setSelectionRange(a, b); } catch (e) {} }
 }
 // Gabinete, jefe y administrador: accesos rápidos (Ctrl+K, clic derecho, casillas) y tablas en computadora
 const poder = () => esGab() || puedeAjustes();
@@ -3059,14 +3063,16 @@ function pintarLista(cual) {
   const porFecha = cual === "todos" && !pap && !loteF && !!rangoFecha(fl);
   if (cual === "todos") suscribirFechaTodos(pap || loteF ? {} : fl);
   const cargandoFecha = (porFecha && !S.todosFecha) || (loteF && !S.loteRegs);
-  // «Buscar en todo el historial»: sin fechas, aplica los filtros al resumen completo (no solo a los últimos 100)
-  const hist = cual === "todos" && !pap && !porFecha && !loteF && fl.hist && poder();
+  // «Buscar en todo el historial»: sin fechas, aplica los filtros al resumen completo (no solo a los últimos 100).
+  // Con texto en el buscador se busca siempre en todo el historial (auto), sin tener que pedirlo.
+  const qs = terminos(fl.q), enHist = cual === "todos" && !pap && !porFecha && !loteF && poder();
+  const auto = enHist && qs.length > 0, hist = enHist && (fl.hist || auto), cargHist = hist && !BUS.todos;
   if (hist) cargarTodoResumen();
   const base = pap ? S.papelera || [] : cual === "mis" ? S.mis : loteF ? S.loteRegs || [] : porFecha ? S.todosFecha || [] : hist ? mezclarHist() : S.todos;
   const datos = pap ? base : base.filter(r => pasaFiltrosReg(fl, r));
   const activos = pap ? [] : activosReg(fl, cual), pcFil = enPC() || tablaPC();
   const sel = S.selReg ||= new Set();
-  const qs = terminos(fl.q), sts = fl.st ? fl.st.split(",") : [];
+  const sts = fl.st ? fl.st.split(",") : [];
   // Los números de los chips cuentan lo que se ve (con la búsqueda y sin los eliminados)
   const ante = datos.filter(r => r.estado !== "X" || esAdmin() || pap).filter(r => coincide(r, qs));
   const cuenta = {}; ante.forEach(r => { cuenta[r.estado] = (cuenta[r.estado] || 0) + 1; });
@@ -3090,7 +3096,11 @@ function pintarLista(cual) {
   if (tabla && fl.ord) vis = ordenarCol(vis, fl.ord, COLR);
   const parcial = cual === "todos" && !pap && !porFecha && !hist && !loteF && S.todosLleno && (activos.length || qs.length) && poder();
   const hayFiltro = activos.length || qs.length || (tablaPC() && innerWidth >= 1200 && fl.st);
-  const vacio = `<div class="empty card"><b>${pap ? (S.papelera ? "La papelera está vacía" : "Cargando papelera…") : datos.length ? "Nada coincide con el filtro" : cargandoFecha ? "Buscando…" : activos.length ? "No hay registros con esos filtros" : "Aún no hay registros"}</b>${pap ? (S.papelera ? "Lo que se borre aparecerá aquí y se podrá restaurar." : "") : datos.length ? "Prueba con otra búsqueda." : cual === "mis" ? "Lo que guardes en «Nueva» aparecerá aquí." : "Los registros de campo aparecerán aquí al instante."}</div>`;
+  // Con texto: mientras llega el historial no se dice «nada coincide»; si hay filtros puestos, se avisa y se ofrece quitarlos
+  const conFil = !pap && qs.length && (activos.length || fl.st);
+  const vacio = cargHist ? `<div class="empty card"><b>Buscando en todo el historial…</b>En los últimos registros no hay coincidencias; falta revisar los más antiguos.</div>`
+    : conFil ? `<div class="empty card"><b>Nada coincide con «${esc(fl.q.trim())}» con los filtros puestos</b>Los filtros (${esc(activos.map(a => a[1]).join(" · "))}) también se aplican a la búsqueda.<div style="margin-top:10px"><button type="button" class="btn sec" id="rSinFil">Buscar sin filtros</button></div></div>`
+    : `<div class="empty card"><b>${pap ? (S.papelera ? "La papelera está vacía" : "Cargando papelera…") : datos.length ? "Nada coincide con el filtro" : cargandoFecha ? "Buscando…" : activos.length ? "No hay registros con esos filtros" : "Aún no hay registros"}</b>${pap ? (S.papelera ? "Lo que se borre aparecerá aquí y se podrá restaurar." : "") : datos.length ? "Prueba con otra búsqueda." : cual === "mis" ? "Lo que guardes en «Nueva» aparecerá aquí." : "Los registros de campo aparecerán aquí al instante."}</div>`;
   // La barra de acciones en grupo se arma aparte para actualizarla al marcar sin redibujar toda la lista
   const bulkHtml = () => { const ns = sel.size, selRegs = vis.filter(r => sel.has(r.id)); return !tabla ? "" : `<div class="cap-bulk ${ns ? "on" : ""}" id="rBulk"><span><b>${ns}</b> ${ns === 1 ? "seleccionado" : "seleccionados"}</span>${pap
     ? `${selRegs.some(puedeRestaurar) ? '<button type="button" class="mini ok-btn" data-rk="restaurar">Restaurar</button>' : ""}`
@@ -3101,7 +3111,7 @@ function pintarLista(cual) {
     ${tdFrente(r)}<td class="mono nw">${esc(rangoPk(r.pkInicio, r.pkFin))}</td><td class="tqd">${pap ? `<small class="tq">${esc(["Borrado " + fechaCorta(r.borradoEn), r.borradoNombre || r.borradoPor || ""].filter(Boolean).join(" · "))}</small>` : lineaQuien(r, fechaDe(r), cual === "todos")}</td>${tdMas(r)}</tr>`;
   $("#view").innerHTML = `
   <h1 class="view-title">${cual === "mis" ? "Mis registros" : pap ? "Papelera" : "Registros"}</h1>
-  <p class="lead">${cual === "mis" ? "Lo que registraste. Puedes editar lo que está pendiente u observado, y mandar a la papelera lo que aún no tiene código." : pap ? `Lo borrado no sale en las listas ni en el panel. ${puedeAjustes() ? "Restaura o borra para siempre." : "Puedes restaurar lo que no tiene código."}` : porFecha ? `${datos.length} ${datos.length === 1 ? "registro" : "registros"} · ${esc(textoFecha(fl))}.` : hist ? `${BUS.todos ? `${datos.length.toLocaleString("es-PE")} de ${base.length.toLocaleString("es-PE")} registros de todo el historial.` : "Cargando todo el historial…"}` : `${activos.length ? datos.length + " de los" : "Los"} últimos ${base.length} registros de todos. Para ver más antiguos filtra por fechas.${poder() ? " Busca en todo el histórico con Ctrl+K." : ""}`}</p>
+  <p class="lead">${cual === "mis" ? "Lo que registraste. Puedes editar lo que está pendiente u observado, y mandar a la papelera lo que aún no tiene código." : pap ? `Lo borrado no sale en las listas ni en el panel. ${puedeAjustes() ? "Restaura o borra para siempre." : "Puedes restaurar lo que no tiene código."}` : porFecha ? `${datos.length} ${datos.length === 1 ? "registro" : "registros"} · ${esc(textoFecha(fl))}.` : auto ? (cargHist ? `Buscando en todo el historial… Por ahora ${vis.length.toLocaleString("es-PE")} ${vis.length === 1 ? "coincidencia" : "coincidencias"} en lo ya cargado.` : `${vis.length.toLocaleString("es-PE")} ${vis.length === 1 ? "coincidencia" : "coincidencias"} en todo el historial (${base.length.toLocaleString("es-PE")} registros).`) : hist ? `${BUS.todos ? `${datos.length.toLocaleString("es-PE")} de ${base.length.toLocaleString("es-PE")} registros de todo el historial.` : "Cargando todo el historial…"}` : `${activos.length ? datos.length + " de los" : "Los"} últimos ${base.length} registros de todos. Para ver más antiguos filtra por fechas${poder() ? " o escribe en el buscador: busca en todo el historial" : ""}.`}</p>
   ${cual === "todos" && poder() ? `<div class="tabs" role="group" aria-label="Registros o papelera"><button type="button" data-pap="0" aria-pressed="${!pap}">Registros</button><button type="button" data-pap="1" aria-pressed="${pap}">Papelera${S.papelera ? ` <span class="cnt">${S.papelera.length}</span>` : ""}</button></div>` : ""}
   ${colFil ? `<div class="rgrid"><aside class="card fcol" id="rFil" aria-label="Filtros">${colFiltros(fl, C, keysF, cual === "todos")}</aside><div class="rmain">` : ""}
   <div class="tools"><input class="search" id="q" type="search" placeholder="Buscar N°, PK, tipo, frente…" value="${esc(fl.q)}" aria-label="Buscar">${cual === "mis" ? `<button type="button" class="mini wsp-btn" id="rWsp">${ICON_WSP}Resumen WhatsApp</button>` : ""}${pap && puedeAjustes() && datos.length ? '<button type="button" class="mini warn-mini" id="rVaciar">Vaciar papelera</button>' : ""}${!pap && vis.length ? `<button type="button" class="mini" id="rExp" title="Descarga en Excel lo que se ve con estos filtros">Excel: ${hayFiltro || sts.length ? "lo filtrado" : "lista"} (${vis.length})</button>` : ""}${puedeCol ? `<button type="button" class="mini" id="rFacT" aria-pressed="${colFil}" title="Muestra u oculta la columna de filtros">${colFil ? "Ocultar filtros" : `Filtros${activos.length ? ` (${activos.length})` : ""}`}</button>` : ""}${cual === "todos" && !pap && puedeAjustes() ? `<button type="button" class="mini sup-btn" id="rSup" title="Abre Panel → Modelo 2D, donde se ven las superficies XML de las liberaciones">${ICON_SUP}Superficies (XML)</button>` : ""}</div>
@@ -3112,7 +3122,8 @@ function pintarLista(cual) {
   ${fl.fecha === "rango" && fl.f1 && fl.f2 && fl.f1 > fl.f2 ? '<p class="rf-nota">«Desde» era posterior a «Hasta»: se tomaron al revés.</p>' : ""}
   ${parcial ? `<p class="rf-nota" id="rParcial">Estos filtros revisan solo los últimos ${S.todos.length} registros. <button type="button" class="btn-txt" id="rHist">Buscar en todo el historial</button></p>` : ""}
   ${loteF ? `<p class="pinfo aviso imp-ver" role="note"><span>Solo la importación <b>«${esc(nombreLote(loteF))}»</b>${S.loteRegs ? ` · ${S.loteRegs.length.toLocaleString("es-PE")} ${S.loteRegs.length === 1 ? "registro" : "registros"}` : " · cargando…"}</span><button type="button" class="btn-txt" id="rLoteX">Ver todos los registros</button></p>` : ""}
-  ${hist ? `<p class="rf-nota">Buscando en todo el historial (datos resumidos: código, tipo, capa, PK, estado y fecha). <button type="button" class="btn-txt" id="rHistX">Volver a los últimos</button></p>` : ""}
+  ${auto ? `<p class="rf-nota" id="rHistNota">${cargHist ? "Buscando en todo el historial…" : "Resultados de todo el historial."} Los registros antiguos traen datos resumidos (código, tipo, capa, PK, estado y fecha): en ellos no se busca por descripción.</p>`
+    : hist ? `<p class="rf-nota">Buscando en todo el historial (datos resumidos: código, tipo, capa, PK, estado y fecha). <button type="button" class="btn-txt" id="rHistX">Volver a los últimos</button></p>` : ""}
   ${cual === "mis" && (cuenta.OB || 0) && !sts.includes("OB") ? `<div class="pinfo aviso mis-obs" role="note"><span><b>Tienes ${cuenta.OB === 1 ? "1 observado" : cuenta.OB + " observados"} por corregir.</b> ${cuenta.OB === 1 ? "Está primero" : "Están primero"} en la lista.</span><button type="button" class="btn-txt" id="rVerObs">Ver solo ${cuenta.OB === 1 ? "ese" : "esos"}</button></div>` : ""}
   ${pap ? "" : `<div class="chips" id="rSt" role="group" aria-label="Filtrar por estado (Ctrl o Mayús + clic para elegir varios)">${chips.map(([k, t, n]) => `<button type="button" class="chip" data-st="${k}" aria-pressed="${fl.st === k}">${esc(t)}<span class="c">${n}</span></button>`).join("")}</div>`}
   ${bulkHtml()}
@@ -3132,6 +3143,8 @@ function pintarLista(cual) {
   $("#rSup")?.addEventListener("click", () => irSuperficies());
   $("#rHist")?.addEventListener("click", () => { fl.hist = true; pintarLista(cual); });
   $("#rHistX")?.addEventListener("click", () => { fl.hist = false; pintarLista(cual); });
+  // «Buscar sin filtros»: quita los filtros y el estado, conserva lo escrito
+  $("#rSinFil")?.addEventListener("click", () => { CAMPOS_RF.forEach(k => { fl[k] = ""; }); fl.st = ""; pintarLista(cual); const q = $("#q"); if (q) { q.focus(); try { q.setSelectionRange(q.value.length, q.value.length); } catch (e) {} } });
   $("#rLoteX")?.addEventListener("click", () => { fl.lote = ""; S._loteId = ""; S.loteRegs = null; pintarLista(cual); });
   $("#rVerObs")?.addEventListener("click", () => { fl.st = "OB"; pintarLista(cual); });
   // Estado: un clic elige uno; con Ctrl o Mayús se suman varios
@@ -3502,7 +3515,8 @@ async function cargarTodoResumen(forzar) {
   } catch (e) { console.warn("buscador", e); BUS.todos ||= []; }
   BUS.cargando = false;
   if ($("#cmdk")) $("#cmdk input").dispatchEvent(new Event("input"));
-  if (S.view === "todos" && S.filtro.todos.hist) pintarLista("todos");
+  // Registros en todo el historial (pedido o por haber texto en el buscador): se redibuja sin quitar el foco del campo
+  if (S.view === "todos" && (S.filtro.todos.hist || terminos(S.filtro.todos.q || "").length)) conFoco("q", () => pintarLista("todos"));
 }
 // Todo el historial para Registros: los registros completos que ya están cargados más el resumen del resto
 function mezclarHist() {
@@ -3529,7 +3543,7 @@ function abrirBuscador() {
     const vistos = new Set(), regs = [];
     for (const r of poder() ? [...S.bandeja.todos(), ...S.todos, ...S.mis, ...(BUS.todos || [])] : S.mis) if (!vistos.has(r.id) && vivo(r)) { vistos.add(r.id); regs.push(r); }
     const okC = cmds.filter(c => qs.every(q => sinTilde(c.t).includes(q)));
-    let okR = qs.length ? regs.filter(r => { const t = txtBus(r); return qs.every(q => t.includes(q)); }) : [];
+    let okR = qs.length ? regs.filter(r => { const t = txtBus(r); return qs.every(q => t.includes(q) || enTramo(r, pkTermino(q))); }) : [];
     const exacto = qs.length === 1 && /\d{3,}/.test(qs[0]);
     okR.sort((a, b) => (exacto ? (String(b.numero).toLowerCase().endsWith(qs[0]) - String(a.numero).toLowerCase().endsWith(qs[0])) : 0) || (toDate(b.fechaCampo)?.getTime() || 0) - (toDate(a.fechaCampo)?.getTime() || 0));
     const nR = okR.length; okR = okR.slice(0, 40);
