@@ -1602,7 +1602,7 @@ const LISTAS_INICIALES = {
 };
 
 const ROLES = { topografo: "Topógrafo", operario: "Operario", gabinete: "Gabinete", jefe: "Jefe de área", admin: "Administrador" };
-const ESTADOS = { PT: "Pendiente topografía", EP: "En proceso", EC: "Entregado a Calidad", OB: "Observado", RE: "Rechazado", X: "Eliminado", NA: "Levantamiento" };
+const ESTADOS = { PT: "Pendiente topografía", EP: "En proceso", EC: "Entregado a Calidad", OB: "Observado", RE: "Rechazado", X: "Eliminado", NA: "Sin código" };
 // Seguimiento de lo que no lleva código: las aspas se «procesan» (jefe/administrador) y los levantamientos se dan por «enterados» (gabinete).
 // Una sola regla para todas las pantallas (tabla, lista, ficha, menú, Ctrl+K) y para los chips de filtro de Registros.
 const SEGUIM = { porproc: ["Por procesar", "Por procesar"], proc: ["Procesado", "Procesadas"], porver: ["Por ver", "Por ver"], ent: ["Enterado", "Enterados"] };
@@ -2479,6 +2479,8 @@ function nombreAct(a) {
   const n = (nom(L.act(a), "registro") || "registro").toLowerCase();
   return { n, g: /a$|ón$/.test(n.split(" ")[0]) ? "f" : "m" };
 }
+// Etiqueta de la fecha según la actividad (versión 44)
+const etqFecha = a => "Fecha y hora " + ({ LIB: "de liberación", LEV: "del levantamiento", DRN: "del vuelo", ASP: "de las aspas" }[a] || "del registro");
 const tituloNuevo = a => { const { n, g } = nombreAct(a); return (g === "fp" ? "Nuevas " : g === "f" ? "Nueva " : "Nuevo ") + n; };
 const btnGuardar = a => "Guardar " + nombreAct(a).n;
 const avisoGuardado = a => { const { n, g } = nombreAct(a); return n.charAt(0).toUpperCase() + n.slice(1) + (g === "fp" ? " guardadas" : g === "f" ? " guardada" : " guardado"); };
@@ -2530,7 +2532,7 @@ function pintarForm() {
         ${S.listas.actividades.map(a => `<button type="button" data-act="${esc(a.id)}" aria-pressed="${f.actividad === a.id}" title="${esc(a.nombre)}" aria-label="${esc(a.nombre)}">${esc(ACT_CORTO[a.id] || a.nombre)}</button>`).join("")}
       </div></div>
       <div class="grid">
-        <div class="f"><label for="iFecha">Fecha y hora de liberación</label><input id="iFecha" name="fechaCampo" type="datetime-local" value="${esc(f.fechaCampo)}" max="${maxFecha()}" required></div>
+        <div class="f"><label for="iFecha">${esc(etqFecha(f.actividad))}</label><input id="iFecha" name="fechaCampo" type="datetime-local" value="${esc(f.fechaCampo)}" max="${maxFecha()}" required></div>
         <div class="f"><label for="iTopo">Topógrafo</label><select id="iTopo" name="topografoId">${opciones(S.listas.topografos, f.topografoId, "Elegir…")}</select></div>
         <div class="f full" id="fEquipo"><span class="flabel">Equipo</span><input type="hidden" name="equipo" value="${esc(f.actividad === "DRN" ? "DRN" : f.equipo || "")}">${f.actividad === "DRN"
           ? '<p class="muted" style="margin:0">Dron</p>'
@@ -2556,7 +2558,7 @@ function pintarForm() {
       </div>
       <div class="grid">
         <div class="f"><label for="iCota">Cota <span class="opt">(opcional)</span></label><div class="inrow"><input id="iCota" name="cota" inputmode="decimal" placeholder="Ej.: 769.63" value="${esc(f.cota)}"><button type="button" class="mini" id="bVar">Variable</button></div></div>
-        <div class="f"><label for="iCapa">Capa <span class="opt">(opcional)</span></label><input id="iCapa" name="capa" placeholder="Ej.: Capa 15" value="${esc(f.capa)}" list="dlCapas" autocomplete="off"><datalist id="dlCapas">${cfgTipo(f.subestructuraId, f.tipoId).capas.map(c => `<option value="${esc(c.nombre)}">${c.cota ? "cota " + esc(c.cota) : ""}</option>`).join("")}</datalist></div>
+        <div class="f"><label for="iCapa">Capa <span class="opt">(opcional)</span></label><input id="iCapa" name="capa" placeholder="Ej.: Capa 15" value="${esc(f.capa)}" list="dlCapas" autocomplete="off"><datalist id="dlCapas">${cfgTipo(f.subestructuraId, f.tipoId).capas.filter(c => !c.oculta).sort((a, b) => natural(a.nombre, b.nombre)).map(c => `<option value="${esc(c.nombre)}">${c.cota ? "cota " + esc(c.cota) : ""}</option>`).join("")}</datalist></div>
         <div class="f"><label for="iArea">Área m² <span class="opt">(opcional)</span></label><input id="iArea" name="area" inputmode="decimal" placeholder="Ej.: 811.55" value="${esc(f.area)}"></div>
       </div>
     </div>
@@ -2982,7 +2984,7 @@ function guardar() {
     ref = doc(collection(db, "liberaciones"));
     a = conCodigo(f.actividad) ? "PT" : "NA";
     b.set(ref, { ...datos, numero: "", nombreLiberacion: "", generadoPor: "", estado: a, notaObservacion: "",
-      fechaLiberacion: null, fechaEntrega: null, numeroCargo: "", creadoEn: serverTimestamp(), creadoPor: S.email, origen: "app" });
+      fechaLiberacion: null, fechaEntrega: null, numeroCargo: "", creadoEn: serverTimestamp(), creadoPor: S.email, creadoNombre: S.perfil?.nombre || "", origen: "app" });
     resumenEn(b, ref.id, { ...datos, numero: "", estado: a });
   }
   for (const x of f.archivos.filter(x => x.nuevo))
@@ -3498,7 +3500,8 @@ function resumenArch(r) {
 const fechaCorta = v => { const d = toDate(v); if (!d) return ""; const z = n => String(n).padStart(2, "0"); return `${z(d.getDate())}/${z(d.getMonth() + 1)} ${z(d.getHours())}:${z(d.getMinutes())}`; };
 const topoCorto = id => { const n = String(nom(L.topo(id), id) || "").trim(), p = n.split(/\s+/); return p.length > 1 ? `${p[0][0]}. ${p[1]}` : n; };
 // «Registrado por» (versión 29): el nombre si se conoce (la propia cuenta, o la lista de usuarios que ven jefe y administrador); si no, el correo
-const quienRegistro = c => !c ? "" : c === S.email ? S.perfil?.nombre || S.user?.displayName || c : (S.usuarios || []).find(u => u.id === c)?.nombre || c;
+// Campo no tiene la lista de usuarios: se usa el nombre guardado en el registro (creadoNombre) y, en los viejos, solo lo de antes de la «@»
+const quienRegistro = (c, r) => !c ? "" : c === S.email ? S.perfil?.nombre || S.user?.displayName || c : (S.usuarios || []).find(u => u.id === c)?.nombre || r?.creadoNombre || String(c).split("@")[0];
 const lineaQuien = (r, f, conTopo = true) => { const t = [fechaCorta(f), conTopo ? topoCorto(r.topografoId) : ""].filter(Boolean).join(" · "); return t ? `<small class="tq">${esc(t)}</small>` : ""; };
 // Volvió corregido: está pendiente y aún guarda la nota de la observación (el topógrafo no puede borrarla; se limpia al aceptar)
 const corregido = r => r.estado === "PT" && !!r.notaObservacion;
@@ -3526,7 +3529,15 @@ function tarjeta(r, i) {
 function editarRegistro(r) {
   if (!r) return;
   // El borrador de «Nueva» se guarda antes de pasar a editar; si se editaba otro registro, esa edición se descarta
-  if (S.view === "nueva") { if (S.editando) { if (S.editando.id === r.id && S.form) { ir("nueva"); return; } borrarEdicion(); } else guardarBorrador(); }
+  if (S.view === "nueva") {
+    if (S.editando) {
+      if (S.editando.id === r.id && S.form) { ir("nueva"); return; }
+      // Otro registro con cambios sin guardar: se pregunta antes de descartarlos (versión 44)
+      let cambio = false; try { leerCampos(); cambio = !!S.form && cambioEdicion(S.editando, S.form); } catch (_) {}
+      if (cambio) { preguntarNuevaEditando(); return; }
+      borrarEdicion();
+    } else guardarBorrador();
+  }
   S.editando = r; S.form = null; ir("nueva");
 }
 function puedeEditar(r) {
@@ -3571,6 +3582,7 @@ async function proxFicha(ids) {
 const marcarFilaAbierta = id => { document.querySelectorAll("#view tr.abierta").forEach(t => t.classList.remove("abierta")); if (id) document.querySelector(`#view tr[data-id="${CSS.escape(id)}"], #view tr[data-rid="${CSS.escape(id)}"]`)?.classList.add("abierta"); };
 // Rechazado: se vuelve a registrar con los mismos datos (sin sus archivos) para corregirlo
 function duplicarComoNuevo(r) {
+  if (S.view === "nueva" && S.editando) { let cambio = false; try { leerCampos(); cambio = !!S.form && cambioEdicion(S.editando, S.form); } catch (_) {} if (cambio) { preguntarNuevaEditando(); return; } }
   if (S.view === "nueva") { if (S.editando) borrarEdicion(); else guardarBorrador(); }
   // Si «Nueva» tiene una liberación a medio llenar, se pregunta antes de reemplazarla (versión 43)
   preguntarReemplazarNueva(() => {
@@ -3609,11 +3621,11 @@ function abrirFicha(r) {
       ${fila("Cota", esc(r.cota))}
       ${fila("Capa", esc(capaDe(r)))}
       ${fila("Área", r.area != null ? esc(r.area.toLocaleString("es-PE")) + " m²" : "")}
-      ${fila("Fecha de liberación", esc(fmtFecha(r.fechaCampo)))}
+      ${fila(etqFecha(r.actividad).replace(/^Fecha y hora/, "Fecha"), esc(fmtFecha(r.fechaCampo)))}
       ${fila("Topógrafo", esc(nom(L.topo(r.topografoId), r.topografoId)))}
       ${r.equipo ? fila("Equipo", esc(nom(L.equipo(r.equipo), r.equipo))) : ""}
       ${(r.protocolos || []).length ? fila("Protocolos", r.protocolos.map(x => `<div>${x.numero ? `<span class="mono">${esc(x.numero)}</span> · ` : ""}${esc(x.nombre)}</div>`).join("")) : ""}
-      ${fila("Registrado por", esc(quienRegistro(r.creadoPor)))}
+      ${fila("Registrado por", esc(quienRegistro(r.creadoPor, r)))}
       ${fila("Fecha de entrega", esc(fmtFecha(r.fechaLiberacion, false)))}
       ${fila("Entrega a Calidad", esc(fmtFecha(r.fechaEntrega, false)))}
       ${r.carpeta ? fila("Carpeta OneDrive", verCarpeta(r.carpeta)) : ""}
@@ -3730,6 +3742,8 @@ addEventListener("popstate", () => {
   if (!$("#sheet").hidden) { cerrarFicha(true); return; }
   const v = location.hash.slice(1);
   if (S.dentro && v && v !== S.view && vistas().some(x => x.id === v)) ir(v, true);
+  // Una ruta que este rol no tiene, escrita a mano (#ajustes, #todos…): sigue la pantalla que se ve y la dirección lo dice (versión 44)
+  else if (S.dentro && v && v !== S.view && S.view) history.replaceState(history.state, "", "#" + S.view);
 });
 addEventListener("keydown", e => {
   if ($("#sheet").hidden || document.querySelector(".dlg,#ctx,#cmdk,.lb")) return;
@@ -5003,6 +5017,7 @@ function ejeDeXml(al) {
     const [sN, sE] = a, [eN, eE] = b; let L = Number(g.getAttribute("length"));
     if (g.localName === "Curve") {
       const [cN, cE] = nums(xUno(g, "Center")?.textContent);
+      if (!isFinite(cN) || !isFinite(cE)) throw new Error("una curva del alineamiento no trae su centro (<Center>); revisa la exportación de Civil 3D");
       const R = Number(g.getAttribute("radius")) || Math.hypot(sE - cE, sN - cN), ccw = g.getAttribute("rot") === "ccw", a0 = Math.atan2(sN - cN, sE - cE);
       if (!L) { let d = Math.atan2(eN - cN, eE - cE) - a0; if (ccw && d < 0) d += 2 * Math.PI; if (!ccw && d > 0) d -= 2 * Math.PI; L = Math.abs(d) * R; }
       const sw = L / R * (ccw ? 1 : -1), n = Math.max(4, Math.ceil(L));
@@ -5011,6 +5026,7 @@ function ejeDeXml(al) {
     pk += L;
   }
   if (p.length < 2) throw new Error("el alineamiento no tiene tramos");
+  if (p.some(q => !isFinite(q[0]) || !isFinite(q[1]) || !isFinite(q[2]))) throw new Error("el alineamiento tiene coordenadas que no son números; revisa la exportación de Civil 3D");
   return p;
 }
 function seccionesDeXml(al) {
@@ -7474,6 +7490,9 @@ function ajLugares() {
     if (k === "enom" || k === "snom") {
       const x = k === "enom" ? est : sub, v = e.target.value.trim(); if (!x) return;
       if (!v) { toast(k === "enom" ? "La estructura necesita un nombre." : "El frente necesita un nombre.", "bad"); e.target.value = x.nombre; return; }
+      // Igual que al agregar: sin distinguir mayúsculas ni tildes, y se deja el nombre anterior
+      const otros = k === "enom" ? items.filter(o => o !== x) : (est.subs || []).filter(o => o !== x);
+      if (otros.some(o => sinTilde(o.nombre).trim() === sinTilde(v))) { toast(k === "enom" ? `Ya existe la estructura «${v}».` : `«${v}» ya está en ${est.nombre}.`, "bad"); e.target.value = x.nombre; return; }
       x.nombre = v;
       guardarLug(items, k === "enom" ? "Estructura renombrada" : "Frente renombrado"); return;
     }
@@ -7515,7 +7534,7 @@ function ajLugares() {
       if (k === "sadd") {
         const inp = ce.querySelector('[data-k="snew"]'), n = inp.value.trim(); if (!n) { inp.focus(); return; }
         const items = estFresca(), x = items.find(o => o.id === eId); if (!x) return;
-        if ((x.subs || []).some(o => o.nombre.toLowerCase() === n.toLowerCase())) { toast(`«${n}» ya está en ${x.nombre}.`, "bad"); inp.focus(); return; }
+        if ((x.subs || []).some(o => sinTilde(o.nombre).trim() === sinTilde(n))) { toast(`«${n}» ya está en ${x.nombre}.`, "bad"); inp.focus(); return; }
         const usados = new Set(); items.forEach(o => { usados.add(o.id); (o.subs || []).forEach(s => usados.add(s.id)); });
         (x.subs ||= []).push({ id: nuevoId(n, usados), nombre: n, pkMin: 0, pkMax: null });
         if (await guardarLug(items, `Frente «${n}» agregado a ${x.nombre}`)) { repintarLug(); $(`#ajBody .est[data-e="${CSS.escape(eId)}"] [data-k="snew"]`)?.focus(); }
@@ -7525,7 +7544,7 @@ function ajLugares() {
     if (e.target.id === "eAdd") {
       const n = $("#eNew").value.trim(); if (!n) { $("#eNew").focus(); return; }
       const items = estFresca();
-      if (items.some(o => o.nombre.toLowerCase() === n.toLowerCase())) { toast(`Ya existe la estructura «${n}».`, "bad"); $("#eNew").focus(); return; }
+      if (items.some(o => sinTilde(o.nombre).trim() === sinTilde(n))) { toast(`Ya existe la estructura «${n}».`, "bad"); $("#eNew").focus(); return; }
       const usados = new Set(); items.forEach(o => { usados.add(o.id); (o.subs || []).forEach(s => usados.add(s.id)); });
       const id = nuevoId(n, usados); usados.add(id);
       items.push({ id, nombre: n, subs: [{ id: nuevoId(n, usados), nombre: n, pkMin: 0, pkMax: null }] });
@@ -7565,6 +7584,8 @@ function ajCapas() {
   const vis = cfg.capas.map((c, i) => ({ c, i })).filter(x => !q || x.c.nombre.toLowerCase().includes(q) || String(x.c.cota || "").includes(q));
   const grupos = S.listas.estructuras.filter(e => e.activo !== false).map(e => `<optgroup label="${esc(e.nombre)}">${(e.subs || []).filter(x => x.activo !== false).map(x => `<option value="${esc(x.id)}" ${x.id === A.capSub ? "selected" : ""}>${esc(x.nombre)}</option>`).join("")}</optgroup>`).join("");
   const numDe = n => { const m = String(n).match(/\d+/); return m ? parseInt(m[0], 10) : NaN; };
+  // «Capa 02», «capa 2» y «Capa 2» son la misma capa (sin mayúsculas ni tildes)
+  const igualCapa = (a, b) => sinTilde(normCapa(a, A.capSub, A.capTipo) || a) === sinTilde(normCapa(b, A.capSub, A.capTipo) || b);
   const nums = cfg.capas.map(c => numDe(c.nombre)).filter(x => !isNaN(x));
   const sig = nums.length ? Math.max(...nums) + 1 : 1;
   const nSel = A.capSel.size;
@@ -7580,12 +7601,12 @@ function ajCapas() {
     <div class="cap-tools">
       <input id="cQ" type="search" placeholder="Buscar capa o cota" value="${esc(A.capQ)}" aria-label="Buscar capa">
       <button type="button" class="mini" id="cDesdeReg">Crear desde los registros</button>
+      <button type="button" class="mini" data-bulk="cotas">Cotas en serie</button>
     </div>
     <div class="cap-bulk ${nSel ? "on" : ""}">
       <span><b>${nSel}</b> ${nSel === 1 ? "seleccionada" : "seleccionadas"}</span>
       <button type="button" class="mini" data-bulk="ocultar">Ocultar en gráfico</button>
       <button type="button" class="mini" data-bulk="mostrar">Mostrar en gráfico</button>
-      <button type="button" class="mini" data-bulk="cotas">Cotas en serie</button>
       <button type="button" class="mini warn-mini" data-bulk="quitar">Quitar</button>
       <button type="button" class="mini" data-bulk="limpiar">Deseleccionar</button>
     </div>
@@ -7617,8 +7638,10 @@ function ajCapas() {
   </div>`;
   const guardar = (msg = "Guardado") => {
     const sid = A.capSub, antes = S.capasCfg[sid], puesto = clon(doc0);
+    // Se guarda en orden natural (Capa 2 antes que Capa 10), sin importar en qué orden se agregaron (versión 44)
+    Object.values(puesto.tipos || {}).forEach(t => { if (Array.isArray(t.capas)) t.capas.sort((a, b) => natural(a.nombre, b.nombre)); });
     S.capasCfg[sid] = puesto; S._cfgV = (S._cfgV || 0) + 1;
-    const p = setDoc(doc(db, "capas", sid), { tipos: clon(doc0.tipos), editadoEn: serverTimestamp(), editadoPor: S.email });
+    const p = setDoc(doc(db, "capas", sid), { tipos: clon(puesto.tipos), editadoEn: serverTimestamp(), editadoPor: S.email });
     revertirSiNiega(p, puesto, antes, () => S.capasCfg[sid], v => { if (v) S.capasCfg[sid] = v; else delete S.capasCfg[sid]; S._cfgV = (S._cfgV || 0) + 1; });
     p.catch(e => toast("No se guardó: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"));
     toast(navigator.onLine ? msg : msg + " en el teléfono; se subirá con señal.");
@@ -7648,7 +7671,7 @@ function ajCapas() {
       if (k === "sel") { e.target.checked ? A.capSel.add(c.nombre) : A.capSel.delete(c.nombre); ajCapas(); return; }
       if (k === "nom") { const v = e.target.value.trim(); if (!v) { toast("La capa necesita un nombre.", "bad"); e.target.value = c.nombre; return; }
         if (v !== c.nombre && !navigator.onLine) { toast("Se necesita señal para renombrar una capa: sus registros y superficies pasan al nombre nuevo.", "bad"); e.target.value = c.nombre; return; }
-        if (cfg.capas.some((x, j) => j !== i && x.nombre === v)) { toast(`Ya existe «${v}».`, "bad"); e.target.value = c.nombre; return; }
+        if (cfg.capas.some((x, j) => j !== i && igualCapa(x.nombre, v))) { toast(`Ya existe «${cfg.capas.find((x, j) => j !== i && igualCapa(x.nombre, v)).nombre}» (es la misma capa).`, "bad"); e.target.value = c.nombre; return; }
         const viejo = c.nombre;
         cfg.noAplica.forEach(x => { if (x.capa === viejo) x.capa = v; }); if (A.capSel.delete(viejo)) A.capSel.add(v); c.nombre = v;
         guardar(`Capa renombrada a «${v}»`); ajCapas(); renombrarCapa(A.capSub, A.capTipo, viejo, v); return; }
@@ -7700,7 +7723,7 @@ function ajCapas() {
     }
     if (btn.id === "cAdd") {
       const n = $("#cNom").value.trim(); if (!n) { $("#cNom").focus(); return; }
-      if (cfg.capas.some(x => x.nombre === n)) { toast(`Ya existe «${n}».`, "bad"); return; }
+      if (cfg.capas.some(x => igualCapa(x.nombre, n))) { toast(`Ya existe «${n}».`, "bad"); return; }
       cfg.capas.push({ nombre: n, cota: $("#cCota").value.trim() }); guardar("Capa agregada"); reabrir("#cNom"); return;
     }
     if (btn.id === "cVarias" || btn.id === "cQuitarR") {
@@ -7903,6 +7926,9 @@ function filasARegistros(filas) {
   if (!porNum.size) throw new Error("el archivo no tiene filas con código");
   return { regs: [...porNum.values()], avisos };
 }
+// Lo emparejado a mano se recuerda (por nombre del archivo) para volver a proponerlo en la siguiente importación (versión 44)
+const parRecordado = (cual, clave) => { const m = ls.get("lib.impPares", {})?.[cual]?.[clave]; return m && (cual === "sub" ? !!L.sub(m) : !!L.tipo(m)) ? m : ""; };
+const recordarPar = (cual, clave, id) => { try { const m = ls.get("lib.impPares", {}) || {}; m[cual] ||= {}; if (id && id !== "+") m[cual][clave] = id; else delete m[cual][clave]; ls.set("lib.impPares", m); } catch (_) {} };
 // Empareja los nombres del archivo con las listas de la app. Lo que no coincide solo queda en I.faltan para elegirlo a mano
 function emparejarImp(I) {
   if (!I.tabla) { I.faltan = { sub: [], tipo: [] }; return; }
@@ -7916,6 +7942,7 @@ function emparejarImp(I) {
     let s = subs.find(x => igual(x.nombre, raw));
     if (!s && raw.startsWith("Estructura: ")) { const e = S.listas.estructuras.find(x => igual(x.nombre, raw.slice(12))); if (e && (e.subs || []).length === 1) s = { id: e.subs[0].id }; }
     if (s) I.auto.sub[raw] = s.id;
+    else if (!I.pares.sub[raw]) { const m = parRecordado("sub", raw); if (m) I.pares.sub[raw] = m; }
     const x = { raw, n }; I.lect.sub.push(x); if (!s && !I.pares.sub[raw]) I.faltan.sub.push(x); });
   // Un tipo con el mismo nombre solo se toma solo si es del mismo elemento que dice el archivo
   // («Relleno en zanja» de Tubería no es el de Movimiento de tierras): si no, se pregunta
@@ -7926,6 +7953,7 @@ function emparejarImp(I) {
     const mismos = S.listas.tipos.filter(x => igual(x.nombre, raw) || similitud(x.nombre, raw) === 1);
     const t = el ? mismos.find(x => x.elementoId === el.id) : mismos[0];
     if (t) I.auto.tipo[raw] = t.id;
+    else if (!I.pares.tipo[raw]) { const m = parRecordado("tipo", raw + "|" + eleRaw); if (m) I.pares.tipo[raw] = m; }
     const sug = [...new Set([...mismos, ...(el ? parecidos(raw, S.listas.tipos.filter(x => x.elementoId === el.id), 0.5).map(p => p.o) : []), ...parecidos(raw, S.listas.tipos, 0.5).map(p => p.o)].map(o => o.id))].slice(0, 5);
     const x = { raw, n, sug, ele: eleRaw }; I.lect.tipo.push(x); if (!t && !I.pares.tipo[raw]) I.faltan.tipo.push(x); });
   // Registros finales, con los ids de las listas (lo elegido a mano gana a lo emparejado solo)
@@ -8085,7 +8113,8 @@ function ajHistorico() {
     try { A.imp = await leerArchivoImp(f); A.impMsg = ""; ajHistorico(); await revisarImp(A.imp); if (enHist()) ajHistorico(); }
     catch (err) { console.error(err); A.imp = null; toast("No se pudo leer: " + err.message, "bad"); if (enHist()) ajHistorico(); }
   });
-  $("#hRes").addEventListener("change", e => { const s = e.target.closest("[data-par]"); if (s) { if (s.value) A.imp.pares[s.dataset.par][s.dataset.raw] = s.value; else delete A.imp.pares[s.dataset.par][s.dataset.raw]; if (s.closest("#hLect")) A.imp.lectAb = true; emparejarImp(A.imp); if (!A.imp.faltan.sub.length && !A.imp.faltan.tipo.length) { A.imp.clas = null; $("#hImp").disabled = true; revisar(); } }
+  $("#hRes").addEventListener("change", e => { const s = e.target.closest("[data-par]"); if (s) { if (s.value) A.imp.pares[s.dataset.par][s.dataset.raw] = s.value; else delete A.imp.pares[s.dataset.par][s.dataset.raw];
+      { const xr = s.dataset.par === "tipo" ? ((A.imp.lect?.tipo || []).find(z => z.raw === s.dataset.raw)?.ele || "") : ""; recordarPar(s.dataset.par, s.dataset.raw + (s.dataset.par === "tipo" ? "|" + xr : ""), s.value); } if (s.closest("#hLect")) A.imp.lectAb = true; emparejarImp(A.imp); if (!A.imp.faltan.sub.length && !A.imp.faltan.tipo.length) { A.imp.clas = null; $("#hImp").disabled = true; revisar(); } }
     else if (e.target.id === "hNombre") A.imp.nombre = e.target.value.trim() || A.imp.nombre; });
   $("#hRes").addEventListener("click", e => {
     if (e.target.id === "hDifCsv") descargar(`diferencias_${hoyISO()}.csv`, "﻿" + [["Código", "Qué es", "Dato", "En la app", "En el archivo"], ...difsImp(A.imp)].map(csvLinea).join("\r\n"), "text/csv;charset=utf-8");
@@ -8764,7 +8793,10 @@ function ajTipos() {
       cambiarElemento(id, x => { x.nombre = v; }, "Elemento renombrado"); return;
     }
     const r = e.target.closest(".tyrow[data-id]"); if (!r) return; const id = r.dataset.id;
-    if (k === "nom") { const v = e.target.value.trim(); if (!v) { toast("El tipo necesita un nombre.", "bad"); e.target.value = L.tipo(id)?.nombre || ""; return; } cambiarTipo(id, t => { t.nombre = v; }, "Tipo renombrado", false); }
+    if (k === "nom") { const v = e.target.value.trim(); if (!v) { toast("El tipo necesita un nombre.", "bad"); e.target.value = L.tipo(id)?.nombre || ""; return; }
+      // Igual que al agregar: sin distinguir mayúsculas ni tildes ni el orden de las palabras; se deja el nombre anterior (versión 44)
+      const rep = S.listas.tipos.find(o => o.id !== id && (sinTilde(o.nombre).trim() === sinTilde(v) || similitud(o.nombre, v) === 1)); if (rep) { toast(`Ya existe el tipo «${rep.nombre}». Para juntarlos usa «Unir con otro tipo».`, "bad"); e.target.value = L.tipo(id)?.nombre || ""; return; }
+      cambiarTipo(id, t => { t.nombre = v; }, "Tipo renombrado", false); }
     else if (k === "gr") cambiarTipo(id, t => { t.enGrafico = e.target.checked; }, e.target.checked ? "Se dibuja en el perfil" : "Ya no se dibuja en el perfil", false);
   });
   L2.addEventListener("keydown", e => {
@@ -8825,6 +8857,8 @@ document.addEventListener("focusout", () => setTimeout(() => {
 // Datos que llegan solos a Ajustes (solicitudes, usuarios): si se está en un campo, se repinta al salir (no se borra lo escrito)
 // (lo escrito en «Agregar por correo» se guarda en S.aj.nu y render devuelve foco y cursor; solo se espera con un desplegable abierto o un diálogo)
 function repintarAjSuave() { const a = document.activeElement; if ($(".dlg.on") || (a?.closest?.("#ajBody") && (a.tagName === "SELECT" || (a.matches?.("input,textarea") && !a.id)))) S.aj._sucio = true; else render(); }
+// Un topógrafo sin clave de topógrafo no ve ni firma lo suyo: se avisa y se pide confirmar (versión 44)
+const AVISO_SIN_CLAVE = "<p class=\"dlg-p aviso\"><b>No tiene clave de topógrafo.</b> Sus registros no quedarán con topógrafo y no podrá ver lo suyo hasta que se la pongas.</p>";
 function pintarUsuarios() {
   // Lo escrito en «Agregar por correo» se recuerda aunque se repinte la pestaña
   const NU = S.aj.nu ||= { mail: "", nom: "", rol: "topografo", topo: "" };
@@ -8856,7 +8890,8 @@ function pintarUsuarios() {
     const s = S.solicitudes.find(x => x.id === row.dataset.uid); if (!s) return;
     if (e.target.closest("[data-ap]")) {
       const rolSel = row.querySelector('[data-k="rol"]').value;
-      if (!await confirmar("Aprobar acceso", `${esc(s.nombre || s.email)} entra como <b>${esc(ROLES[rolSel])}</b>.`, "Aprobar")) return;
+      const sinClave = rolSel === "topografo" && !row.querySelector('[data-k="topo"]').value;
+      if (!await confirmar("Aprobar acceso", `${esc(s.nombre || s.email)} entra como <b>${esc(ROLES[rolSel])}</b>.${sinClave ? AVISO_SIN_CLAVE : ""}`, sinClave ? "Aprobar sin clave" : "Aprobar")) return;
       const b = writeBatch(db);
       b.set(doc(db, "usuarios", s.email.toLowerCase()), { nombre: s.nombre || s.email, rol: row.querySelector('[data-k="rol"]').value, topografoId: row.querySelector('[data-k="topo"]').value, activo: true, creadoEn: serverTimestamp() });
       b.delete(doc(db, "solicitudes", s.id));
@@ -8868,7 +8903,8 @@ function pintarUsuarios() {
   });
   $("#uAdd").addEventListener("click", async () => {
     const m = $("#uMail").value.trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)) { toast("Escribe un correo válido.", "bad"); $("#uMail").focus(); return; }
+    // Dominio con nombre de 2 o más letras y final de al menos 2 letras («a@b.c» no vale)
+    if (!/^[^@\s]+@([^@\s.]{2,}\.)+[a-z]{2,}$/.test(m)) { toast("Escribe un correo válido.", "bad"); $("#uMail").focus(); return; }
     if (m === S.email || m === ADMIN) { toast("Esa cuenta no se cambia desde aquí.", "bad"); return; }
     // Si el correo ya tiene acceso, no se le cambia el rol sin avisar
     const ya = S.usuarios.find(u => u.id === m);
@@ -8876,6 +8912,7 @@ function pintarUsuarios() {
       if (ya.rol === "admin" && !esAdmin()) { toast(`${ya.nombre || m} es administrador; solo otro administrador lo cambia.`, "bad"); return; }
       if (!await confirmar("Ya tiene acceso", `${esc(ya.nombre || m)} ya entra como <b>${esc(ROLES[ya.rol] || ya.rol)}</b>${ya.activo === false ? " (desactivado)" : ""}. ¿Cambiarlo a <b>${esc(ROLES[$("#uRol").value])}</b>${ya.activo === false ? " y activarlo" : ""}?`, "Cambiar")) return;
     }
+    if ($("#uRol").value === "topografo" && !$("#uTopo").value && !await confirmar("Sin clave de topógrafo", `${esc($("#uNom").value.trim() || m)} entra como <b>Topógrafo</b>.${AVISO_SIN_CLAVE}`, "Agregar sin clave")) { $("#uTopo").focus(); return; }
     const enviado = JSON.stringify(S.aj.nu || {});
     setDoc(doc(db, "usuarios", m), { nombre: $("#uNom").value.trim() || m, rol: $("#uRol").value, topografoId: $("#uTopo").value, activo: true, creadoEn: serverTimestamp() }, { merge: true })
       .then(() => {
@@ -8891,7 +8928,8 @@ function pintarUsuarios() {
   $("#usr").addEventListener("change", async e => {
     const row = e.target.closest("[data-mail]"); if (!row) return;
     const k = e.target.dataset.k; if (!k) return;
-    if (k === "rol") { const u = S.usuarios.find(x => x.id === row.dataset.mail); if (!await confirmar("Cambiar rol", `${esc(u?.nombre || row.dataset.mail)} pasa de ${esc(ROLES[u?.rol] || u?.rol || "")} a <b>${esc(ROLES[e.target.value])}</b>.`, "Cambiar")) { e.target.value = u?.rol || ""; return; } }
+    if (k === "rol") { const u = S.usuarios.find(x => x.id === row.dataset.mail), sinClave = e.target.value === "topografo" && !u?.topografoId; if (!await confirmar("Cambiar rol", `${esc(u?.nombre || row.dataset.mail)} pasa de ${esc(ROLES[u?.rol] || u?.rol || "")} a <b>${esc(ROLES[e.target.value])}</b>.${sinClave ? AVISO_SIN_CLAVE : ""}`, sinClave ? "Cambiar sin clave" : "Cambiar")) { e.target.value = u?.rol || ""; return; } }
+    else if (k === "topo" && !e.target.value) { const u = S.usuarios.find(x => x.id === row.dataset.mail); if (u?.rol === "topografo" && !await confirmar("Quitar la clave", `${esc(u.nombre || u.id)} es <b>Topógrafo</b>.${AVISO_SIN_CLAVE}`, "Quitar la clave")) { e.target.value = u.topografoId || ""; return; } }
     updateDoc(doc(db, "usuarios", row.dataset.mail), k === "rol" ? { rol: e.target.value } : { topografoId: e.target.value })
       .then(() => toast("Actualizado")).catch(err => toast(err.message, "bad"));
   });
