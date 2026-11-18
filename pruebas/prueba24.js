@@ -93,7 +93,8 @@ const cabe = p => p.evaluate(() => { const w = document.querySelector('.twrap'),
   ok(vis1.filter(x => /^Capa/.test(x)).length === 10, `R2: muestra las últimas 5 capas de cada tipo (${vis1.length} filas: ${vis1.join(', ')})`);
   ok(vis1.join() === 'Capa 7,Capa 6,Capa 5,Capa 4,Capa 3,Capa 9,Capa 8,Capa 7,Capa 6,Capa 5,Fundación', 'R2: son las más recientes de cada tipo (filtro 2: 3 a 7; filtro 1: 5 a 9) y la banda sin capa sigue');
   const ancho = await p.$eval('#chart rect.pista', r => r.getBoundingClientRect().width);
-  ok(ancho >= 280, `R2: la franja mide ${Math.round(ancho)} px (antes 133)`);
+  // Versión 43: la franja deja a su izquierda la columna de 44 px del ojo (zona de toque que no se pisa con los tramos)
+  ok(ancho >= 250, `R2: la franja mide ${Math.round(ancho)} px (antes 133; desde la versión 43 deja 44 px al ojo)`);
   ok(await p.$eval('#chart text.lab2', t => getComputedStyle(t).fontSize === '13px'), 'R2: nombre en 13 px arriba de la franja');
   ok(/Últimas 5 capas de cada tipo/.test(await p.textContent('#pUlt')), 'R2: avisa «Últimas 5 capas de cada tipo · Ver todas»');
   ok(await p.$eval('#pUlt .pult', e => e.getBoundingClientRect().height <= 34), 'C2: el aviso de las últimas 5 capas cabe en una línea');

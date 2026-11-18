@@ -11,6 +11,16 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 43: las acciones en grupo siempre a la vista y toques más grandes
+
+No cambia las reglas de Firebase.
+
+- **Barra de acciones en grupo** (Bandeja y Registros): al marcar una casilla queda fija abajo, siempre visible, y la lista ya no salta. «Seleccionar todo» no desaparece al marcar.
+- **Ficha abierta en pantallas de 1320 a 1799 px**: se pliega la columna de filtros (y la de Frente) para que se vean el código, la liberación y el botón de acción de cada fila sin desplazarse de lado.
+- **Cabecera de la ficha pegajosa**: la ✕, las flechas y «Copiar» siguen a la vista al bajar.
+- **Pantallas táctiles**: casillas, cabeceras, «No aplica progresiva», «Ver», «Ver todas», «Deshacer» y el ojo, los tramos y los huecos del Perfil tienen al menos 44 px de zona de toque; con ratón se ve igual.
+- **Salir de una edición con cambios** (a otra pantalla o con el botón atrás) pregunta antes de descartar. «Registrar este tramo» y «Duplicar» preguntan antes de reemplazar una liberación a medio llenar.
+
 ## Versión 42: lo escrito y lo adjuntado ya no se pierde
 
 No cambia las reglas de Firebase.
