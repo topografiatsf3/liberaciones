@@ -12,8 +12,8 @@ const errores = [];
 const ok = (c, m) => { if (!c) { console.log('FALLA:', m); process.exitCode = 1; } else console.log('ok  -', m); };
 const escuchar = (p, n) => { p.on('pageerror', e => { errores.push(n + ': ' + e.message); console.log('PAGEERROR', n, e.message); }); p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts/.test(m.text())) { errores.push(n + ': ' + m.text()); console.log('CONSOLE', n, m.text()); } }); };
 let version = 'v1';
-// Cada versión publicada lleva su propio número (v1 → 101, v2 → 102…)
-const html = () => fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8').replace(/const VERSION_APP = \d+;/, `const VERSION_APP = ${100 + +version.slice(1)};`).replace('</head>', `<script>window.__version='${version}'</script></head>`);
+// Cada versión publicada lleva su propio número (v1 → 1.101.0, v2 → 1.102.0…)
+const html = () => fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8').replace(/const VERSION_APP = [^;]+;/, `const VERSION_APP = "1.${100 + +version.slice(1)}.0";`).replace('</head>', `<script>window.__version='${version}'</script></head>`);
 async function preparar(ctx) {
   await ctx.route(/gstatic\.com\/firebasejs\/.*\/(firebase-[a-z]+\.js)/, r => { const f = r.request().url().match(/(firebase-[a-z]+\.js)/)[1]; r.fulfill({ path: path.join(__dirname, 'fake', f), contentType: 'application/javascript' }); });
   await ctx.route(/fonts\./, r => r.abort());
@@ -39,7 +39,7 @@ async function preparar(ctx) {
   ok(await p.evaluate(() => window.__version) === 'v2', 'al abrir, si hay versión nueva se pone sola');
   ok(cargas.length === 2, `se nota solo como una recarga rápida al abrir (${cargas.length} cargas)`);
   await p.waitForSelector('#nav button');
-  ok(await p.waitForFunction(() => /App actualizada a la versión 102/.test(document.querySelector('#toast')?.textContent || ''), null, { timeout: 5000 }).then(() => true, () => false), 'avisa «App actualizada a la versión …»');
+  ok(await p.waitForFunction(() => /App actualizada a la versión 1\.102\.0/.test(document.querySelector('#toast')?.textContent || ''), null, { timeout: 5000 }).then(() => true, () => false), 'avisa «App actualizada a la versión …»');
 
   // Con algo escrito no se recarga: aparece el aviso «Hay una versión nueva»
   await p.click('#nav [data-v="nueva"]'); await p.waitForSelector('#iDesc');
@@ -51,7 +51,7 @@ async function preparar(ctx) {
   await p.evaluate(() => document.dispatchEvent(new Event('version-nueva')));
   await p.waitForSelector('#verNueva');
   ok(await p.inputValue('#iDesc') === 'Algo que no debe perderse' && await p.evaluate(() => window.__version) === 'v2', 'si ya se está escribiendo, no recarga: avisa «Hay una versión nueva»');
-  ok(/Versión \d+/.test(await (async () => { await p.click('#nav [data-v="mis"]'); await p.waitForTimeout(300); return p.textContent('#view'); })()), 'la versión se ve al final de Mis registros');
+  ok(/Versión \d+\.\d+\.\d+/.test(await (async () => { await p.click('#nav [data-v="mis"]'); await p.waitForTimeout(300); return p.textContent('#view'); })()), 'la versión se ve al final de Mis registros');
   await ctx.close();
 
   // Lo nuevo aparece aunque la lista guardada en Firebase sea vieja (sin dron ni equipos)

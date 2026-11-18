@@ -11,6 +11,30 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Cómo se numeran las versiones
+
+Desde el 18/11/2026 la versión lleva tres números, **grande.mediano.mínimo** (la antigua «versión 43» es la 1.43.0):
+
+- **Mínimo** (1.43.0 → 1.43.1): arreglo chico, un texto, algo mal colocado.
+- **Mediano** (1.43.2 → 1.44.0): función nueva o cambio que se nota al trabajar.
+- **Grande** (1.44.0 → 2.0.0): rediseño, cambio de reglas de Firebase o de la forma de trabajar.
+
+`VERSION_APP` en `index.html` y `CACHE` en `sw.js` (`liberaciones-v1.43.1`) suben juntos; `pruebas/prueba12.js` espera el nombre de la caché.
+
+## Versión 1.43.1: cosas en su sitio (14 arreglos de posición)
+
+Cambio mínimo. No cambia las reglas de Firebase ni la forma de trabajar.
+
+- **«Nueva» en celular** ya no se ensancha cuando un tipo sugerido tiene nombre largo: el texto parte línea.
+- **Ajustes → Capas y Lugares** caben en laptops de 1100 a 1700 px sin cortar nombres ni sacar botones; **Usuarios** sin el hueco bajo «Solicitudes» y con los correos largos partidos.
+- **«Acceso solicitado» y «Cuenta desactivada»** parten un correo largo en celular.
+- **El aviso (toast)** sube si taparía el campo con error, el campo enfocado o los botones del pie de la ficha. «Panel preparado…» solo sale en el Panel.
+- **Registros en tableta (960–1024 px)**: chips de estado en dos líneas y filtros del mismo ancho. Los registros sin código dicen «Sin código» en vez de un guion.
+- **Planta en celular**: el selector «Tipo» queda dentro de su tarjeta y los rótulos de PK y de frente no se pisan con el eje.
+- **Resumen para WhatsApp**: los botones de periodo quedan fijos arriba.
+- **Textos cortados** con «…» y el texto completo al pasar el ratón o mantener pulsado (Ctrl+K, archivos de la ficha, Panel).
+- **Letra de al menos 12 px** en cabeceras, etiquetas y contadores, y contraste de 4,5:1 o más donde se leía mal.
+
 ## Versión 43: las acciones en grupo siempre a la vista y toques más grandes
 
 No cambia las reglas de Firebase.
