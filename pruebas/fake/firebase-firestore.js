@@ -43,6 +43,7 @@ export function doc(a, ...segs) {
   const path = base.join('/'); return { type: 'doc', path, id: path.split('/').pop() };
 }
 export const where = (f, op, v) => ({ t: 'where', f, op, v });
+export const documentId = () => '__name__';
 export const orderBy = (f, d = 'asc') => ({ t: 'order', f, d });
 export const limit = n => ({ t: 'limit', n });
 export function query(col, ...c) { return { type: 'query', path: col.path, c }; }
@@ -56,7 +57,7 @@ function runQuery(q) {
   const col = q.path, c = q.c || [];
   let docs = Object.keys(store).filter(p => p.startsWith(col + '/') && p.split('/').length === col.split('/').length + 1);
   const wv = x => x instanceof Timestamp ? x._ms : x;
-  for (const w of c.filter(x => x.t === 'where')) docs = docs.filter(p => { const v = val(store[p][w.f]), t = wv(w.v); if (v == null) return false;
+  for (const w of c.filter(x => x.t === 'where')) docs = docs.filter(p => { const v = w.f === '__name__' ? p.split('/').pop() : val(store[p][w.f]), t = wv(w.v); if (v == null) return false;
     return w.op === '==' ? v === t : w.op === 'in' ? t.includes(v) : w.op === '>=' ? v >= t : w.op === '<=' ? v <= t : w.op === '>' ? v > t : w.op === '<' ? v < t : true; });
   const o = c.find(x => x.t === 'order');
   if (o) { docs = docs.filter(p => store[p][o.f] != null); docs.sort((a, b) => { const x = val(store[a][o.f]), y = val(store[b][o.f]); return (x < y ? -1 : x > y ? 1 : 0) * (o.d === 'desc' ? -1 : 1); }); }

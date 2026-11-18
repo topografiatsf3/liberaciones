@@ -11,6 +11,17 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 40: los registros antiguos del buscador se pueden trabajar
+
+No cambia las reglas de Firebase. **Después de publicar, el administrador pulsa una vez «Reconstruir resumen»** (Ajustes → Histórico) para que los levantamientos y aspas antiguos muestren «Por ver», «Enterado», «Por procesar» o «Procesado» en la lista.
+
+- Desde la versión 39 el buscador de **Registros** muestra también registros antiguos con datos resumidos. Ahora todo lo que se hace sobre ellos lee primero el registro completo (solo al actuar, nunca al escribir ni al pintar la lista).
+- **«⋯» y selección en grupo**: «Observar», «Devolver a pendientes», «Entregar a Calidad», «Marcar enterado» y «Mandar a la papelera» funcionan igual que desde la ficha. Si un registro ya no existe se avisa cuál y no se cambia nada; «Entregar» nunca se salta el control del XML.
+- **Ficha**: las flechas y «›» avanzan por los resultados, y tras una acción pasa al siguiente.
+- **La lista se pone al día sola** tras cambiar un registro antiguo (fila y chips), sin volver a escribir la búsqueda.
+- **Excel** de lo seleccionado o lo filtrado: lee los registros completos (con progreso) para que salgan descripción, fechas y «Registrado por». Sin señal no exporta, para no entregar un Excel incompleto.
+- El resumen guarda si un levantamiento o unas aspas ya están «Enterado» o «Procesado».
+
 ## Versión 39: el buscador de Registros busca en todo el historial
 
 No cambia las reglas de Firebase.
