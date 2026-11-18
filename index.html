@@ -1602,7 +1602,7 @@ const LISTAS_INICIALES = {
 };
 
 const ROLES = { topografo: "Topógrafo", operario: "Operario", gabinete: "Gabinete", jefe: "Jefe de área", admin: "Administrador" };
-const ESTADOS = { PT: "Pendiente topografía", EP: "En proceso", EC: "Entregado a Calidad", OB: "Observado", RE: "Rechazado", X: "Eliminado", NA: "Sin código" };
+const ESTADOS = { PT: "Pendiente topografía", EP: "En proceso", EC: "Entregado a Calidad", OB: "Observado", RE: "Rechazado", X: "Eliminado", NA: "No lleva código" };
 // Seguimiento de lo que no lleva código: las aspas se «procesan» (jefe/administrador) y los levantamientos se dan por «enterados» (gabinete).
 // Una sola regla para todas las pantallas (tabla, lista, ficha, menú, Ctrl+K) y para los chips de filtro de Registros.
 const SEGUIM = { porproc: ["Por procesar", "Por procesar"], proc: ["Procesado", "Procesadas"], porver: ["Por ver", "Por ver"], ent: ["Enterado", "Enterados"] };
@@ -1787,7 +1787,7 @@ addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false);
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
 // Versión: grande.mediano.mínimo (1.43.0 es la antigua «versión 43»). Mínimo: arreglo chico; mediano: función nueva o cambio que se nota; grande: rediseño o cambio de reglas
-const VERSION_APP = "1.43.1";
+const VERSION_APP = "1.43.2";
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {

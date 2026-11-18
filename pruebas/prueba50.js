@@ -81,7 +81,7 @@ const abrirReg = async (p, id) => { await p.evaluate(id => { [...document.queryS
 
     // C10: el chip NA
     const chips = await p.$$eval('#view .st', e => e.map(x => x.textContent.trim()));
-    ok(chips.includes('Sin código') && !chips.includes('Levantamiento'), 'C10: el estado NA se muestra «Sin código» (' + [...new Set(chips)].join(', ') + ')');
+    ok(chips.includes('No lleva código') && !chips.includes('Levantamiento'), 'C10: el estado NA se muestra «No lleva código» (' + [...new Set(chips)].join(', ') + ')');
 
     await ctx.close();
   }

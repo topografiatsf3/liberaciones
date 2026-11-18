@@ -166,7 +166,7 @@ async function menu(p, rid, txt) { await p.click(`#lista tr[data-id="${rid}"] [d
   await buscar('91+010');
   ok(/Por ver/.test(await filaSt(p, 'lev2')) && /Por ver\s*1/.test(await p.textContent('#rSt')), 'levantamiento antiguo sin ver: «Por ver» en la fila y en el chip');
   await buscar('92+010');
-  ok(!/Por ver|Enterado/.test(await filaSt(p, 'lev3')) && /Levantamiento/.test(await filaSt(p, 'lev3')), 'entrada vieja del resumen (sin el dato): sigue como antes, sin etiqueta');
+  ok(!/Por ver|Enterado/.test(await filaSt(p, 'lev3')) && /No lleva código/.test(await filaSt(p, 'lev3')), 'entrada vieja del resumen (sin el dato): sigue como antes, sin etiqueta');
   // Marcar enterado desde «⋯»: la fila cambia y el resumen guarda el dato
   await buscar('91+010');
   await menu(p, 'lev2', 'Marcar enterado');

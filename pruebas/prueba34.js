@@ -32,10 +32,10 @@ let b;
 
   // 1. Tabla de Registros (computadora)
   await p.click('#nav [data-v="todos"]'); await p.waitForSelector('.rtab tr[data-id="a1"]');
-  ok((await chips(p, '.rtab tr[data-id="a1"] .tcod')).join() === 'Levantamiento,Procesado', 'tabla: aspas procesadas dicen «Procesado» (como en el celular)');
-  ok((await chips(p, '.rtab tr[data-id="a2"] .tcod')).join() === 'Levantamiento,Por procesar', 'tabla: aspas sin procesar dicen «Por procesar»');
-  ok((await chips(p, '.rtab tr[data-id="v1"] .tcod')).join() === 'Levantamiento,Enterado', 'tabla: levantamiento visto dice «Enterado»');
-  ok((await chips(p, '.rtab tr[data-id="v2"] .tcod')).join() === 'Levantamiento,Por ver', 'tabla: levantamiento sin ver dice «Por ver»');
+  ok((await chips(p, '.rtab tr[data-id="a1"] .tcod')).join() === 'No lleva código,Procesado', 'tabla: aspas procesadas dicen «Procesado» (como en el celular)');
+  ok((await chips(p, '.rtab tr[data-id="a2"] .tcod')).join() === 'No lleva código,Por procesar', 'tabla: aspas sin procesar dicen «Por procesar»');
+  ok((await chips(p, '.rtab tr[data-id="v1"] .tcod')).join() === 'No lleva código,Enterado', 'tabla: levantamiento visto dice «Enterado»');
+  ok((await chips(p, '.rtab tr[data-id="v2"] .tcod')).join() === 'No lleva código,Por ver', 'tabla: levantamiento sin ver dice «Por ver»');
   ok((await chips(p, '.rtab tr[data-id="l1"] .tcod')).join() === 'Pendiente topografía', 'una liberación con código no lleva etiqueta de seguimiento');
   ok(/Procesado por Carlos Jefe/.test(await p.getAttribute('.rtab tr[data-id="a1"] .st.seg', 'title')), 'al pasar el mouse dice quién lo procesó');
   await p.screenshot({ path: path.join(OUT, '1-tabla.png') });
@@ -59,7 +59,7 @@ let b;
   await p.click('#blist [data-rid="a2"] [data-a="procesar"]');
   await p.waitForFunction(() => window.__fakeStore()['liberaciones/a2']?.procesado === true, null, { timeout: 10000 }).catch(() => {});
   await p.click('#nav [data-v="todos"]'); await p.waitForSelector('.rtab tr[data-id="a2"]');
-  ok((await chips(p, '.rtab tr[data-id="a2"] .tcod')).join() === 'Levantamiento,Procesado', 'al marcar procesado en la Bandeja, Registros dice «Procesado» al instante');
+  ok((await chips(p, '.rtab tr[data-id="a2"] .tcod')).join() === 'No lleva código,Procesado', 'al marcar procesado en la Bandeja, Registros dice «Procesado» al instante');
   // 5. Ctrl+K
   await p.keyboard.press('Control+k'); await p.waitForSelector('#cmdk'); await p.keyboard.type('caseta 2');
   await p.waitForFunction(() => /caseta 2|Por ver/i.test(document.querySelector('#cmdk .cmdk-res')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});

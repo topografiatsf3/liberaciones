@@ -21,6 +21,17 @@ Desde el 18/11/2026 la versión lleva tres números, **grande.mediano.mínimo** 
 
 `VERSION_APP` en `index.html` y `CACHE` en `sw.js` (`liberaciones-v1.43.1`) suben juntos; `pruebas/prueba12.js` espera el nombre de la caché.
 
+## Versión 1.43.2: los menores de la revisión
+
+Cambio mínimo. No cambia las reglas de Firebase.
+
+- **Registros**: los chips de estado quedan marcados al elegir varios (Ctrl o Mayús + clic); el contador del encabezado es el de las filas que se ven; las fechas llevan el año si no es el actual; el título de la columna de fecha dice qué fecha muestra; «Ver registros» de una importación dice de cuál es y entra sin los filtros recordados.
+- **Excel**: columna «Seguimiento» (Por ver, Enterado, Por procesar, Procesado) y «registros» en vez de «liberaciones» cuando hay levantamientos, aspas o dron.
+- **Diálogos**: Enter al abrir no abre otro igual encima; Ctrl+K no se abre sobre un diálogo.
+- **Campo**: la etiqueta de la fecha sigue a la actividad («…del levantamiento», «…del vuelo», «…de las aspas»); el estado de levantamientos y aspas se llama «No lleva código»; «Registrado por» muestra el nombre (se guarda `creadoNombre` al crear; en los antiguos, lo anterior a la «@»); una ruta prohibida escrita a mano deja la dirección en la pantalla que se muestra; «Editar» otro registro con una edición a medias pregunta antes.
+- **Ajustes**: no se puede renombrar un frente, tipo o capa a un nombre que ya existe («Capa 02» y «Capa 2» son la misma); las capas se guardan ordenadas y las ocultas no se sugieren en «Nueva»; «Cotas en serie» siempre a la vista (sin selección aplica a todas); la importación recuerda los emparejamientos hechos a mano; el correo exige un dominio válido; avisa si un topógrafo queda sin clave.
+- **Modelo 2D**: un eje LandXML con una curva sin centro se rechaza con aviso.
+
 ## Versión 1.43.1: cosas en su sitio (14 arreglos de posición)
 
 Cambio mínimo. No cambia las reglas de Firebase ni la forma de trabajar.
