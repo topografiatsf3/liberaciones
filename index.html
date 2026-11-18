@@ -362,6 +362,9 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 #chart svg{display:block;width:100%;overflow:visible}
 #chart rect.seg{cursor:pointer;transition:opacity .15s}
 #chart rect.seg:hover{opacity:.75}
+/* Con filtros de estado, topógrafo o fecha: lo que no coincide queda tenue (se sigue tocando) */
+#chart .dimf,#chart path.tramo[data-dim]{opacity:.22}#chart rect.seg.dimf:hover,#chart path.tramo[data-dim]:hover{opacity:.5}
+.pfil-nota{margin:6px 0 4px;font-size:12.5px;color:var(--muted);border-left:3px solid var(--line);padding:2px 0 2px 8px}
 #chart .lab{font:700 13px var(--f-disp);fill:var(--ink)}
 #chart .lab2{font:700 12.5px var(--f-body);fill:var(--ink)}
 #chart .grp{font:700 12px var(--f-disp);fill:var(--accent-strong)}
@@ -1576,7 +1579,8 @@ function leerPk(t) {
 function fmtPk(v) {
   if (v === null || v === undefined || v === "" || isNaN(v)) return "";
   if (v < 0) return "-" + fmtPk(-v);
-  const km = Math.floor(v / 1000), r = Math.round((v - km * 1000) * 100) / 100;
+  let km = Math.floor(v / 1000), r = Math.round((v - km * 1000) * 100) / 100;
+  if (r >= 1000) { km++; r = 0; } // 999,996 redondea a «1+000», no a «0+1000»
   const [e, d] = r.toFixed(2).split(".");
   return km + "+" + e.padStart(3, "0") + (d === "00" ? "" : "." + d);
 }
@@ -1700,7 +1704,7 @@ document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
-const VERSION_APP = 40;
+const VERSION_APP = 41;
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -1948,7 +1952,7 @@ function entrarApp() {
   if (puedeAjustes()) suscribirAspas();
   if (esGab() || puedeAjustes()) suscribirLevantamientos();
   S.subs.push(onSnapshot(collection(db, "capas"), snap => {
-    S.capasCfg = {}; snap.docs.forEach(d => { S.capasCfg[d.id] = d.data(); });
+    S.capasCfg = {}; snap.docs.forEach(d => { S.capasCfg[d.id] = d.data(); }); S._cfgV = (S._cfgV || 0) + 1;
     if (S.view === "panel") actualizarPanel();
     if (S.view === "ajustes" && S.aj.tab === "capas" && !document.activeElement?.closest?.("#ajBody")) ajCapas();
     if (S.view === "nueva") { const dl = $("#dlCapas"); if (dl) repintarFormSuave(); }
@@ -2757,7 +2761,7 @@ function precargarFrente(subId) {
 function solapados(subId, tipoId, capa, a, b, propio) {
   const datos = S.panelDatos.some(r => r.subestructuraId === subId) ? S.panelDatos.filter(r => r.subestructuraId === subId) : RESF[subId] || [];
   const extra = [...S.mis, ...S.todos].filter(r => r.subestructuraId === subId && vivo(r) && !datos.some(x => x.id === r.id));
-  return [...datos, ...extra].filter(r => r.id !== propio && r.tipoId === tipoId && capaDe(r) === (capa || "") && r.actividad === "LIB" && !["RE", "X", "NA"].includes(r.estado) && r.pkInicio != null
+  return [...datos, ...extra].filter(r => r.id !== propio && r.tipoId === tipoId && capaN(r) === capaVista(capa, subId, tipoId) && r.actividad === "LIB" && !["RE", "X", "NA"].includes(r.estado) && r.pkInicio != null
     && Math.min(b, r.pkFin ?? r.pkInicio) - Math.max(a, r.pkInicio) > 0.5);
 }
 
@@ -2870,7 +2874,8 @@ const FECHA_CAMPO = { "": ["fechaCampo", "Fecha de liberación"], lib: ["fechaLi
 const campoFecha = fl => (FECHA_CAMPO[fl.fc || ""] || FECHA_CAMPO[""])[0];
 // Filtros de Registros y Mis registros que se recuerdan al recargar (por persona; la búsqueda escrita no)
 const guardarFiltros = () => { const q = x => { const { q: _q, pap, hist, lote, ...resto } = x; return resto; }; ls.set("lib.filtros." + S.email, { mis: q(S.filtro.mis), todos: q(S.filtro.todos) }); };
-function cargarFiltros() { const g = ls.get("lib.filtros." + S.email, null); if (!g) return; S.filtro.mis = { ...S.filtro.mis, ...g.mis, q: "" }; S.filtro.todos = { ...S.filtro.todos, ...g.todos, q: "", pap: false, hist: false }; }
+function cargarFiltros() { const g = ls.get("lib.filtros." + S.email, null); if (!g) return; S.filtro.mis = { ...S.filtro.mis, ...g.mis, q: "" }; S.filtro.todos = { ...S.filtro.todos, ...g.todos, q: "", pap: false, hist: false };
+  [S.filtro.mis, S.filtro.todos].forEach(f => { if (f.capa) f.capa = [...new Set(lstF(f.capa).map(v => v === "~" ? v : normCapa(v, "", "")))].join(","); }); }
 const isoAFecha = t => { if (!t) return null; const [y, m, d] = t.split("-").map(Number); return y ? new Date(y, m - 1, d) : null; };
 const dd = d => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 function rangoFecha(fl) {
@@ -2897,7 +2902,7 @@ const lstF = v => v ? String(v).split(",").filter(Boolean) : [];
 const FAC = {
   sub: { t: "Frente", v: r => r.subestructuraId || "", n: id => nom(L.sub(id) || L.est(id), id) || "Sin frente" },
   tipo: { t: "Tipo", v: r => r.tipoId || (r.actividad === "LIB" ? "~" : ""), n: id => id === "~" ? "Sin tipo" : nom(L.tipo(id), id) },
-  capa: { t: "Capa", v: r => capaDe(r) || (r.actividad === "LIB" ? "~" : ""), n: id => id === "~" ? "Sin capa" : id },
+  capa: { t: "Capa", v: r => capaN(r) || (r.actividad === "LIB" ? "~" : ""), n: id => id === "~" ? "Sin capa" : id },
   topo: { t: "Topógrafo", v: r => claveTopo(r.topografoId), n: id => nom(L.topo(id), id) },
   act: { t: "Actividad", v: r => r.actividad || "", n: id => nom(L.act(id), id) },
   equipo: { t: "Equipo", v: r => r.equipo || "~", n: id => id === "~" ? "Sin equipo" : nom(L.equipo(id), id) },
@@ -3040,7 +3045,7 @@ function controlesReg(fl, cual, hoja) {
     ${cual === "todos" ? `<div class="f"><label for="rfTopo">Topógrafo</label><select id="rfTopo" data-rf="topo">${ops(S.listas.topografos, fl.topo)}</select></div>` : ""}
     <div class="f"><label for="rfAct">Actividad</label><select id="rfAct" data-rf="act">${ops(S.listas.actividades, fl.act, "Todas")}</select></div>
     <div class="f"><label for="rfEq">Equipo</label><select id="rfEq" data-rf="equipo">${ops(equipos, fl.equipo)}<option value="~" ${fl.equipo === "~" ? "selected" : ""}>Sin equipo</option></select></div>
-    <div class="f"><label for="rfCapa">Capa</label><select id="rfCapa" data-rf="capa"><option value="">Todas</option><option value="~" ${fl.capa === "~" ? "selected" : ""}>Sin capa</option>${[...new Set([...(S.todos || []), ...(S.mis || [])].map(capaDe).filter(Boolean)), ...lstF(fl.capa).filter(c => c !== "~")].filter((c, i, a) => a.indexOf(c) === i).sort(natural).map(c => `<option value="${esc(c)}" ${fl.capa === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></div>`;
+    <div class="f"><label for="rfCapa">Capa</label><select id="rfCapa" data-rf="capa"><option value="">Todas</option><option value="~" ${fl.capa === "~" ? "selected" : ""}>Sin capa</option>${[...new Set([...(S.todos || []), ...(S.mis || [])].map(capaN).filter(Boolean)), ...lstF(fl.capa).filter(c => c !== "~")].filter((c, i, a) => a.indexOf(c) === i).sort(natural).map(c => `<option value="${esc(c)}" ${fl.capa === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></div>`;
 }
 function abrirFiltrosReg(cual) {
   const fl = S.filtro[cual], F = {}; CAMPOS_RF.forEach(k => { F[k] = fl[k] || ""; });
@@ -3745,7 +3750,7 @@ function dibujarLista(sub, recs, bandas, totalBandas) {
   const tira = f => `<svg class="tira" viewBox="0 0 1000 20" preserveAspectRatio="none" aria-hidden="true"><defs>${PAT_OBS}</defs>
     ${f.gs.map(k => { const g = huecosT[k], xa = X(g.a), w = Math.max(10, X(g.b) - xa); return `<rect x="${(w === 10 ? xa - 4 : xa).toFixed(1)}" y="1" width="${w.toFixed(1)}" height="18" fill="${TOK.faltaA}" stroke="${TOK.faltaBorde}" stroke-width="1.3" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>`; }).join("")}
     ${f.b.na.map(x => { const a = Math.max(x0, x.pkInicio), e = Math.min(x1, x.pkFin); return e > a ? `<rect x="${X(a).toFixed(1)}" y="0" width="${(X(e) - X(a)).toFixed(1)}" height="20" fill="${TOK.nolibA}"/>` : ""; }).join("")}
-    ${f.b.rs.map(r => { const a = Math.max(x0, r.pkInicio), e = Math.min(x1, Math.max(r.pkFin ?? r.pkInicio, r.pkInicio)); if (e < x0 || a > x1) return ""; const xa = X(a), w = Math.max(6, X(e) - xa); return `<rect x="${xa.toFixed(1)}" y="0" width="${w.toFixed(1)}" height="20" fill="${relleno(r.estado)}" stroke="#fff" stroke-width="1" vector-effect="non-scaling-stroke"/>`; }).join("")}
+    ${f.b.rs.map(r => { const [ri, rf] = ivDe(r), a = Math.max(x0, ri), e = Math.min(x1, rf); if (e < x0 || a > x1) return ""; const xa = X(a), w = Math.max(6, X(e) - xa); return `<rect ${atenuado(r) ? 'class="dimf" ' : ""}x="${xa.toFixed(1)}" y="0" width="${w.toFixed(1)}" height="20" fill="${relleno(r.estado)}" stroke="#fff" stroke-width="1" vector-effect="non-scaling-stroke"/>`; }).join("")}
   </svg>`;
   const pill = k => { const g = huecosT[k]; return `<button type="button" class="fpill mono" data-falta="${k}">${esc(rangoPk(g.a, g.b))} <span>${mts(g.b - g.a)}</span></button>`; };
   box.innerHTML = `<div class="qf-res">${conFalta.length ? `<b>Falta liberar ${mts(totalFalta)}</b> en ${conFalta.length} ${conFalta.length === 1 ? "capa" : "capas"}` : "<b>Todo liberado</b> en las capas visibles"} <span class="muted">· PK ${fmtPk(x0)} a ${fmtPk(x1)}</span>${completas ? `<button type="button" class="mini" id="qfComp">${P.verCompletas ? "Ocultar" : "Ver"} ${completas} ${completas === 1 ? "completa" : "completas"}</button>` : ""}</div>
@@ -3795,7 +3800,7 @@ function accionHueco(g, sub, pos = {}) {
 function guardarNoAplica(subId, tipoId, lista, msg) {
   const cfg = S.capasCfg[subId] || {}, tipos = JSON.parse(JSON.stringify(cfg.tipos || {}));
   tipos[tipoId] = { ...(tipos[tipoId] || {}), capas: tipos[tipoId]?.capas || [], noAplica: lista };
-  S.capasCfg[subId] = { ...cfg, tipos }; actualizarPanel();
+  S.capasCfg[subId] = { ...cfg, tipos }; S._cfgV = (S._cfgV || 0) + 1; actualizarPanel();
   setDoc(doc(db, "capas", subId), { tipos: { [tipoId]: { noAplica: lista } }, editadoEn: serverTimestamp(), editadoPor: S.email }, { merge: true })
     .catch(e => toast("No se guardó: " + (e.code === "permission-denied" ? "sin permiso." : e.message), "bad"));
   toast(msg);
@@ -3836,6 +3841,24 @@ function normCapa(t, subId, tipoId) {
   const c = cfgTipo(subId, tipoId).capas.find(x => x.nombre.toLowerCase() === s.toLowerCase());
   return c ? c.nombre : s;
 }
+/* La capa con que se agrupa al mirar (Panel, filtros de capa, conteos): «Capa 1», «capa 1» y «Capa 01» son una sola.
+   No cambia lo guardado. Si solo cambian las mayúsculas, se usa el nombre de Ajustes → Capas (de cualquier frente) o
+   la primera forma que se vio. S._cfgV sube cada vez que cambian las capas de Ajustes. */
+const _cn = { v: -1, m: new Map(), may: new Map(), r: new WeakMap() };
+function capaVista(t, subId, tipoId) {
+  const raw = sinCapa(t) ? "" : String(t || "").trim(); if (!raw) return "";
+  if (_cn.v !== S._cfgV) { _cn.v = S._cfgV; _cn.m.clear(); _cn.may.clear(); _cn.r = new WeakMap(); }
+  const k = subId + "|" + tipoId + "|" + raw; let v = _cn.m.get(k); if (v !== undefined) return v;
+  v = normCapa(raw, subId, tipoId).trim();
+  const kl = tipoId + "|" + v.toLowerCase();
+  let w = _cn.may.get(kl);
+  if (w === undefined) {
+    w = v; for (const c of Object.values(S.capasCfg || {})) { const x = (c?.tipos?.[tipoId]?.capas || []).find(q => q.nombre.trim().toLowerCase() === v.toLowerCase()); if (x) { w = x.nombre.trim(); break; } }
+    _cn.may.set(kl, w);
+  }
+  _cn.m.set(k, w); return w;
+}
+const capaN = r => { if (!r) return ""; const c = _cn.v === S._cfgV ? _cn.r.get(r) : undefined; if (c !== undefined) return c; const v = capaVista(r.capa, r.subestructuraId, r.tipoId); _cn.r.set(r, v); return v; };
 
 /* ---------- Panel: perfil por capas y planta ---------- */
 const COLOR = { PT: TOK.gPt, EP: TOK.gEp, EC: TOK.gEc, OB: TOK.gOb };
@@ -3860,19 +3883,26 @@ function suscribirPanel(estId) {
 }
 const natural = (a, b) => String(a).localeCompare(String(b), "es", { numeric: true, sensitivity: "base" });
 const hoyStr = () => new Date().toDateString();
-function filtrarPanel(conFiltros = true, subId = S.panel.subId) {
-  const P = S.panel;
+// Filtros de estado, topógrafo y fecha del Panel: solo resaltan lo que coincide; lo que falta y el % cuentan todo lo liberado
+const hayFiltrosPanel = () => { const P = S.panel; return !!(P.desde || P.hasta || P.st || P.topo || P.hoy); };
+function coincidePanel() {
+  const P = S.panel, hoy = hoyStr();
   const d0 = P.desde ? new Date(P.desde + "T00:00:00").getTime() : null, d1 = P.hasta ? new Date(P.hasta + "T23:59:59").getTime() : null;
-  return S.panelDatos.filter(r => r.estado !== "X" && r.estado !== "RE" && r.actividad === "LIB" && (!subId || r.subestructuraId === subId)).filter(r => {
-    if (!conFiltros) return true;
+  return r => {
     const t = toDate(r.fechaCampo)?.getTime() || 0;
     if (d0 && t < d0) return false; if (d1 && t > d1) return false;
     if (P.st && r.estado !== P.st) return false;
     if (P.topo && claveTopo(r.topografoId) !== P.topo) return false;
-    if (P.hoy && toDate(r.fechaCampo)?.toDateString() !== hoyStr()) return false;
+    if (P.hoy && toDate(r.fechaCampo)?.toDateString() !== hoy) return false;
     return true;
-  });
+  };
 }
+function filtrarPanel(conFiltros = true, subId = S.panel.subId) {
+  const rs = S.panelDatos.filter(r => r.estado !== "X" && r.estado !== "RE" && r.actividad === "LIB" && (!subId || r.subestructuraId === subId));
+  return conFiltros && hayFiltrosPanel() ? rs.filter(coincidePanel()) : rs;
+}
+// Atenuado: lo que no coincide con los filtros se dibuja tenue (sigue siendo tocable y abre su ficha)
+const atenuado = r => !!S.panel._coinc && !S.panel._coinc.has(r.id);
 function pintarPanel() {
   const P = S.panel, lista = subsConDatos();
   P._animado = "";
@@ -3898,6 +3928,7 @@ function pintarPanel() {
 
     </div>
     <div class="fchips" id="pActivos" hidden></div>
+    <p class="pfil-nota" id="pFilNota" hidden></p>
     <h2 class="chart-t${planta ? "" : " solo-pc"}" id="pTit"></h2>
     ${planta ? `<div class="pl-bar"><label class="plsel"><span>Tipo</span><select id="pTipoPl" aria-label="Tipo a mostrar en planta"></select></label><label class="plsel" id="pCapaW"><span>Capa</span><select id="pCapaPl" aria-label="Capa a mostrar en planta"></select></label><div class="pl-top" id="plTop"></div></div>` : ""}
     ${movilP ? `<details class="ley-d"${P._leyAbierta ? " open" : ""}><summary>Leyenda<span class="ley-mini" aria-hidden="true"><i class="falta-i"></i><i class="nolib"></i>${["PT", "EP", "EC", "OB"].map(k => `<i style="background:${fondoLey(k)}"></i>`).join("")}</span></summary>${leyenda}</details>` : leyenda}
@@ -4100,17 +4131,19 @@ function accionCapas(acc) { accionCapasEn(visCapas(), acc); guardarVis(); actual
 
 // Una banda por tipo; si el tipo tiene capas (definidas o registradas), una banda por capa. Orden: de la primera construida a la última.
 function construirBandas(sub, recs) {
-  const porTipo = new Map(); recs.filter(r => r.pkInicio != null).forEach(r => { if (!porTipo.has(r.tipoId)) porTipo.set(r.tipoId, []); porTipo.get(r.tipoId).push(r); });
+  // Por tipo y por capa normalizada («Capa 1», «capa 1» y «Capa 01» son una sola banda)
+  const porTipo = new Map(); recs.forEach(r => { if (r.pkInicio == null) return; let m = porTipo.get(r.tipoId); if (!m) porTipo.set(r.tipoId, m = new Map()); const c = capaN(r); let a = m.get(c); if (!a) m.set(c, a = []); a.push(r); });
   const bandas = [];
   S.listas.tipos.filter(t => t.enGrafico).forEach(t => {
-    const rs = porTipo.get(t.id) || [], cfg = cfgTipo(sub.id, t.id);
-    if (!(rs.length || cfg.capas.length || cfg.noAplica.length || S.panel.todas)) return;
-    const capas = [...new Set([...cfg.capas.map(c => c.nombre.trim()), ...rs.map(r => capaDe(r))].filter(Boolean))].sort(natural);
-    const sinCapa = rs.filter(r => !capaDe(r));
-    if (sinCapa.length || !capas.length) bandas.push({ key: bandaKey(t.id, ""), t, capa: "", nombre: capas.length ? `${t.nombre} · sin capa` : t.nombre, corto: capas.length ? "Sin capa" : t.nombre, rs: sinCapa, na: capas.length ? cfg.noAplica.filter(x => !x.capa) : cfg.noAplica });
+    const m = porTipo.get(t.id) || new Map(), cfg = cfgTipo(sub.id, t.id), cv = c => capaVista(c, sub.id, t.id);
+    if (!(m.size || cfg.capas.length || cfg.noAplica.length || S.panel.todas)) return;
+    const deCfg = new Map(); cfg.capas.forEach(c => { const k = cv(c.nombre); if (k && !deCfg.has(k)) deCfg.set(k, c); });
+    const capas = [...new Set([...deCfg.keys(), ...m.keys()].filter(Boolean))].sort(natural);
+    const sinCapa = m.get("") || [];
+    if (sinCapa.length || !capas.length) bandas.push({ key: bandaKey(t.id, ""), t, capa: "", nombre: capas.length ? `${t.nombre} · sin capa` : t.nombre, corto: capas.length ? "Sin capa" : t.nombre, rs: sinCapa, na: capas.length ? cfg.noAplica.filter(x => !cv(x.capa)) : cfg.noAplica });
     capas.forEach(c => {
-      const cc = cfg.capas.find(x => x.nombre.trim() === c);
-      bandas.push({ key: bandaKey(t.id, c), t, capa: c, oculta: !!(cc && cc.oculta), cota: cc?.cota || "", nombre: `${t.nombre} · ${c}${cc && cc.cota ? ` (cota ${cc.cota})` : ""}`, corto: c + (cc && cc.cota ? ` · ${cc.cota}` : ""), rs: rs.filter(r => capaDe(r) === c), na: cfg.noAplica.filter(x => !x.capa || x.capa === c) });
+      const cc = deCfg.get(c);
+      bandas.push({ key: bandaKey(t.id, c), t, capa: c, oculta: !!(cc && cc.oculta), cota: cc?.cota || "", nombre: `${t.nombre} · ${c}${cc && cc.cota ? ` (cota ${cc.cota})` : ""}`, corto: c + (cc && cc.cota ? ` · ${cc.cota}` : ""), rs: m.get(c) || [], na: cfg.noAplica.filter(x => !cv(x.capa) || cv(x.capa) === c) });
     });
   });
   return bandas;
@@ -4128,45 +4161,54 @@ function actualizarPanel() {
   if (!sub || !$("#chart")) return;
   const planta = P.vista === "planta";
   const est = estDeSub(P.subId);
-  const base = filtrarPanel(false, planta ? "" : P.subId);
+  // «base» es todo lo liberado (sin filtros): de ahí salen los números, las bandas, los huecos y el %.
+  // Los filtros de estado, topógrafo y fecha solo eligen qué se resalta («recs») y qué va en la lista de abajo.
+  const base = filtrarPanel(false, planta ? "" : P.subId), conF = hayFiltrosPanel();
+  const recs = conF ? base.filter(coincidePanel()) : base;
+  P._coinc = conF ? new Set(recs.map(r => r.id)) : null;
   const hoy = base.filter(r => toDate(r.fechaCampo)?.toDateString() === hoyStr()).length;
   const cnt = k => base.filter(r => r.estado === k).length;
-  const pDe = $("#pStatsDe"); if (pDe) pDe.textContent = planta ? `Toda la estructura ${nom(est)} (todos sus frentes)` : `Solo el frente ${sub.nombre}`;
-  $("#pStats").innerHTML = `<div class="stat"><b>${hoy}</b><span>Registradas hoy</span></div><div class="stat PT"><b>${cnt("PT") + cnt("OB")}</b><span>Pendientes${cnt("OB") ? ` (${cnt("OB")} ${cnt("OB") === 1 ? "observada" : "observadas"})` : ""}</span></div><div class="stat EP"><b>${cnt("EP")}</b><span>En proceso</span></div><div class="stat EC"><b>${cnt("EC")}</b><span>Entregadas a Calidad</span></div>`;
-  const recs = filtrarPanel(true, planta ? "" : P.subId);
-  let lst;
+  const pDe = $("#pStatsDe"); if (pDe) pDe.textContent = (planta ? `Toda la estructura ${nom(est)} (todos sus frentes)` : `Solo el frente ${sub.nombre}`) + (conF ? " · sin filtros" : "");
+  $("#pStats").innerHTML = `<div class="stat" title="Con fecha de campo de hoy (no cuenta cuándo se subieron a la app)"><b>${hoy}</b><span>Liberadas hoy en campo</span></div><div class="stat PT"><b>${cnt("PT") + cnt("OB")}</b><span>Pendientes${cnt("OB") ? ` (${cnt("OB")} ${cnt("OB") === 1 ? "observada" : "observadas"})` : ""}</span></div><div class="stat EP"><b>${cnt("EP")}</b><span>En proceso</span></div><div class="stat EC"><b>${cnt("EC")}</b><span>Entregadas a Calidad</span></div>`;
+  let lst, nVis = 0, nCoinc = 0;
   if (planta) {
     const tipos = S.listas.tipos.filter(t => t.enGrafico);
     // Tipos con registros primero (de más a menos); al entrar a una estructura se elige el que más tiene
-    const nT = new Map(); recs.forEach(r => nT.set(r.tipoId, (nT.get(r.tipoId) || 0) + 1));
+    const nT = new Map(); base.forEach(r => nT.set(r.tipoId, (nT.get(r.tipoId) || 0) + 1));
     const conDatos = tipos.filter(t => nT.get(t.id)).sort((a, b) => nT.get(b.id) - nT.get(a.id)), sinDatos = tipos.filter(t => !nT.get(t.id));
     if (P._plIni !== est.id || !P.tipoPl || !tipos.some(t => t.id === P.tipoPl)) { P._plIni = est.id; P.tipoPl = (conDatos[0] || tipos[0] || {}).id || ""; P.capa = ""; P.plVB = null; }
     const opT = t => `<option value="${esc(t.id)}" ${t.id === P.tipoPl ? "selected" : ""}>${esc(t.nombre)}${nT.get(t.id) ? ` (${nT.get(t.id)})` : ""}</option>`;
     $("#pTipoPl").innerHTML = (conDatos.length ? `<optgroup label="Con liberaciones">${conDatos.map(opT).join("")}</optgroup>` : "") + (sinDatos.length ? `<optgroup label="Sin liberaciones">${sinDatos.map(opT).join("")}</optgroup>` : "");
     $("#plTop").innerHTML = conDatos.length > 1 ? `<span>Más liberados:</span>${conDatos.slice(0, 6).map(t => `<button type="button" class="chip" data-pltipo="${esc(t.id)}" aria-pressed="${t.id === P.tipoPl}">${esc(t.nombre)}<span class="c">${nT.get(t.id)}</span></button>`).join("")}` : "";
-    const delTipo = recs.filter(r => r.tipoId === P.tipoPl);
-    const capas = [...new Set([...delTipo.map(r => capaDe(r)), ...(est.subs || []).flatMap(s => cfgTipo(s.id, P.tipoPl).capas.map(c => c.nombre.trim()))].filter(Boolean))].sort(natural);
+    const delTipo = base.filter(r => r.tipoId === P.tipoPl);
+    const capas = [...new Set([...delTipo.map(capaN), ...(est.subs || []).flatMap(s => cfgTipo(s.id, P.tipoPl).capas.map(c => capaVista(c.nombre, s.id, P.tipoPl)))].filter(Boolean))].sort(natural);
     if (P.capa && !capas.includes(P.capa)) P.capa = "";
     $("#pCapaPl").innerHTML = `<option value="">Todas las capas</option>` + capas.map(c => `<option ${c === P.capa ? "selected" : ""}>${esc(c)}</option>`).join("");
     $("#pCapaW").hidden = !capas.length;
     $("#pTit").textContent = `${est.nombre} · ${nom(L.tipo(P.tipoPl))}${P.capa ? " · " + P.capa : ""}`;
-    lst = delTipo.filter(r => !P.capa || capaDe(r) === P.capa);
-    dibujarPlanta(est, lst, !!P.capa || capas.length <= 1);
+    const delCapa = delTipo.filter(r => !P.capa || capaN(r) === P.capa);
+    dibujarPlanta(est, delCapa, !!P.capa || capas.length <= 1);
+    lst = conF ? delCapa.filter(r => P._coinc.has(r.id)) : delCapa;
+    nVis = delCapa.filter(r => r.pkInicio != null).length; nCoinc = lst.filter(r => r.pkInicio != null).length;
     // Un tipo sin liberaciones en esta estructura: se dice y se ofrecen los que sí tienen
-    if (!delTipo.length && $("#chart .plwrap")) $("#chart").insertAdjacentHTML("afterbegin", `<div class="pl-vacio"><b>${esc(nom(L.tipo(P.tipoPl)))} no tiene liberaciones en ${esc(est.nombre)}${resumenFil(filtrosDe()).length ? " con estos filtros" : ""}.</b>${conDatos.length ? `Prueba con: ${conDatos.slice(0, 4).map(t => `<button type="button" class="chip" data-pltipo="${esc(t.id)}">${esc(t.nombre)} <span class="c">${nT.get(t.id)}</span></button>`).join(" ")}` : "Aún no hay liberaciones con progresiva en esta estructura."}</div>`);
+    if (!delTipo.length && $("#chart .plwrap")) $("#chart").insertAdjacentHTML("afterbegin", `<div class="pl-vacio"><b>${esc(nom(L.tipo(P.tipoPl)))} no tiene liberaciones en ${esc(est.nombre)}.</b>${conDatos.length ? `Prueba con: ${conDatos.slice(0, 4).map(t => `<button type="button" class="chip" data-pltipo="${esc(t.id)}">${esc(t.nombre)} <span class="c">${nT.get(t.id)}</span></button>`).join(" ")}` : "Aún no hay liberaciones con progresiva en esta estructura."}</div>`);
     dibujarAvancePlanta(est, delTipo, capas);
   } else {
-    const bandas = construirBandas(sub, recs); P._bandas = bandas;
-    pintarAvisos(sub, recs);
+    const bandas = construirBandas(sub, base); P._bandas = bandas;
+    pintarAvisos(sub, base);
     $("#pTit").textContent = sub.nombre;
     const visibles = bandas.filter(esVisible);
     const ocultasUlt = ultimasPorDefecto() ? bandas.filter(b => !b.oculta && !ultimas5().has(b.key)).length : 0;
     $("#pUlt").innerHTML = ocultasUlt ? `<p class="pult">Últimas 5 capas de cada tipo · <button type="button" class="linkbtn" id="pVerTodas">Ver todas (${bandas.filter(b => !b.oculta).length})</button></p>` : "";
     $("#pVerTodas")?.addEventListener("click", () => accionCapas("todas"));
-    if (P.vista === "lista") { $("#chart").classList.remove("pf-on", "pf-comp"); dibujarLista(sub, recs, visibles, bandas.length); } else dibujarPerfil(sub, recs, visibles, bandas.length);
+    if (P.vista === "lista") { $("#chart").classList.remove("pf-on", "pf-comp"); dibujarLista(sub, base, visibles, bandas.length); } else dibujarPerfil(sub, base, visibles, bandas.length);
     const claves = new Set(visibles.map(b => b.key));
-    lst = recs.filter(r => r.pkInicio == null || claves.has(bandaKey(r.tipoId, capaDe(r))) || claves.has(bandaKey(r.tipoId, "")) && !capaDe(r));
+    lst = recs.filter(r => r.pkInicio == null || claves.has(bandaKey(r.tipoId, capaN(r))));
+    visibles.forEach(b => { nVis += b.rs.length; if (conF) b.rs.forEach(r => { if (P._coinc.has(r.id)) nCoinc++; }); });
   }
+  // Con filtros de estado, topógrafo o fecha: se dice que solo resaltan
+  const fn = $("#pFilNota");
+  if (fn) { fn.hidden = !conF; fn.textContent = conF ? `Con filtros: se resalta lo que coincide (${nCoinc.toLocaleString("es-PE")} de ${nVis.toLocaleString("es-PE")}); lo que falta y el % cuentan todo lo liberado.` : ""; }
   pintarChips();
   lst = lst.slice().sort((a, b) => (toDate(b.fechaCampo)?.getTime() || 0) - (toDate(a.fechaCampo)?.getTime() || 0));
   $("#pListaT").textContent = S.panelCargando ? "Cargando…" : `${lst.length} liberaciones con estos filtros`;
@@ -4242,7 +4284,7 @@ function dibujarPerfil(sub, recs, bandas, totalBandas) {
   const visRecs = bandas.flatMap(b => b.rs);
   // Rango del frente: el que se definió en Ajustes → Lugares; solo si falta, se toma de los registros
   const { x0, x1, fr0, fr1 } = rangoPanel(sub, conPk, visRecs);
-  const fueraFrente = conPk.filter(r => (r.pkFin ?? r.pkInicio) < fr0 || r.pkInicio > fr1).length;
+  const fueraFrente = conPk.filter(r => { const [a, b] = ivDe(r); return b < fr0 || a > fr1; }).length;
   const ocultosTipo = conPk.filter(r => !S.listas.tipos.some(t => t.id === r.tipoId && t.enGrafico)).length;
   const fueraInfo = $("#pFalta");
   if (!bandas.length) {
@@ -4294,7 +4336,7 @@ function dibujarPerfil(sub, recs, bandas, totalBandas) {
     b.rs.slice().sort((p, q) => (toDate(p.fechaCampo)?.getTime() || 0) - (toDate(q.fechaCampo)?.getTime() || 0)).forEach(r => {
       const [ri, rf] = ivDe(r), a = Math.max(x0, ri), e = Math.min(x1, rf); if (e < x0 || a > x1) return;
       const xa = X(a), w = Math.max(4, X(e) - xa), esHoy = toDate(r.fechaCampo)?.toDateString() === hoy;
-      out.push(`<rect class="seg${animar ? " seg-anim" : ""}" data-id="${esc(r.id)}" x="${xa.toFixed(1)}" y="${y + 2}" width="${w.toFixed(1)}" height="${bh - 4}" rx="3" fill="${relleno(r.estado) || COLOR.PT}" stroke="${esHoy ? TOK.ink : "#fff"}" stroke-width="${esHoy ? 1.8 : 1.2}" style="animation-delay:${Math.min(i * 25, 400)}ms"/>`);
+      out.push(`<rect class="seg${animar ? " seg-anim" : ""}${atenuado(r) ? " dimf" : ""}" data-id="${esc(r.id)}" x="${xa.toFixed(1)}" y="${y + 2}" width="${w.toFixed(1)}" height="${bh - 4}" rx="3" fill="${relleno(r.estado) || COLOR.PT}" stroke="${esHoy ? TOK.ink : "#fff"}" stroke-width="${esHoy ? 1.8 : 1.2}" style="animation-delay:${Math.min(i * 25, 400)}ms"/>`);
     });
     // El nombre solo se lee; para ocultar la capa está el ojo a su izquierda
     out.push(`<g class="ojo" data-oculta="${esc(b.key)}" role="button" aria-label="Ocultar ${esc(b.nombre)}"><title>Ocultar esta capa</title><rect x="0" y="${movil ? y0 - 4 : y}" width="${OJO}" height="${movil ? LH + 2 : bh}" fill="transparent"/><g transform="translate(4 ${movil ? y0 + LH / 2 - 9 : y + bh / 2 - 8})"><path d="M1 8s3.2-5.5 9-5.5S19 8 19 8s-3.2 5.5-9 5.5S1 8 1 8z" fill="none" stroke-width="1.6"/><circle cx="10" cy="8" r="2.6" fill="none" stroke-width="1.6"/></g></g>${movil ? `<text class="lab2" x="${OJO + 2}" y="${y0 + LH / 2 + 3}"><title>${esc(b.nombre)}</title>${esc(corta(fp.grupo ? b.corto : b.nombre, Math.floor((W - OJO - 60) / 7.5)))}</text>` : `<text class="lab2" data-banda="${esc(b.key)}" x="${gx0 - 8}" y="${y + bh / 2 + 4}" text-anchor="end"><title>${esc(b.nombre)} · clic derecho: exportar sus liberaciones o verlas en Registros</title>${esc(corta(fp.grupo ? b.corto : b.nombre, 34))}</text>`}`);
@@ -4370,9 +4412,10 @@ function conectarZoomPerfil(box) {
 // Menú de una capa del perfil: exportar todos los datos de sus liberaciones, lo que falta, verlas en Registros u ocultarla
 function menuBanda(key, x, y) {
   const P = S.panel, b = (P._bandas || []).find(q => q.key === key); if (!b) return;
-  const sub = L.sub(P.subId), gs = (P._huecos || []).filter(g => g.key === key), n = b.rs.length;
-  abrirMenu({ titulo: esc(b.nombre), sub: `${esc(sub?.nombre || "")} · ${n} ${n === 1 ? "liberación" : "liberaciones"}`, x, y, items: [
-    { t: `Exportar sus ${n} ${n === 1 ? "liberación" : "liberaciones"} (Excel)`, fn: () => exportarBanda(b) },
+  // Con filtros de estado, topógrafo o fecha se exporta lo que coincide (lo resaltado), como antes
+  const sub = L.sub(P.subId), gs = (P._huecos || []).filter(g => g.key === key), rsE = P._coinc ? b.rs.filter(r => P._coinc.has(r.id)) : b.rs, n = rsE.length;
+  abrirMenu({ titulo: esc(b.nombre), sub: `${esc(sub?.nombre || "")} · ${b.rs.length} ${b.rs.length === 1 ? "liberación" : "liberaciones"}${P._coinc ? ` · ${n} con los filtros` : ""}`, x, y, items: [
+    { t: `Exportar sus ${n} ${n === 1 ? "liberación" : "liberaciones"}${P._coinc ? (n === 1 ? " que coincide" : " que coinciden") + " con los filtros" : ""} (Excel)`, fn: () => exportarBanda(b, rsE) },
     ...(gs.length ? [{ t: `Exportar lo que falta liberar (${gs.length} ${gs.length === 1 ? "tramo" : "tramos"}, Excel)`, fn: () => exportarFaltaBanda(b, gs) }] : []),
     { t: "Ver en Registros", fn: () => verBandaEnRegistros(b) },
     { sep: 1 },
@@ -4380,16 +4423,16 @@ function menuBanda(key, x, y) {
   ] });
 }
 // Todos los datos (las mismas columnas que «Exportar» de Registros): se leen completos de Firebase; sin señal, lo del resumen
-async function exportarBanda(b) {
-  const P = S.panel, ids = new Set(b.rs.map(r => r.id)); if (!ids.size) { toast("Esta capa no tiene liberaciones."); return; }
+async function exportarBanda(b, rs = b.rs) {
+  const P = S.panel, ids = new Set(rs.map(r => r.id)); if (!ids.size) { toast(b.rs.length ? "Ninguna liberación de esta capa coincide con los filtros." : "Esta capa no tiene liberaciones."); return; }
   const nombre = slug(`${L.sub(P.subId)?.nombre || ""}-${b.nombre}`).slice(0, 60);
   toast("Preparando el CSV…");
   try {
     const sn = await getDocs(query(collection(db, "liberaciones"), where("subestructuraId", "==", P.subId), where("tipoId", "==", b.t.id)));
     const regs = sn.docs.map(fila).filter(r => ids.has(r.id)).sort((a, c) => (a.pkInicio ?? 0) - (c.pkInicio ?? 0));
     const de = `${L.sub(P.subId)?.nombre || ""} · ${b.nombre} · desde el Panel (perfil, clic derecho en la capa)`;
-    exportarSel(regs.length ? regs : b.rs, nombre, de);
-  } catch (e) { console.warn("exportar capa", e); exportarSel(b.rs, nombre, `${L.sub(P.subId)?.nombre || ""} · ${b.nombre} · desde el Panel (datos resumidos, sin señal)`, { resumidos: true }); toast("Sin señal: se exportó lo que hay en el panel (datos resumidos).", "bad"); }
+    exportarSel(regs.length ? regs : rs, nombre, de);
+  } catch (e) { console.warn("exportar capa", e); exportarSel(rs, nombre, `${L.sub(P.subId)?.nombre || ""} · ${b.nombre} · desde el Panel (datos resumidos, sin señal)`, { resumidos: true }); toast("Sin señal: se exportó lo que hay en el panel (datos resumidos).", "bad"); }
 }
 function exportarFaltaBanda(b, gs) {
   const sub = L.sub(S.panel.subId), filas = gs.slice().sort((p, q) => p.a - q.a).map(g => ({ frente: sub?.nombre || "", tipo: b.t.nombre, capa: b.capa || "", a: g.a, b: g.b, largo: g.b - g.a }));
@@ -4470,12 +4513,12 @@ function dibujarPlanta(est, recs, conPct = true) {
   subs.forEach(({ s: sb, p }) => out.push(`<path d="${linea(p.map(q => [q[1], q[2]]))}" fill="none" stroke="${sb.id === sel ? TOK.ejeSel : TOK.eje}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`));
   subs.forEach(({ p }) => out.push(`<path d="${linea(p.map(q => [q[1], q[2]]))}" fill="none" stroke="url(#falta)" stroke-width="${sw - 4}" stroke-linecap="round" stroke-linejoin="round"/>`));
   const porSub = new Map(subs.map(x => [x.s.id, x.p]));
-  subs.forEach(({ s: sb, p }) => cfgTipo(sb.id, S.panel.tipoPl).noAplica.filter(x => !S.panel.capa || !x.capa || x.capa === S.panel.capa).forEach(x => {
+  subs.forEach(({ s: sb, p }) => cfgTipo(sb.id, S.panel.tipoPl).noAplica.filter(x => !S.panel.capa || !capaVista(x.capa, sb.id, S.panel.tipoPl) || capaVista(x.capa, sb.id, S.panel.tipoPl) === S.panel.capa).forEach(x => {
     out.push(`<path d="${linea(tramoEje(p, x.pkInicio, x.pkFin))}" fill="none" stroke="${TOK.nolibB}" stroke-width="${sw - 2}" stroke-linecap="butt"><title>No se libera · ${esc(rangoPk(x.pkInicio, x.pkFin))}${x.nota ? " · " + esc(x.nota) : ""}</title></path>`);
   }));
   recs.filter(r => r.pkInicio != null && porSub.has(r.subestructuraId)).sort((a, b) => (toDate(a.fechaCampo)?.getTime() || 0) - (toDate(b.fechaCampo)?.getTime() || 0)).forEach(r => {
     const p = porSub.get(r.subestructuraId), [a, f] = ivDe(r), b = Math.max(f, a + 0.5);
-    out.push(`<path class="tramo" data-id="${esc(r.id)}" d="${linea(tramoEje(p, a, b))}" fill="none" stroke="${relleno(r.estado)}" stroke-width="${sw - 2}" stroke-linecap="butt" stroke-linejoin="round"/>`);
+    out.push(`<path class="tramo"${atenuado(r) ? ' data-dim="1"' : ""} data-id="${esc(r.id)}" d="${linea(tramoEje(p, a, b))}" fill="none" stroke="${relleno(r.estado)}" stroke-width="${sw - 2}" stroke-linecap="butt" stroke-linejoin="round"/>`);
   });
   // progresivas y nombres
   subs.forEach(({ s: sb, p }) => {
@@ -4487,7 +4530,7 @@ function dibujarPlanta(est, recs, conPct = true) {
     let pctTxt = "";
     if (conPct) {
       const f0 = sb.pkMin ?? a, f1 = sb.pkMax ?? b;
-      const naIv = cfgTipo(sb.id, S.panel.tipoPl).noAplica.filter(x => !S.panel.capa || !x.capa || x.capa === S.panel.capa).map(x => [x.pkInicio, x.pkFin]);
+      const naIv = cfgTipo(sb.id, S.panel.tipoPl).noAplica.filter(x => !S.panel.capa || !capaVista(x.capa, sb.id, S.panel.tipoPl) || capaVista(x.capa, sb.id, S.panel.tipoPl) === S.panel.capa).map(x => [x.pkInicio, x.pkFin]);
       if (f1 > f0) pctTxt = ` · ${avance(recs.filter(r => r.subestructuraId === sb.id && r.pkInicio != null).map(ivDe), naIv, f0, f1).pct}%`;
     }
     out.push(`<text class="lab-pl" x="${x}" y="${(+y + sw + 12).toFixed(1)}" text-anchor="middle">${esc(sb.nombre)}${pctTxt}</text>`);
@@ -4513,11 +4556,11 @@ function dibujarAvancePlanta(est, delTipo, capas) {
   const rgs = new Map(subs.map(sb => [sb.id, rango(sb)]));
   const celda = (sb, capa) => {
     const rg = rgs.get(sb.id); if (!rg) return null;
-    const rs = delTipo.filter(r => r.subestructuraId === sb.id && r.pkInicio != null && (!capas.length || capaDe(r) === capa));
-    const na = cfgTipo(sb.id, P.tipoPl).noAplica.filter(x => !capas.length || !x.capa || x.capa === capa).map(x => [x.pkInicio, x.pkFin]);
-    const a = avance(rs.map(ivDe), na, rg[0], rg[1]); return { ...a, n: rs.length };
+    const rs = delTipo.filter(r => r.subestructuraId === sb.id && r.pkInicio != null && (!capas.length || capaN(r) === capa));
+    const na = cfgTipo(sb.id, P.tipoPl).noAplica.filter(x => !capas.length || !capaVista(x.capa, sb.id, P.tipoPl) || capaVista(x.capa, sb.id, P.tipoPl) === capa).map(x => [x.pkInicio, x.pkFin]);
+    const iv = rs.map(ivDe), a = avance(iv, na, rg[0], rg[1]); return { ...a, n: rs.length, h: huecos([...iv, ...na], rg[0], rg[1]).length };
   };
-  const conFilas = filasC.map(c => { const cs = subs.map(sb => celda(sb, c)), lib = cs.reduce((t, x) => t + (x?.lib || 0), 0), base = cs.reduce((t, x) => t + (x?.base || 0), 0), n = cs.reduce((t, x) => t + (x?.n || 0), 0); return { c, cs, lib, base, n, pct: base > 0 ? Math.round(lib / base * 100) : null }; });
+  const conFilas = filasC.map(c => { const cs = subs.map(sb => celda(sb, c)), lib = cs.reduce((t, x) => t + (x?.lib || 0), 0), base = cs.reduce((t, x) => t + (x?.base || 0), 0), n = cs.reduce((t, x) => t + (x?.n || 0), 0); let pct = base > 0 ? Math.min(100, Math.round(lib / base * 100)) : null; if (pct === 100 && cs.some(x => x && x.h)) pct = 99; return { c, cs, lib, base, n, pct }; }); // como en cada celda: no dice 100 % si queda un hueco
   const lim = P.plTodas ? conFilas.length : 12, vis = conFilas.slice(0, lim);
   const td = x => x == null ? '<td class="c-no" title="Sin rango de PK ni eje">—</td>' : `<td class="c-pct" style="--p:${Math.min(100, x.pct)}%" title="${mts(x.lib)} de ${mts(x.base)} · ${x.n} ${x.n === 1 ? "liberación" : "liberaciones"}">${x.pct}%</td>`;
   box.innerHTML = `<div class="plav"><h3>Avance de ${esc(nom(L.tipo(P.tipoPl)))} <span>% liberado de cada ${capas.length ? "capa" : "frente"} en cada frente, sin contar lo que no se libera${capas.length ? " · toca una capa para verla en la planta" : ""}</span></h3>
@@ -6760,7 +6803,7 @@ function excelRegistros(regs, que, de) {
   const ini = cab.filas.length + 1, fin = ini + regs.length;
   const hoja1 = { nombre: "Liberaciones", filas, anchos: cols.map(c => c[1]), unir: cab.unir, altos: [...cab.altos, 30], fijar: [2, ini], filtro: `A${ini}:${xlCol(n - 1)}${fin}` };
   // Resumen: por estado y por frente · tipo · capa
-  const g = new Map(); regs.forEach(r => { const k = [nom(L.sub(r.subestructuraId)) || "", nom(L.tipo(r.tipoId)) || nom(L.act(r.actividad), r.actividad), capaDe(r)].join("|"); const x = g.get(k) || g.set(k, { n: 0, m: 0, a: Infinity, b: -Infinity, u: null }).get(k); x.n++; x.m += largo(r) || 0; if (r.pkInicio != null) { x.a = Math.min(x.a, r.pkInicio); x.b = Math.max(x.b, r.pkFin ?? r.pkInicio); } const f = toDate(r.fechaCampo); if (f && (!x.u || f > x.u)) x.u = f; });
+  const g = new Map(); regs.forEach(r => { const k = [nom(L.sub(r.subestructuraId)) || "", nom(L.tipo(r.tipoId)) || nom(L.act(r.actividad), r.actividad), capaN(r)].join("|"); const x = g.get(k) || g.set(k, { n: 0, m: 0, a: Infinity, b: -Infinity, u: null }).get(k); x.n++; x.m += largo(r) || 0; if (r.pkInicio != null) { x.a = Math.min(x.a, r.pkInicio); x.b = Math.max(x.b, r.pkFin ?? r.pkInicio); } const f = toDate(r.fechaCampo); if (f && (!x.u || f > x.u)) x.u = f; });
   const cab2 = xlCabecera(est, 7, "Resumen", de, resumen), sT = est({ b: 1, sz: 11, c: C.oscuro }), sTot = est({ b: 1, bd: C.linea, bt: "medium", btc: C.marca, bg: C.suave }), sTotN = est({ b: 1, bd: C.linea, bt: "medium", btc: C.marca, bg: C.suave, nf: "#,##0.00" });
   const porEst = ["EC", "EP", "PT", "OB", "RE", "NA"].filter(k => cuenta[k]).map((k, i) => [{ v: ESTADOS[k], s: est({ b: 1, bg: C[k][0], c: C[k][1], bd: C.linea }) }, { v: cuenta[k], s: base(i % 2) }, { v: Math.round(regs.filter(r => r.estado === k).reduce((t, r) => t + (largo(r) || 0), 0) * 100) / 100, s: base(i % 2, { nf: "#,##0.00" }) }]);
   const porG = [...g.entries()].sort((a, b) => natural(a[0], b[0])).map(([k, x], i) => { const [fr, t, c] = k.split("|"); return [{ v: fr, s: base(i % 2) }, { v: t, s: base(i % 2) }, { v: c, s: base(i % 2) }, { v: x.n, s: base(i % 2, { h: "center" }) }, { v: Math.round(x.m * 100) / 100, s: base(i % 2, { nf: "#,##0.00" }) }, { v: isFinite(x.a) ? `${fmtPk(x.a)} a ${fmtPk(x.b)}` : "", s: base(i % 2, { mono: 1 }) }, { v: x.u, s: base(i % 2, { nf: "dd/mm/yyyy", h: "center" }) }]; });
@@ -6840,7 +6883,7 @@ function ajExportar() {
         nombre = `registros_${desde}_${hasta}.csv`;
       } else {
         const g = new Map();
-        const k = (f, r) => `${f}|${r.subestructuraId}|${r.tipoId}|${capaDe(r)}`;
+        const k = (f, r) => `${f}|${r.subestructuraId}|${r.tipoId}|${capaN(r)}`;
         const get = (f, r) => { const key = k(f, r); if (!g.has(key)) g.set(key, { f, r, reg: 0, m: 0, gen: 0, ent: 0, pend: 0, rech: 0 }); return g.get(key); };
         regs.filter(r => r.actividad === "LIB").forEach(r => {
           const fc = fISO(r.fechaCampo); if (fc && r.estado === "RE") { get(fc, r).rech++; return; }
@@ -6848,8 +6891,8 @@ function ajExportar() {
           const fl = fISO(r.fechaLiberacion); if (fl && r.numero) get(fl, r).gen++;
           const fe = fISO(r.fechaEntrega); if (fe && r.estado === "EC") get(fe, r).ent++;
         });
-        const filas = [...g.values()].sort((a, b) => b.f.localeCompare(a.f) || natural(nom(L.sub(a.r.subestructuraId)), nom(L.sub(b.r.subestructuraId))) || natural(nom(L.tipo(a.r.tipoId)), nom(L.tipo(b.r.tipoId))) || natural(a.r.capa || "", b.r.capa || ""));
-        lineas = [["Fecha", "Estructura", "Sub-Estructura", "Tipo de Liberacion", "Capa", "Registradas en campo", "Metros registrados", "Codigos generados", "Entregadas a Calidad", "Pendientes de ese dia", "Rechazadas"], ...filas.map(o => [o.f, nom(L.est(o.r.estructuraId)), nom(L.sub(o.r.subestructuraId)), nom(L.tipo(o.r.tipoId)), (o.r.capa || "").trim(), o.reg, Math.round(o.m * 10) / 10, o.gen, o.ent, o.pend, o.rech])];
+        const filas = [...g.values()].sort((a, b) => b.f.localeCompare(a.f) || natural(nom(L.sub(a.r.subestructuraId)), nom(L.sub(b.r.subestructuraId))) || natural(nom(L.tipo(a.r.tipoId)), nom(L.tipo(b.r.tipoId))) || natural(capaN(a.r), capaN(b.r)));
+        lineas = [["Fecha", "Estructura", "Sub-Estructura", "Tipo de Liberacion", "Capa", "Registradas en campo", "Metros registrados", "Codigos generados", "Entregadas a Calidad", "Pendientes de ese dia", "Rechazadas"], ...filas.map(o => [o.f, nom(L.est(o.r.estructuraId)), nom(L.sub(o.r.subestructuraId)), nom(L.tipo(o.r.tipoId)), capaN(o.r), o.reg, Math.round(o.m * 10) / 10, o.gen, o.ent, o.pend, o.rech])];
         nombre = `avance_diario_${desde}_${hasta}.csv`;
       }
       descargar(nombre, "﻿" + lineas.map(csvLinea).join("\r\n"), "text/csv;charset=utf-8");
@@ -7224,7 +7267,7 @@ function ajCapas() {
     <div class="nrow" style="border-top:0"><select id="nCapa" aria-label="Capa">${optCapa("")}</select><input id="nPki" class="mono" inputmode="decimal" placeholder="PK inicio" aria-label="PK inicio"><input id="nPkf" class="mono" inputmode="decimal" placeholder="PK final" aria-label="PK final"><input id="nCota" inputmode="decimal" placeholder="Cota" aria-label="Cota"><input id="nNota" placeholder="Motivo (opcional)" aria-label="Motivo"><button type="button" class="mini ok-btn" id="nAdd">Marcar</button></div>
   </div>`;
   const guardar = (msg = "Guardado") => {
-    S.capasCfg[A.capSub] = clon(doc0);
+    S.capasCfg[A.capSub] = clon(doc0); S._cfgV = (S._cfgV || 0) + 1;
     setDoc(doc(db, "capas", A.capSub), { tipos: clon(doc0.tipos), editadoEn: serverTimestamp(), editadoPor: S.email })
       .catch(e => toast("No se guardó: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"));
     toast(navigator.onLine ? msg : msg + " en el teléfono; se subirá con señal.");

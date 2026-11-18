@@ -11,6 +11,16 @@ Registro de liberaciones topográficas de la presa de relaves: los topógrafos r
 
 Incluye: acceso con Google y roles (operario, topógrafo, gabinete, jefe, administrador), registro en campo sin señal con CSV y fotos, bandeja de gabinete con código SKT-TOP único, panel («Qué falta», perfil por capas y planta) que lee un resumen por frente, modelo 2D para gabinete (eje y secciones de Civil 3D en LandXML más la superficie de cada liberación), confirmación antes de las acciones importantes, rechazo con motivo, papelera, «no se libera» rápido desde el panel, versión de computadora con menú lateral, buscador Ctrl+K, clic derecho y acciones en grupo, ajustes, depuración de fotos de entregados antiguos (Ajustes → Archivos), aviso de tramos superpuestos, avance por capa en planta real con XML base y porcentaje por área, corrección de entregados con motivo, exportación a CSV y app instalable con logo.
 
+## Versión 41: el Panel ya no muestra datos falsos
+
+No cambia las reglas de Firebase ni los datos guardados.
+
+- **La misma capa escrita distinto** («Capa 1», «capa 1», «Capa 01») cuenta como una sola en Perfil, Qué falta, Planta, tabla de avance, filtros de capa de Registros y Bandeja, hoja «Resumen» del Excel, CSV de avance diario y el aviso de superposición al guardar.
+- **Con filtros de estado, topógrafo o fecha**, lo que falta y el % cuentan siempre todo lo liberado del frente; el filtro solo resalta lo que coincide (lo demás sale tenue y se puede tocar) y una nota lo dice. Ya no se ofrece «Registrar este tramo» sobre algo liberado.
+- Los números de arriba dicen «· sin filtros» cuando hay filtros; «Registradas hoy» pasa a «Liberadas hoy en campo».
+- En «Qué falta», un tramo con el PK al revés se dibuja completo. El total de la tabla de avance de Planta no dice 100 % si queda algún hueco.
+- Un PK como 999,996 se escribe «1+000» (antes «0+1000»).
+
 ## Versión 40: los registros antiguos del buscador se pueden trabajar
 
 No cambia las reglas de Firebase. **Después de publicar, el administrador pulsa una vez «Reconstruir resumen»** (Ajustes → Histórico) para que los levantamientos y aspas antiguos muestren «Por ver», «Enterado», «Por procesar» o «Procesado» en la lista.
