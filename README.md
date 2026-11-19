@@ -21,6 +21,27 @@ Desde el 18/11/2026 la versión lleva tres números, **grande.mediano.mínimo** 
 
 `VERSION_APP` en `index.html` y `CACHE` en `sw.js` (`liberaciones-v1.43.1`) suben juntos; `pruebas/prueba12.js` espera el nombre de la caché.
 
+## Versión 1.45.0: menos lecturas de Firebase y datos que no se pisan
+
+Cambio mediano: algunas cosas se notan. No cambia las reglas de Firebase.
+
+**Lo que se nota**
+
+- **Ajustes pide señal**: sin señal ya no se cambian listas (tipos, elementos, equipos, lugares, topógrafos, protocolos) ni capas, ni se marca «tramo que no se libera». Avisa «Se necesita señal…» y no deja nada en cola. El formulario de campo y la Bandeja siguen funcionando sin señal igual que antes.
+- **«Procesadas» y «Enterados»** de la Bandeja se cargan al abrirlas, de a 200 con «Ver más»; el buscador ahí busca en lo cargado. «En proceso» escucha hasta 300 y ofrece «Ver más».
+- **«Cargar registros más antiguos»** trae cada página una sola vez; esas páginas no se actualizan en vivo (la ficha sí se lee al día).
+- **Aviso nuevo al entrar, en un caso raro**: «Un registro no está en el servidor», si algo guardado sin señal fue rechazado por Firebase con la app cerrada; se puede recuperar en «Nueva» (con sus adjuntos) o descartar.
+- **Versión mínima**: `config/general.versionMin` (opcional) hace que las versiones anteriores se recarguen; no recarga con un formulario a medio llenar, una importación en curso, la Bandeja con registros marcados o un campo a medio escribir.
+
+**Por dentro**
+
+- **Lecturas**: aspas y levantamientos se escuchan solo «por hacer»; las escuchas del Panel, la Papelera y el filtro por fechas se sueltan al salir de su pantalla (45 s de margen); «hay modelo» pasa a una lectura cada 10 min; la configuración se escucha en vivo. Una sesión de gabinete con 10.000 registros baja de unos 4.800 documentos a 1.600; la de un jefe, de 4.100 a 900 (medido con el Firebase falso).
+- **Levantamientos y aspas nacen con `visto:false` / `procesado:false`.** Los antiguos sin ese dato se siguen viendo como pendientes y los equipos de gabinete y jefe se lo ponen una vez, siempre releyendo del servidor (nunca con datos de la caché ni si ya está «Enterado» o «Procesado»).
+- **Listas de Ajustes** guardadas con transacción: conserva lo que campo u otra sesión agregó mientras tanto. Cambiar la clave de un topógrafo guarda primero la lista y, si se corta, dice qué falta y ofrece «Reintentar».
+- **«Reconstruir resumen»** repasa al terminar lo que cambió mientras corría.
+- **Lo guardado sin confirmar** se copia en el teléfono (con adjuntos) hasta que Firebase lo confirma.
+- **Pruebas**: `PUERTO` en todas, tiempo por prueba en `correr-paralelo.js`, las 47, 48, 50 y 52 corren sus bloques de a 4 (`PARALELO=1` en serie); la tanda completa baja de 31 min a unos 5. Pruebas 55 a 58 nuevas.
+
 ## Versión 1.44.2: más rápida, sobre todo el Panel en celular
 
 Cambio mínimo: no cambia lo que la app hace ni cómo se ve (salida comparada antes y después con 3.000 y 10.000 registros, 0 diferencias). No cambia las reglas de Firebase.
