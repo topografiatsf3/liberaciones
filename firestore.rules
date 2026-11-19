@@ -53,16 +53,45 @@ service cloud.firestore {
         && request.resource.data.items.hasAll(resource.data.items)
         && request.resource.data.items[n].creadoPor == email();
     }
-    // Gabinete no edita lo que viene de campo: acepta, observa, rechaza, entrega y pone o corrige la capa
+    // Gabinete no edita lo que viene de campo: acepta, observa, rechaza, entrega y pone o corrige la capa.
+    // Tampoco toca quién lo registró (creadoNombre), los datos de una importación (lote, importadoEn)
+    // ni el «Procesado» de las aspas (eso lo marcan el jefe de área y el administrador).
     function sinTocarCampo() { return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
       'actividad', 'fechaCampo', 'topografoId', 'equipo', 'estructuraId', 'subestructuraId', 'elementoId', 'tipoId',
       'pkInicio', 'pkFin', 'cota', 'area', 'descripcion', 'observaciones', 'linksCsv', 'linksFotos', 'archivos',
-      'detalle', 'creadoPor', 'creadoEn', 'origen']); }
+      'detalle', 'creadoPor', 'creadoEn', 'origen',
+      'creadoNombre', 'lote', 'importadoEn', 'procesado', 'procesadoPor', 'procesadoNombre', 'procesadoEn']); }
     function tocaPapelera() { return request.resource.data.diff(resource.data).affectedKeys().hasAny(['borrado']); }
-    // Entregar a Calidad exige el XML de la superficie (con el mismo código; la app lo revisa al subirlo)
+    // Entregar a Calidad exige el XML de la superficie (con el mismo código; la app lo revisa al subirlo).
+    // El primero de la lista tiene que ser como los que arma la app: nombre del archivo y código de la superficie
+    // y, si el registro tiene frente, la superficie guardada en el Modelo 2D (supId). Una lista inventada ([{}], ["x"]) no sirve.
     function entregaConXml() {
+      let x = request.resource.data.get('xmlEntrega', []);
       return request.resource.data.get('estado', '') != 'EC' || resource.data.get('estado', '') == 'EC'
-        || (request.resource.data.get('xmlEntrega', []) is list && request.resource.data.get('xmlEntrega', []).size() > 0);
+        || (x is list && x.size() > 0 && x[0] is map
+            && x[0].get('archivo', '') is string && x[0].get('archivo', '') != ''
+            && x[0].get('codigo', '') is string && x[0].get('codigo', '') != ''
+            && (resource.data.get('subestructuraId', '') == ''
+                || (x[0].get('supId', '') is string && x[0].get('supId', '') != '')));
+    }
+    // Gabinete: solo los pasos de estado que ofrece la app. Si su pantalla tenía una copia vieja (otra persona ya
+    // movió el registro), la escritura se rechaza y no pisa lo del otro.
+    //   aceptar (código nuevo o re-aceptar con el suyo): pendiente u observado → en proceso, siempre con código
+    //   observar: pendiente o en proceso → observado
+    //   rechazar: pendiente u observado → rechazado
+    //   entregar a Calidad: en proceso → entregado
+    //   devolver a pendientes: observado, en proceso o rechazado → pendiente
+    //   «Deshacer» de devolver: pendiente → observado, en proceso (con su código) o rechazado (ya están arriba)
+    //   sin cambiar el estado: capa, carpeta, «Enterado», papelera y restaurar
+    function pasoDeEstado() {
+      let de = resource.data.get('estado', '');
+      let a = request.resource.data.get('estado', '');
+      return a == de
+        || (a == 'EP' && de in ['PT', 'OB'] && request.resource.data.get('numero', '') != '')
+        || (a == 'OB' && de in ['PT', 'EP'])
+        || (a == 'RE' && de in ['PT', 'OB'])
+        || (a == 'EC' && de == 'EP')
+        || (a == 'PT' && de in ['OB', 'EP', 'RE']);
     }
     // Código SKT-TOP único: una vez puesto, el número (y los protocolos con sus números) no cambia.
     // Un número nuevo solo vale si en la misma transacción el correlativo sube y el número termina en «último + 1»
@@ -85,7 +114,8 @@ service cloud.firestore {
     // El jefe de área administra cuentas, pero no la suya (no se sube de rol ni se desactiva)
     // ni la de un administrador, y no puede crear administradores.
     match /usuarios/{correo} {
-      allow read: if signedIn() && (email() == correo || member());
+      // Cada cuenta lee solo su perfil; la lista completa (correos, roles, claves) solo jefe y administrador (Ajustes → Usuarios)
+      allow read: if signedIn() && (email() == correo || isConf());
       allow create, update: if isConf()
         && (correo != 'brandonkluivertvillegasfranco@gmail.com' || isOwner())
         && (isAdmin() || (correo != email()
@@ -96,11 +126,18 @@ service cloud.firestore {
         && (isAdmin() || (correo != email() && resource.data.get('rol', '') != 'admin'));
     }
 
-    // Pedidos de acceso de cuentas nuevas
+    // Pedidos de acceso de cuentas nuevas: la app solo escribe el correo propio, el nombre de la cuenta de Google y la fecha
+    function solicitudValida() {
+      return request.resource.data.email == email()
+        && request.resource.data.get('nombre', '') is string && request.resource.data.get('nombre', '').size() <= 200;
+    }
     match /solicitudes/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isConf());
-      allow create, update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.email == email();
+      allow create: if signedIn() && request.auth.uid == uid && solicitudValida()
+        && request.resource.data.keys().hasOnly(['email', 'nombre', 'fecha']);
+      // Al volver a entrar se reescribe con merge: solo pueden cambiar esos tres campos
+      allow update: if signedIn() && request.auth.uid == uid && solicitudValida()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'nombre', 'fecha']);
       allow delete: if signedIn() && (request.auth.uid == uid || isConf());
     }
 
@@ -159,7 +196,7 @@ service cloud.firestore {
       // papelera si aún no tiene código. Jefe también puede depurar fotos (solo la lista de archivos)
       // marcar como procesados los levantamientos de aspas, marcar «Enterado» en los levantamientos y unir tipos o elementos repetidos.
       allow update: if isAdmin()
-        || (hasRol(['gabinete']) && sinTocarCampo() && numeroFijo() && entregaConXml() && (!tocaPapelera() || resource.data.get('numero', '') == ''))
+        || (hasRol(['gabinete']) && sinTocarCampo() && numeroFijo() && entregaConXml() && pasoDeEstado() && (!tocaPapelera() || resource.data.get('numero', '') == ''))
         || (isConf() && ((resource.data.get('origen', '') == 'excel' && request.resource.data.get('origen', '') == 'excel') || soloPapelera() || soloArchivos() || soloProcesado() || soloVisto() || soloTipo() || soloTopo() || soloCapa() || soloEstructura()))
         || (writer()
           && resource.data.creadoPor == email()
@@ -169,10 +206,14 @@ service cloud.firestore {
         || (writer()
           && resource.data.creadoPor == email()
           && resource.data.estado in ['PT', 'OB', 'NA']
-          && request.resource.data.estado in ['PT', 'NA']
+          // Al guardar la edición, lo de campo vuelve a pendiente (o queda sin código); gabinete, en un observado
+          // que registró él mismo, lo deja observado (así lo guarda la app: no se marca «Corregido» a sí mismo)
+          && (request.resource.data.estado in ['PT', 'NA']
+              || (hasRol(['gabinete']) && resource.data.estado == 'OB' && request.resource.data.estado == 'OB'))
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
                'numero', 'protocolos', 'nombreLiberacion', 'generadoPor', 'fechaLiberacion', 'fechaEntrega',
                'numeroCargo', 'carpeta', 'xmlEntrega', 'notaObservacion', 'notaRechazo', 'motivoEdicion', 'creadoPor', 'creadoEn', 'origen',
+               'creadoNombre', 'lote', 'importadoEn',
                'borrado', 'borradoPor', 'borradoNombre', 'borradoEn',
                'procesado', 'procesadoPor', 'procesadoNombre', 'procesadoEn',
                'visto', 'vistoPor', 'vistoNombre', 'vistoEn']));
