@@ -1,7 +1,7 @@
 // Modelo 2D de gabinete: XML de un eje inventado con secciones + superficie de una liberación inventada
 const { chromium, devices } = require('playwright'); const path = require('path'), fs = require('fs');
 const OUT = path.join(__dirname, 'capturas', 'prueba8'); fs.mkdirSync(OUT, { recursive: true });
-const URL = 'http://127.0.0.1:8765/';
+const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const EJE = path.join(__dirname, 'datos', 'eje-prueba.xml');
 const LIB = path.join(__dirname, 'datos', 'liberacion-prueba.xml');
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };

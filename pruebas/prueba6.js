@@ -1,5 +1,5 @@
 const { chromium, devices } = require('playwright'); const path = require('path'), fs = require('fs');
-const URL = 'http://127.0.0.1:8765/';
+const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const JEFE = { uid: 'j1', email: 'jefe@gmail.com', displayName: 'Jefe Prueba' };
 const NUEVO = { uid: 'n1', email: 'nuevo@gmail.com', displayName: 'Topógrafo Nuevo' };

@@ -84,7 +84,7 @@ const escuchar = (p, n) => { p.on('pageerror', e => { errores.push(n + ': ' + e.
 
   // 5. En la dirección de pruebas (o la nueva) no aparece ningún aviso
   [ctx, p] = await nuevo();
-  await p.goto('http://127.0.0.1:8765/'); await p.evaluate(u => { localStorage.clear(); localStorage.setItem('__fakeUser', JSON.stringify(u)); }, ADMIN);
+  await p.goto('http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/'); await p.evaluate(u => { localStorage.clear(); localStorage.setItem('__fakeUser', JSON.stringify(u)); }, ADMIN);
   await p.reload(); await p.waitForSelector('#nav button'); await p.waitForTimeout(2000);
   ok(!(await p.$('#mudanza')) && !(await p.$('.dlg.on')), 'fuera de la dirección vieja no hay aviso de mudanza');
   await ctx.close();

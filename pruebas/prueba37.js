@@ -6,7 +6,7 @@ const { chromium, devices } = require('playwright');
 const path = require('path'), fs = require('fs'), os = require('os');
 const FAKE = path.join(__dirname, 'fake');
 const OUT = path.join(__dirname, 'capturas', 'prueba37'); fs.mkdirSync(OUT, { recursive: true });
-const URL = 'http://127.0.0.1:8765/';
+const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const XLSX = path.join(__dirname, 'datos', 'excel-prueba.xlsx');
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const errores = [];

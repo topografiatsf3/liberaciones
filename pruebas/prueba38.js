@@ -3,7 +3,7 @@
 // pantalla completa con divisor y teclado.
 const { chromium, devices } = require('playwright'); const path = require('path'), fs = require('fs');
 const OUT = path.join(__dirname, 'capturas', 'prueba38'); fs.mkdirSync(OUT, { recursive: true });
-const URL = 'http://127.0.0.1:8765/';
+const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const D = f => path.join(__dirname, 'datos', f);
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const errores = [];

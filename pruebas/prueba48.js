@@ -2,14 +2,19 @@
 // Datos que lo provocan: un tipo de 87 caracteres, un frente de 84, un correo largo, registros sin código, capas y tramos que no se liberan.
 // Todo se mide (getBoundingClientRect, scrollWidth, elementFromPoint, contraste calculado); las capturas son para mirar.
 // Para ver las mediciones con una versión anterior: ANTES=ruta\index.html node pruebas\prueba48.js
+// Rápida: los bloques corren de a PARALELO (4 por defecto; PARALELO=1 los corre uno por uno, como antes) y cada bloque imprime su resultado
+// junto al terminar; las esperas de «que se termine de dibujar» son esperas a que la página quede quieta (ayuda.js), no tiempos fijos.
 const { chromium } = require('playwright'); const path = require('path'), fs = require('fs');
+const { quieto } = require('./ayuda'); const { AsyncLocalStorage } = require('async_hooks'); const bloque = new AsyncLocalStorage();
+const log = (...a) => { const b = bloque.getStore(); if (b) b.push(a.join(' ')); else console.log(...a); };
+const esp = (p, ms) => quieto(p, Math.max(80, Math.round(ms * 0.35)));  // sustituye a waitForTimeout(ms): espera a que la pantalla quede quieta
 const OUT = path.join(__dirname, 'capturas', process.env.ANTES ? 'prueba48-antes' : 'prueba48'); fs.mkdirSync(OUT, { recursive: true });
 const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const OPER = { uid: 'o1', email: 'operario@gmail.com', displayName: 'Pedro Operario' };
 const LARGO = 'carolina.fernanda.maria.de.los.angeles.villanueva.rodriguez.huamanquispe@empresa-contratista-minera.com.pe';
 const errores = [];
-const ok = (c, m) => { if (!c) { console.log('FALLA:', m); process.exitCode = 1; } else console.log('ok  -', m); return !!c; };
+const ok = (c, m) => { if (!c) { log('FALLA:', m); process.exitCode = 1; } else log('ok  -', m); return !!c; };
 const ahora = Date.now(), hora = 36e5, min = 6e4;
 const TIPO87 = 'Relleno de filtro 1 con material seleccionado y compactado por capas en la zona del vaso oeste';
 const FRENTE84 = 'Presa Principal Oeste, frente de relleno de filtros y transiciones aguas abajo del eje';
@@ -52,10 +57,10 @@ async function abrir(b, v, u, extra) {
   p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts|net::|Failed to load resource/.test(m.text())) { errores.push(m.text()); console.log('CONSOLE', m.text()); } });
   await p.goto(URL);
   await p.evaluate(([d, u]) => { localStorage.clear(); localStorage.setItem('__fakeDB', JSON.stringify(d)); localStorage.setItem('__fakeUser', JSON.stringify(u)); localStorage.setItem('lib.panelSub', JSON.stringify('pp-oeste')); }, [{ ...DB, ...(extra || {}) }, u]);
-  await p.reload(); await p.waitForSelector('#nav button'); await p.waitForTimeout(700);
+  await p.reload(); await p.waitForSelector('#nav button'); await esp(p, 700);
   return { ctx, p };
 }
-const ir = async (p, v) => { await p.evaluate(v => { const b = document.querySelector(`#nav [data-v="${v}"]`) || document.querySelector(`[data-v="${v}"]`); b.click(); }, v); await p.waitForTimeout(500); };
+const ir = async (p, v) => { await p.evaluate(v => { const b = document.querySelector(`#nav [data-v="${v}"]`) || document.querySelector(`[data-v="${v}"]`); b.click(); }, v); await esp(p, 500); };
 const lado = p => p.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth }));
 const sinLado = async (p, donde) => { const l = await lado(p); ok(l.sw <= l.iw + 1, `${donde}: la página no se desplaza de lado (scrollWidth ${l.sw}, ancho ${l.iw})`); return l; };
 const caja = (p, sel) => p.$eval(sel, e => { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, r: r.right, b: r.bottom }; }).catch(() => null);
@@ -81,8 +86,8 @@ const contraste = (p, sel, i = 0) => p.evaluate(([sel, i]) => {
 async function x1(b) {
   for (const v of [{ n: 'celular 375', w: 375, h: 700, tactil: true }, { n: 'celular 360', w: 360, h: 640, tactil: true }, { n: 'PC 1366 (ya estaba bien)', w: 1366, h: 768 }]) {
     const { ctx, p } = await abrir(b, v, OPER);
-    await ir(p, 'nueva'); await p.waitForSelector('#fLib:not([hidden])'); await p.waitForTimeout(500);
-    if (await p.$('#tCambiar')) { await p.click('#tCambiar'); await p.waitForTimeout(200); }
+    await ir(p, 'nueva'); await p.waitForSelector('#fLib:not([hidden])'); await esp(p, 500);
+    if (await p.$('#tCambiar')) { await p.click('#tCambiar'); await esp(p, 200); }
     await esperar(p, () => document.querySelector('#tSel .tsel-chips .chip'));
     const chip = await caja(p, '#tSel .tsel-chips .chip'), caj = await caja(p, '#tSel');
     ok(chip && caj && chip.r <= caj.r + 1 && chip.x >= caj.x - 1 && caj.r <= v.w + 1, `X1 ${v.n}: el botón del tipo de 87 caracteres cabe en su caja y en la pantalla de ${v.w} px (${bf(chip)} en caja ${bf(caj)})`);
@@ -91,7 +96,7 @@ async function x1(b) {
     ok(!fu.length, `X1 ${v.n}: nada del formulario supera el ancho de la pantalla${fu.length ? ' · ' + fu.slice(0, 4).join(', ') : ''}`);
     await sinLado(p, `X1 ${v.n}`);
     await p.screenshot({ path: `${OUT}/x1-nueva-${v.w}.png` });
-    await p.$eval('#tSel .tsel-chips .chip', e => e.click()); await p.waitForTimeout(300);
+    await p.$eval('#tSel .tsel-chips .chip', e => e.click()); await esp(p, 300);
     const ok2 = await caja(p, '#tCambiar'), cj = await caja(p, '#tSel');
     ok(ok2 && cj && ok2.r <= cj.r + 1, `X1 ${v.n}: con el tipo ya elegido el botón también cabe (${bf(ok2)})`);
     await sinLado(p, `X1 ${v.n} (tipo elegido)`);
@@ -103,7 +108,7 @@ async function x1(b) {
 async function ajustes(b, v, tab, sub) {
   const r = await abrir(b, v, ADMIN, sub); const p = r.p;
   await ir(p, 'ajustes'); await p.waitForSelector('.ajgrid [data-tab]');
-  await p.evaluate(t => document.querySelector(`.ajgrid [data-tab="${t}"]`).click(), tab); await p.waitForTimeout(600);
+  await p.evaluate(t => document.querySelector(`.ajgrid [data-tab="${t}"]`).click(), tab); await esp(p, 600);
   return r;
 }
 const ANCHOS_AJ = [960, 1100, 1280, 1366, 1440, 1536, 1600, 1920];
@@ -111,7 +116,7 @@ const ANCHOS_AJ = [960, 1100, 1280, 1366, 1440, 1536, 1600, 1920];
 async function x2(b) {
   for (const w of ANCHOS_AJ) {
     const v = { n: 'PC ' + w, w, h: 800 }, { ctx, p } = await ajustes(b, v, 'capas');
-    await p.selectOption('#cTipo', 'filtro1'); await p.waitForTimeout(500);
+    await p.selectOption('#cTipo', 'filtro1'); await esp(p, 500);
     const l = await sinLado(p, `A1 Capas ${v.n}`);
     const lim = await p.evaluate(() => document.documentElement.clientWidth);
     const fu = await fuera(p, '#ajBody input:not([type=hidden]), #ajBody select, #ajBody button, #ajBody .nrow, #ajBody .cap-add', lim);
@@ -154,7 +159,7 @@ async function x4(b) {
       p.on('pageerror', e => { errores.push(e.message); console.log('PAGEERROR', e.message); });
       await p.goto(URL);
       await p.evaluate(([d, u]) => { localStorage.clear(); localStorage.setItem('__fakeDB', JSON.stringify(d)); localStorage.setItem('__fakeUser', JSON.stringify(u)); }, [{ ...DB, ...extra }, { uid: 'x1', email: LARGO, displayName: 'Carolina' }]);
-      await p.reload(); await esperar(p, t => document.querySelector('.gate h1')?.textContent === t, titulo); await p.waitForTimeout(300);
+      await p.reload(); await esperar(p, t => document.querySelector('.gate h1')?.textContent === t, titulo); await esp(p, 300);
       const m = await p.evaluate(() => { const bx = document.querySelector('.gate .box').getBoundingClientRect(), pp = document.querySelector('.gate .box p'), bb = pp.querySelector('b').getBoundingClientRect(), r = pp.getBoundingClientRect(); return { boxR: bx.right, boxL: bx.left, bR: bb.right, bL: bb.left, pw: pp.scrollWidth, pc: pp.clientWidth, h1: document.querySelector('.gate h1').textContent, vw: document.documentElement.clientWidth }; });
       ok(m.h1 === titulo, `X4 ${v.n}: se ve la pantalla «${titulo}»`);
       ok(m.pw <= m.pc + 1 && m.bR <= m.boxR + 1 && m.bL >= m.boxL - 1, `X4 ${v.n} «${titulo}»: el correo de ${LARGO.length} caracteres no se corta (texto ${m.pw}/${m.pc} px, correo x ${Math.round(m.bL)}–${Math.round(m.bR)} en caja ${Math.round(m.boxL)}–${Math.round(m.boxR)})`);
@@ -184,7 +189,7 @@ async function a10(b) {
 // Panel → Planta (celular y PC): el selector «Tipo» no sobresale de su tarjeta y el nombre del frente no tapa los rótulos de PK
 async function planta(b, v) {
   const { ctx, p } = await abrir(b, v, ADMIN); await ir(p, 'panel'); await p.waitForSelector('.chart-h [data-vista="planta"]');
-  await p.evaluate(() => document.querySelector('.chart-h [data-vista="planta"]').click()); await p.waitForSelector('.plwrap svg'); await p.waitForTimeout(500);
+  await p.evaluate(() => document.querySelector('.chart-h [data-vista="planta"]').click()); await p.waitForSelector('.plwrap svg'); await esp(p, 500);
   return { ctx, p };
 }
 async function x6(b) {
@@ -215,7 +220,7 @@ async function p6(b) {
       if (window.__dbg) return { nombres: nombres.length, ticks: ticks.length, taparon, sobre, det: [...nombres, ...ticks].map(x => x.tx + ' ' + [x.l, x.r, x.top, x.bot].map(Math.round).join(',')) };
       return { nombres: nombres.length, ticks: ticks.length, taparon, sobre, nomSobre };
     });
-    if (m.det) console.log(m.det.join(' | '));
+    if (m.det) log(m.det.join(' | '));
     ok(m.nombres >= 1 && m.ticks >= 3, `P6 ${v.n}: se dibujan ${m.nombres} nombres de frente y ${m.ticks} rótulos de PK`);
     ok(!m.taparon.length, `P6 ${v.n}: el nombre del frente no tapa ningún rótulo de PK${m.taparon.length ? ' · ' + m.taparon.join(', ') : ''}`);
     ok(m.nomSobre === 0, `P6 ${v.n}: el nombre del frente no queda encima de la línea del eje (${m.nomSobre} de ${m.nombres} sobre el trazo)`);
@@ -231,8 +236,8 @@ async function x7(b) {
   for (const v of [{ n: 'celular 375', w: 375, h: 700, tactil: true }, { n: 'celular 360', w: 360, h: 640, tactil: true }, { n: 'PC 1366', w: 1366, h: 768 }]) {
     // «Nueva» vacía: «Guardar» marca varios campos y avisa «Revisa los campos marcados»
     let { ctx, p } = await abrir(b, v, OPER);
-    await ir(p, 'nueva'); await p.waitForSelector('#fLib:not([hidden])'); await p.waitForTimeout(400);
-    await p.$eval('#bGuardar', e => e.click()); await p.waitForTimeout(1100);
+    await ir(p, 'nueva'); await p.waitForSelector('#fLib:not([hidden])'); await esp(p, 400);
+    await p.$eval('#bGuardar', e => e.click()); await p.waitForTimeout(1100);  // fija a propósito: el aviso se reubica 500 ms después de salir (evitarTapar)
     let m = await p.evaluate(() => {
       const q = e => { if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, r: r.right, b: r.bottom }; };
       const t = document.getElementById('toast'), a = document.activeElement, errs = [...document.querySelectorAll('#fLib .f.err')];
@@ -246,8 +251,8 @@ async function x7(b) {
     // Ficha abierta y desplazada hasta el pie: «Copiar» avisa y no debe tapar «Cerrar»
     ({ ctx, p } = await abrir(b, v, ADMIN));
     await ir(p, 'bandeja'); await p.click('[data-bt="EP"]').catch(() => {}); await p.waitForSelector('#blist [data-rid="ep1"]');
-    await p.click(v.w < 860 ? '#blist [data-rid="ep1"] .item' : '#blist [data-rid="ep1"] td.tdesc'); await p.waitForSelector('#sheet.on #fCopiar'); await p.waitForTimeout(600);
-    await p.evaluate(() => { const sh = document.getElementById('sheet'); sh.scrollTop = sh.scrollHeight; }); await p.waitForTimeout(300);
+    await p.click(v.w < 860 ? '#blist [data-rid="ep1"] .item' : '#blist [data-rid="ep1"] td.tdesc'); await p.waitForSelector('#sheet.on #fCopiar'); await esp(p, 600);
+    await p.evaluate(() => { const sh = document.getElementById('sheet'); sh.scrollTop = sh.scrollHeight; }); await esp(p, 300);
     await p.$eval('#fCopiar', e => e.click()); await p.waitForTimeout(900);
     m = await p.evaluate(() => {
       const q = e => { if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, r: r.right, b: r.bottom }; };
@@ -284,8 +289,8 @@ async function a8(b) {
 async function x8(b) {
   for (const v of [{ n: 'PC 1024', w: 1024, h: 768 }, { n: 'PC 960', w: 960, h: 700 }, { n: 'PC 1366 con la columna de filtros oculta', w: 1366, h: 768, oculta: true }, { n: 'PC 1366 (ya estaba bien)', w: 1366, h: 768 }]) {
     const { ctx, p } = await abrir(b, v, ADMIN);
-    if (v.oculta) await p.evaluate(() => localStorage.setItem('lib.facOff', 'true')), await p.reload(), await p.waitForSelector('#nav button'), await p.waitForTimeout(600);
-    await ir(p, 'todos'); await p.waitForSelector('#rSt'); await p.waitForTimeout(500);
+    if (v.oculta) await p.evaluate(() => localStorage.setItem('lib.facOff', 'true')), await p.reload(), await p.waitForSelector('#nav button'), await esp(p, 600);
+    await ir(p, 'todos'); await p.waitForSelector('#rSt'); await esp(p, 500);
     const m = await p.evaluate(() => {
       const st = document.getElementById('rSt'), chips = [...st.children].map(c => c.getBoundingClientRect()), tops = [...new Set(chips.map(c => Math.round(c.top)))];
       const f = [...document.querySelectorAll('#rFil.rfil > .f')].map(e => ({ w: e.getBoundingClientRect().width, tipo: e.classList.contains('rf-tipo'), t: Math.round(e.getBoundingClientRect().top) }));
@@ -316,7 +321,7 @@ async function c11(b) {
       const cq = c ? c.getBoundingClientRect() : null; return { cont: cq && { y: cq.top, b: cq.bottom }, per: q(d.querySelector('.wsp-per')), ta: q(d.querySelector('#dWsp')), btns: [...d.querySelectorAll('.actions .btn, .dlg-foot .btn, button.btn')].filter(e => e.getBoundingClientRect().width).map(q), vh: innerHeight, box: q(box), lineas: d.querySelector('#dWsp').value.split('\n').length };
     });
     for (const per of ['hoy', 'dos']) {
-      await p.$eval(`.wsp-per [data-per="${per}"]`, e => e.click()); await p.waitForTimeout(400);
+      await p.$eval(`.wsp-per [data-per="${per}"]`, e => e.click()); await p.waitForTimeout(400);  // fija a propósito: se mide el diálogo ya asentado (con la espera por «página quieta» se medía antes de que terminara)
       const m = await medir();
       const botonesVis = m.btns.length && m.btns.every(x => x.y >= -0.5 && x.b <= m.vh + 0.5);
       ok(m.per && m.per.y >= -0.5 && m.per.b <= m.vh && (!m.cont || (m.per.y >= m.cont.y - 0.5 && m.per.b <= m.cont.b + 0.5)), `C11 ${v.n} «${per === 'dos' ? 'Ayer y hoy' : 'Hoy'}»: con el texto bajado al final los botones de periodo se ven completos (y ${Math.round(m.per.y)}–${Math.round(m.per.b)} de ${m.vh}; desplazamiento ${m.sc}; contenido y ${m.cont && Math.round(m.cont.y)}–${m.cont && Math.round(m.cont.b)}; texto de ${m.lineas} líneas y ${Math.round(m.ta.h)} px de alto)`);
@@ -340,7 +345,7 @@ const chicas = p => p.evaluate(() => {
 });
 async function recorrer(b, v, vistas) {
   const { ctx, p } = await abrir(b, v, ADMIN), res = {};
-  for (const [nombre, paso] of vistas) { try { await paso(p); await p.waitForTimeout(450); } catch (e) { console.log('  (no se pudo ' + nombre + ': ' + e.message.split('\n')[0] + ')'); continue; } (await chicas(p)).forEach(x => { (res[x.sel + ' ' + x.px] ||= { n: 0, vistas: new Set(), t: x.t }).n++; res[x.sel + ' ' + x.px].vistas.add(nombre); }); }
+  for (const [nombre, paso] of vistas) { try { await paso(p); await esp(p, 450); } catch (e) { log('  (no se pudo ' + nombre + ': ' + e.message.split('\n')[0] + ')'); continue; } (await chicas(p)).forEach(x => { (res[x.sel + ' ' + x.px] ||= { n: 0, vistas: new Set(), t: x.t }).n++; res[x.sel + ' ' + x.px].vistas.add(nombre); }); }
   await ctx.close(); return res;
 }
 async function x10(b) {
@@ -349,7 +354,7 @@ async function x10(b) {
     ['registros', async p => { await ir(p, 'todos'); }], ['ficha', async p => { await p.click('#lista tr[data-id] td.tdesc'); await p.waitForSelector('#sheet.on'); }],
     ['panel', async p => { await ir(p, 'panel'); }], ['panel-lista', clic('.chart-h [data-vista="lista"]')], ['panel-planta', clic('.chart-h [data-vista="planta"]')],
     ...['usuarios', 'lugares', 'capas', 'topografos', 'tipos', 'protocolos', 'historico', 'archivos', 'exportar'].map(t => ['aj-' + t, async p => { await ir(p, 'ajustes'); await p.evaluate(t => document.querySelector(`.ajgrid [data-tab="${t}"]`).click(), t); }]),
-    ['ctrlk', async p => { await p.keyboard.press('Escape'); await p.keyboard.press('Control+k'); await p.waitForSelector('#cmdk'); await p.keyboard.type('filtro'); await p.waitForTimeout(400); }]];
+    ['ctrlk', async p => { await p.keyboard.press('Escape'); await p.keyboard.press('Control+k'); await p.waitForSelector('#cmdk'); await p.keyboard.type('filtro'); await esp(p, 400); }]];
   for (const v of [{ n: 'PC 1366', w: 1366, h: 768 }, { n: 'celular 375', w: 375, h: 700, tactil: true }]) {
     const vs = v.tactil ? vistas.filter(x => x[0] !== 'ficha') : vistas;
     const res = await recorrer(b, v, vs), claves = Object.keys(res);
@@ -357,9 +362,9 @@ async function x10(b) {
   }
   // Contrastes medidos (WCAG, mínimo 4,5:1)
   const { ctx, p } = await abrir(b, { n: 'PC 1366', w: 1366, h: 768 }, ADMIN);
-  await ir(p, 'todos'); await p.waitForSelector('.fcol .fop', { state: 'attached' }); await p.evaluate(() => document.querySelectorAll('.fcol details').forEach(d => { d.open = true; })); await p.waitForTimeout(400);
+  await ir(p, 'todos'); await p.waitForSelector('.fcol .fop', { state: 'attached' }); await p.evaluate(() => document.querySelectorAll('.fcol details').forEach(d => { d.open = true; })); await esp(p, 400);
   // Dos frentes marcados y un tipo que solo tiene uno: el otro frente queda marcado con contador 0
-  await p.evaluate(() => document.querySelectorAll('.fcol details').forEach(d => { d.open = true; })); for (const [k, v] of [['sub', 'pan'], ['sub', 'pp-oeste'], ['tipo', 'filtro1']]) { await p.evaluate(() => document.querySelectorAll('.fcol details').forEach(d => { d.open = true; })); await p.$eval(`.fcol [data-fk="${k}"][value="${v}"]`, e => e.click()); await p.waitForTimeout(500); }
+  await p.evaluate(() => document.querySelectorAll('.fcol details').forEach(d => { d.open = true; })); for (const [k, v] of [['sub', 'pan'], ['sub', 'pp-oeste'], ['tipo', 'filtro1']]) { await p.evaluate(() => document.querySelectorAll('.fcol details').forEach(d => { d.open = true; })); await p.$eval(`.fcol [data-fk="${k}"][value="${v}"]`, e => e.click()); await esp(p, 500); }
   await p.evaluate(() => document.querySelectorAll('.fcol details').forEach(d => { d.open = true; }));
   const medidas = [['contador «0» de los filtros', '.fcol .fop.cero .c'], ['frente de 84 caracteres en el filtro', '.fcol .fop span:nth-child(2)']];
   for (const [n, sel] of medidas) { const r = await contraste(p, sel, 0); ok(r && r.c >= 4.5, `X10 contraste de ${n} (${r && r.px}px «${r && r.txt}»): ${r && r.c}:1`); }
@@ -371,9 +376,9 @@ async function x10(b) {
   for (const sel of ['.fcol .fop span:nth-child(2)', '.fcol .fop .c']) { const n = await p.$$eval(sel, e => e.length); for (let i = 0; i < n; i++) { const r = await contraste(p, sel, i); if (r && r.c < peor) { peor = r.c; quien = sel + ' «' + r.txt + '»'; } } }
   ok(peor >= 4.5, `X10 el peor contraste de las ${todos.length} opciones del filtro es ${peor}:1 (${quien})`);
   await p.screenshot({ path: `${OUT}/x10-filtros-1366.png` });
-  await ir(p, 'panel'); await p.waitForSelector('.pavisos'); await p.waitForTimeout(400);
+  await ir(p, 'panel'); await p.waitForSelector('.pavisos'); await esp(p, 400);
   for (const [n, sel] of [['«Ver» de «sin progresiva» sobre el rosa', '.pavisos .linkbtn[data-prob="sinPk"]']]) { const r = await contraste(p, sel, 0); ok(r && r.c >= 4.5, `X10 contraste de ${n}: ${r && r.c}:1`); }
-  await p.$eval('.chart-h [data-vista="lista"]', e => e.click()); await p.waitForTimeout(600);
+  await p.$eval('.chart-h [data-vista="lista"]', e => e.click()); await esp(p, 600);
   const nF = await p.$$eval('#chart .qf .fpill span', e => e.length);
   if (nF) { let peor2 = 99, q2 = ''; for (let i = 0; i < nF; i++) { const r = await contraste(p, '#chart .qf .fpill span', i); if (r && r.c < peor2) { peor2 = r.c; q2 = r.txt; } } ok(peor2 >= 4.5, `X10 contraste de la medida («${q2}») en las ${nF} etiquetas de «Qué falta»: ${peor2}:1`); }
   else ok(false, 'X10 no hay etiquetas «Qué falta» con medida para medir');
@@ -388,7 +393,7 @@ async function x9(b) {
   for (const v of [{ n: 'celular 375', w: 375, h: 700, tactil: true }, { n: 'PC 1366', w: 1366, h: 768 }]) {
     let { ctx, p } = await abrir(b, v, ADMIN);
     // Ctrl+K: el subtítulo (frente · fecha) y el título
-    await p.keyboard.press('Control+k'); await p.waitForSelector('#cmdk'); await p.keyboard.type('filtro'); await p.waitForTimeout(500);
+    await p.keyboard.press('Control+k'); await p.waitForSelector('#cmdk'); await p.keyboard.type('filtro'); await esp(p, 500);
     await p.evaluate(() => { document.querySelector('#cmdk .cmdk-box').style.maxWidth = '420px'; });
     revisar(`${v.n} Ctrl+K subtítulo (.ct small)`, await vistaCorte(p, '#cmdk .ct small'));
     revisar(`${v.n} Ctrl+K título (.ct)`, await vistaCorte(p, '#cmdk .cmdk-i .ct'));
@@ -396,13 +401,13 @@ async function x9(b) {
     await ctx.close();
     // Panel (lista): nombre de la liberación
     ({ ctx, p } = await abrir(b, v, ADMIN)); await ir(p, 'panel'); await p.waitForSelector('.pavisos'); if (v.tactil) await p.$eval('.pavisos summary', e => e.click()).catch(() => {});
-    await p.$eval('.pavisos [data-prob="sinPk"]', e => e.click()); await p.waitForSelector('.dlg.on .pf-t'); await p.waitForTimeout(400);
+    await p.$eval('.pavisos [data-prob="sinPk"]', e => e.click()); await p.waitForSelector('.dlg.on .pf-t'); await esp(p, 400);
     const pf = await vistaCorte(p, '.dlg.on .pf-t'); revisar(`${v.n} Panel, «Ver» registros sin progresiva (.pf-t)`, pf);
     await p.screenshot({ path: `${OUT}/x9-panel-${v.w}.png` });
     await ctx.close();
     // Ficha: nombre del archivo adjunto
     ({ ctx, p } = await abrir(b, v, ADMIN)); await ir(p, 'bandeja'); await p.click('[data-bt="EP"]').catch(() => {}); await p.waitForSelector('#blist [data-rid="ar1"]');
-    await p.click(v.w < 860 ? '#blist [data-rid="ar1"] .item' : '#blist [data-rid="ar1"] td.tdesc'); await p.waitForSelector('#sheet.on #fArch'); await p.waitForTimeout(500);
+    await p.click(v.w < 860 ? '#blist [data-rid="ar1"] .item' : '#blist [data-rid="ar1"] td.tdesc'); await p.waitForSelector('#sheet.on #fArch'); await esp(p, 500);
     revisar(`${v.n} ficha (.an b)`, await vistaCorte(p, '#fArch .an b'));
     await p.screenshot({ path: `${OUT}/x9-ficha-${v.w}.png` });
     await ctx.close();
@@ -411,7 +416,7 @@ async function x9(b) {
 // X12: registros sin código en la tabla de Registros
 async function x12(b) {
   for (const v of [{ n: 'PC 1366', w: 1366, h: 768 }, { n: 'PC 1024', w: 1024, h: 768 }]) {
-    const { ctx, p } = await abrir(b, v, ADMIN); await ir(p, 'todos'); await p.waitForSelector('#lista tr[data-id="pt00"] .tcod'); await p.waitForTimeout(400);
+    const { ctx, p } = await abrir(b, v, ADMIN); await ir(p, 'todos'); await p.waitForSelector('#lista tr[data-id="pt00"] .tcod'); await esp(p, 400);
     const m = await p.evaluate(() => { const td = document.querySelector('#lista tr[data-id="pt00"] .tcod'), primero = td.firstElementChild; return { txt: primero.textContent.trim(), todo: td.textContent.trim().replace(/\s+/g, ' ') }; });
     ok(!/^[–—-]$/.test(m.txt) && /Sin código/.test(m.todo), `X12 ${v.n}: el registro sin código dice «${m.todo}» (primera línea «${m.txt}», no un guion suelto)`);
     const c = await contraste(p, '#lista tr[data-id="pt00"] .tcod .sin-cod', 0);
@@ -425,7 +430,10 @@ const BLOQUES = { x1, x2, a2, x4, a10, x6, p6, x7, a8, x8, c11, x10, x9, x12 };
 (async () => {
   const b = await chromium.launch();
   const que = (process.env.SOLO || Object.keys(BLOQUES).join(',')).split(',');
-  for (const k of que) { console.log('--- ' + k); await BLOQUES[k](b); }
+  const cola = [...que], n = Math.max(1, +process.env.PARALELO || 4);
+  await Promise.all(Array.from({ length: Math.min(n, cola.length) }, async () => { while (cola.length) { const k = cola.shift(), buf = ['--- ' + k];
+    await bloque.run(buf, () => BLOQUES[k](b)).catch(e => { buf.push('FALLA: el bloque ' + k + ' se detuvo: ' + String(e.message).split('\n')[0]); process.exitCode = 1; });
+    console.log(buf.join('\n')); } }));
   await b.close();
   if (errores.length) { console.log('Errores de consola/página:', errores.length); process.exitCode = 1; } else console.log('Errores de consola: 0');
 })();

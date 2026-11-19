@@ -1,7 +1,7 @@
 // Nombres de las fechas (versión 25): «Fecha de liberación» = fecha en campo, «Fecha de entrega» = cuando gabinete genera el código,
 // «Entrega a Calidad» = fecha de entrega a Calidad. Ficha, filtro de Registros y formulario.
 const { chromium } = require('playwright'); const path = require('path');
-const URL = 'http://127.0.0.1:8765/';
+const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const errores = [];
 const ok = (c, m) => { if (!c) { console.log('FALLA:', m); process.exitCode = 1; } else console.log('ok  -', m); };

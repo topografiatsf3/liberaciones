@@ -7,7 +7,11 @@
 //   ANCHOS=320,360,390,430   (por defecto; el barrido completo es BARRIDO=1: 320,360,375,390,414,430,768,1024)
 //   ROLES=admin,jefe,gabinete,topografo,operario   (por defecto todos)
 //   ANTES=ruta\index.html    (mide una versión anterior para ver qué falla sin el arreglo)
+//   PARALELO=4               (por defecto) cuántos recorridos (ancho × rol) van a la vez; PARALELO=1 los corre uno por uno, como antes
+// El barrido que corre en la tanda es el corto (ANCHOS por defecto: 320, 360, 390, 430); el completo es BARRIDO=1.
 const { chromium } = require('playwright'); const path = require('path'), fs = require('fs');
+const { quieto } = require('./ayuda');
+const esp = (p, ms) => quieto(p, Math.max(60, Math.round(ms * 0.35)));  // sustituye a waitForTimeout(ms): espera a que la pantalla quede quieta
 const OUT = path.join(__dirname, 'capturas', process.env.ANTES ? 'prueba52-antes' : 'prueba52'); fs.mkdirSync(OUT, { recursive: true });
 const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const ANCHOS = (process.env.ANCHOS || (process.env.BARRIDO ? '320,360,375,390,414,430,768,1024' : '320,360,390,430')).split(',').map(Number);
@@ -116,24 +120,24 @@ async function abrir(b, w, rol) {
   await p.goto(URL);
   const u = rol === 'admin' ? ADMIN : { uid: 'u-' + rol, email: MAILS[rol], displayName: NOMBRES[rol] };
   await p.evaluate(([d, u]) => { localStorage.clear(); localStorage.setItem('__fakeDB', JSON.stringify(d)); localStorage.setItem('__fakeUser', JSON.stringify(u)); localStorage.setItem('lib.panelSub', JSON.stringify('pp-oeste')); }, [DB, u]);
-  await p.reload(); await p.waitForSelector('#nav button', { timeout: 15000 }); await p.waitForTimeout(900);
+  await p.reload(); await p.waitForSelector('#nav button', { timeout: 15000 }); await esp(p, 900);
   return { ctx, p };
 }
-const ir = async (p, v) => { const h = await p.evaluate(v => { const b = document.querySelector(`#nav [data-v="${v}"]`) || document.querySelector(`[data-v="${v}"]:not([hidden])`); if (!b) return false; b.click(); return true; }, v); await p.waitForTimeout(450); return h; };
-const clic = async (p, sel, espera = 350) => { const e = await p.$(sel); if (!e) return false; await e.evaluate(e => e.click()); await p.waitForTimeout(espera); return true; };
+const ir = async (p, v) => { const h = await p.evaluate(v => { const b = document.querySelector(`#nav [data-v="${v}"]`) || document.querySelector(`[data-v="${v}"]:not([hidden])`); if (!b) return false; b.click(); return true; }, v); await esp(p, 450); return h; };
+const clic = async (p, sel, espera = 350) => { const e = await p.$(sel); if (!e) return false; await e.evaluate(e => e.click()); await esp(p, espera); return true; };
 // Cierra lo que haya abierto (diálogos, ficha, menús) sin tocar nada más
-const limpiar = async p => { for (let i = 0; i < 4; i++) { await p.keyboard.press('Escape'); await p.waitForTimeout(80); } await p.evaluate(() => document.querySelectorAll('.dlg').forEach(d => d.remove())); await p.waitForTimeout(150); };
+const limpiar = async p => { for (let i = 0; i < 4; i++) await p.keyboard.press('Escape'); await p.evaluate(() => document.querySelectorAll('.dlg').forEach(d => d.remove())); await esp(p, 150); };
 
 // Baja por la página para que se pinte lo que se carga al verlo (listas largas) y vuelve arriba
-const recorrer = async p => { await p.evaluate(async () => { const sc = document.scrollingElement; for (let y = 0; y < sc.scrollHeight + 600 && y < 12000; y += 500) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 90)); } window.scrollTo(0, 0); }); await p.waitForTimeout(150); };
+const recorrer = async p => { await p.evaluate(async () => { const sc = document.scrollingElement; for (let y = 0; y < sc.scrollHeight + 600 && y < 12000; y += 500) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 40)); } window.scrollTo(0, 0); }); await esp(p, 150); };
 // ---- Pantallas: cada una recibe la página, la deja en el estado a medir y devuelve false si no pudo llegar
-const abrirRegistro = async (p, id) => { const e = await p.evaluate(id => { const x = [...document.querySelectorAll('#view [data-id], #view [data-rid]')].find(e => (e.dataset.id || e.dataset.rid) === id); if (!x) return false; (x.querySelector('.item, td.tdesc') || x).click(); return true; }, id); await p.waitForTimeout(500); return e && !!(await p.$('#sheet.on')); };
-const tabAj = async (p, t) => { if (!(await ir(p, 'ajustes'))) return false; const h = await p.evaluate(t => { const b = document.querySelector(`.ajgrid [data-tab="${t}"]`); if (!b) return false; b.click(); return true; }, t); await p.waitForTimeout(600); return h; };
+const abrirRegistro = async (p, id) => { const e = await p.evaluate(id => { const x = [...document.querySelectorAll('#view [data-id], #view [data-rid]')].find(e => (e.dataset.id || e.dataset.rid) === id); if (!x) return false; (x.querySelector('.item, td.tdesc') || x).click(); return true; }, id); await esp(p, 500); return e && !!(await p.$('#sheet.on')); };
+const tabAj = async (p, t) => { if (!(await ir(p, 'ajustes'))) return false; const h = await p.evaluate(t => { const b = document.querySelector(`.ajgrid [data-tab="${t}"]`); if (!b) return false; b.click(); return true; }, t); await esp(p, 600); return h; };
 const PANTALLAS = [
   // [nombre, roles que la tienen, función]
   ['Nueva · liberación', ['admin', 'gabinete', 'topografo', 'operario'], async p => { if (!await ir(p, 'nueva')) return false; await p.waitForSelector('#fLib:not([hidden])'); return true; }],
-  ['Nueva · tipo elegido', ['admin', 'gabinete', 'topografo', 'operario'], async p => { if (!await ir(p, 'nueva')) return false; await p.waitForSelector('#fLib:not([hidden])'); await p.evaluate(() => { const s = document.querySelector('#iSub'); if (s && s.options.length > 1) { s.value = s.options[1].value; s.dispatchEvent(new Event('change', { bubbles: true })); } }); await p.waitForTimeout(300); await clic(p, '#tSel .tsel-chips .chip'); return true; }],
-  ['Nueva · selector de tipo', ['admin', 'gabinete', 'topografo', 'operario'], async p => { if (!await ir(p, 'nueva')) return false; await p.evaluate(() => { const s = document.querySelector('#iSub'); if (s && s.options.length > 1) { s.value = s.options[1].value; s.dispatchEvent(new Event('change', { bubbles: true })); } }); await p.waitForTimeout(300); await clic(p, '#tCambiar'); return true; }],
+  ['Nueva · tipo elegido', ['admin', 'gabinete', 'topografo', 'operario'], async p => { if (!await ir(p, 'nueva')) return false; await p.waitForSelector('#fLib:not([hidden])'); await p.evaluate(() => { const s = document.querySelector('#iSub'); if (s && s.options.length > 1) { s.value = s.options[1].value; s.dispatchEvent(new Event('change', { bubbles: true })); } }); await esp(p, 300); await clic(p, '#tSel .tsel-chips .chip'); return true; }],
+  ['Nueva · selector de tipo', ['admin', 'gabinete', 'topografo', 'operario'], async p => { if (!await ir(p, 'nueva')) return false; await p.evaluate(() => { const s = document.querySelector('#iSub'); if (s && s.options.length > 1) { s.value = s.options[1].value; s.dispatchEvent(new Event('change', { bubbles: true })); } }); await esp(p, 300); await clic(p, '#tCambiar'); return true; }],
   ...['LEV', 'ASP', 'DRN'].map(a => [`Nueva · actividad ${a}`, ['admin', 'gabinete', 'topografo', 'operario'], async p => { if (!await ir(p, 'nueva')) return false; return clic(p, `[data-act="${a}"]`, 500); }]),
   ['Mis registros', ['admin', 'gabinete', 'topografo', 'operario'], async p => ir(p, 'mis')],
   ['Mis registros · ficha', ['admin', 'gabinete', 'topografo', 'operario'], async p => { if (!await ir(p, 'mis')) return false; return abrirRegistro(p, 'ob1') || abrirRegistro(p, 'pt00'); }],
@@ -160,20 +164,20 @@ const PANTALLAS = [
   ...['entregar', 'exportar'].map(k => ['Diálogo · ' + k + ' en grupo', ['admin', 'gabinete'], async p => { if (!await ir(p, 'bandeja')) return false; await clic(p, '[data-bt="EP"]', 500); await clic(p, '#bAll'); return (await clic(p, '[data-bk="' + k + '"]', 600)); }]),
   ['Diálogo · Resumen WhatsApp', ['admin', 'gabinete', 'topografo', 'operario'], async p => { if (!await ir(p, 'mis')) return false; return (await clic(p, '#rWsp', 600)) && !!(await p.$('.dlg.on')); }],
   ['Registros · papelera', ['admin', 'gabinete', 'jefe'], async p => { if (!await ir(p, 'todos')) return false; return clic(p, '[data-pap="1"]', 600); }],
-  ['Ctrl+K · buscador', ['admin', 'gabinete', 'jefe', 'topografo', 'operario'], async p => { await p.keyboard.press('Control+k'); await p.waitForTimeout(500); if (!await p.$('#cmdk')) return false; await p.keyboard.type('Conformacion de muro', { delay: 10 }); await p.waitForTimeout(700); return true; }],
+  ['Ctrl+K · buscador', ['admin', 'gabinete', 'jefe', 'topografo', 'operario'], async p => { await p.keyboard.press('Control+k'); await esp(p, 500); if (!await p.$('#cmdk')) return false; await p.keyboard.type('Conformacion de muro', { delay: 10 }); await esp(p, 700); return true; }],
   ['Panel · hoja de filtros', ['admin', 'jefe', 'gabinete', 'topografo', 'operario'], async p => { if (!await ir(p, 'panel')) return false; await clic(p, '.chart-h [data-vista="lista"]', 500); return (await clic(p, '#pFilBtn', 600)) && !!(await p.$('.dlg.on')); }],
-  ['Ajustes · usuarios · cambiar rol', ['admin'], async p => { if (!await tabAj(p, 'usuarios')) return false; await p.evaluate(() => { const s = document.querySelector('#usr [data-k="rol"]'); s.value = s.value === 'gabinete' ? 'jefe' : 'gabinete'; s.dispatchEvent(new Event('change', { bubbles: true })); }); await p.waitForTimeout(600); return !!(await p.$('.dlg.on')); }],
+  ['Ajustes · usuarios · cambiar rol', ['admin'], async p => { if (!await tabAj(p, 'usuarios')) return false; await p.evaluate(() => { const s = document.querySelector('#usr [data-k="rol"]'); s.value = s.value === 'gabinete' ? 'jefe' : 'gabinete'; s.dispatchEvent(new Event('change', { bubbles: true })); }); await esp(p, 600); return !!(await p.$('.dlg.on')); }],
   ['Ajustes · usuarios · desactivar', ['admin'], async p => { if (!await tabAj(p, 'usuarios')) return false; return (await clic(p, '#usr [data-act]', 600)) && !!(await p.$('.dlg.on')); }],
   ['Ajustes · usuarios · aprobar sin clave', ['admin'], async p => { if (!await tabAj(p, 'usuarios')) return false; await p.evaluate(() => { const r = document.querySelector('#sol [data-uid]'); const s = r.querySelector('[data-k="rol"]'); s.value = 'topografo'; s.dispatchEvent(new Event('change', { bubbles: true })); }); return (await clic(p, '#sol [data-ap]', 600)) && !!(await p.$('.dlg.on')); }],
   ['Ajustes · lugares · menú de estructura', ['admin'], async p => { if (!await tabAj(p, 'lugares')) return false; return (await clic(p, '.est [data-k="emas"]', 500)); }],
   ['Ajustes · lugares · menú de frente', ['admin'], async p => { if (!await tabAj(p, 'lugares')) return false; return (await clic(p, '.srow [data-k="smas"]', 500)); }],
-  ['Ajustes · lugares · mover frente', ['admin'], async p => { if (!await tabAj(p, 'lugares')) return false; await clic(p, '.srow [data-k="smas"]', 500); const hs = await p.$$('#ctx button, .menu button'); for (const h of hs) { if (/Mover/i.test(await h.textContent())) { await h.evaluate(e => e.click()); await p.waitForTimeout(500); return !!(await p.$('.dlg.on')); } } return false; }],
-  ['Ajustes · capas · tipo elegido', ['admin'], async p => { if (!await tabAj(p, 'capas')) return false; await p.selectOption('#cTipo', 'muro').catch(() => {}); await p.waitForTimeout(500); return true; }],
+  ['Ajustes · lugares · mover frente', ['admin'], async p => { if (!await tabAj(p, 'lugares')) return false; await clic(p, '.srow [data-k="smas"]', 500); const hs = await p.$$('#ctx button, .menu button'); for (const h of hs) { if (/Mover/i.test(await h.textContent())) { await h.evaluate(e => e.click()); await esp(p, 500); return !!(await p.$('.dlg.on')); } } return false; }],
+  ['Ajustes · capas · tipo elegido', ['admin'], async p => { if (!await tabAj(p, 'capas')) return false; await p.selectOption('#cTipo', 'muro').catch(() => {}); await esp(p, 500); return true; }],
   ['Ajustes · topógrafos · cambiar clave', ['admin'], async p => { if (!await tabAj(p, 'topografos')) return false; return (await clic(p, '[data-k="clave"]', 600)) && !!(await p.$('.dlg.on')); }],
   ['Ajustes · tipos · menú de tipo', ['admin'], async p => { if (!await tabAj(p, 'tipos')) return false; return (await clic(p, '.tyrow [data-k="mas"]', 500)); }],
   ['Ajustes · tipos · menú de elemento', ['admin'], async p => { if (!await tabAj(p, 'tipos')) return false; return (await clic(p, '[data-k="emas"]', 500)); }],
   ['Ajustes · protocolos · zonas', ['admin'], async p => { if (!await tabAj(p, 'protocolos')) return false; return (await clic(p, '[data-k="zonas"]', 500)); }],
-  ['Ajustes · histórico · emparejar', ['admin'], async p => { if (!await tabAj(p, 'historico')) return false; await p.setInputFiles('#hFile', path.join(__dirname, 'datos', 'excel-prueba.xlsx')); await p.waitForTimeout(2500); return true; }],
+  ['Ajustes · histórico · emparejar', ['admin'], async p => { if (!await tabAj(p, 'historico')) return false; await p.setInputFiles('#hFile', path.join(__dirname, 'datos', 'excel-prueba.xlsx')); await esp(p, 2500); return true; }],
   ...['usuarios', 'lugares', 'capas', 'topografos', 'tipos', 'protocolos', 'historico', 'archivos', 'exportar'].map(t => [`Ajustes · ${t}`, ['admin'], async p => tabAj(p, t)])
 ];
 
@@ -184,7 +188,7 @@ async function barrer(b, w, rol) {
     let llego = false; if (process.env.DEPURA) console.log('  >', nombre);
     try { llego = await fn(p); } catch (e) { llego = false; if (process.env.DEPURA) console.log('  (excepción en', nombre + ':', String(e.message).slice(0, 140) + ')'); }
     if (!llego) { sinAbrir.add(`${rol} · ${nombre}`); await limpiar(p); continue; }
-    await p.waitForTimeout(250);
+    await esp(p, 250);
     await recorrer(p);
     const prob = await p.evaluate(MEDIR, w);
     const etiqueta = `${nombre} (${rol}, ${w} px)`;
@@ -201,7 +205,7 @@ async function entradas(b, w) {
     const tactil = w < 600, ctx = await b.newContext({ viewport: { width: w, height: tactil ? 760 : 800 }, hasTouch: tactil, isMobile: tactil, deviceScaleFactor: tactil ? 2 : 1 });
     await rutas(ctx); const p = await ctx.newPage(); await p.goto(URL);
     await p.evaluate(([d, u]) => { localStorage.clear(); localStorage.setItem('__fakeDB', JSON.stringify(d)); if (u) localStorage.setItem('__fakeUser', JSON.stringify(u)); }, [DB, usuario]);
-    await p.reload(); await p.waitForTimeout(1800);
+    await p.reload(); await p.waitForSelector('.gate h1, #gEntrar', { timeout: 10000 }).catch(() => {}); await esp(p, 600);
     const prob = await p.evaluate(MEDIR, w);
     ok(!prob.length, `${nombre} (${w} px): nada se sale de su caja ni de la pantalla${prob.length ? ' · ' + prob.slice(0, 6).map(x => `${x.tipo} ${x.d} +${x.px}px`).join(' | ') : ''}`);
     await ctx.close();
@@ -210,8 +214,11 @@ async function entradas(b, w) {
 
 (async () => {
   const b = await chromium.launch();
-  if (!SOLO || SOLO.includes('Entrada')) for (const w of ANCHOS) { console.log(`--- entradas · ${w} px`); await entradas(b, w); }
-  for (const w of ANCHOS) for (const rol of ROLES_T) { console.log(`--- ${rol} · ${w} px`); await barrer(b, w, rol); }
+  const tareas = [];
+  if (!SOLO || SOLO.includes('Entrada')) for (const w of ANCHOS) tareas.push([`entradas · ${w} px`, () => entradas(b, w)]);
+  for (const w of ANCHOS) for (const rol of ROLES_T) tareas.push([`${rol} · ${w} px`, () => barrer(b, w, rol)]);
+  const n = Math.max(1, +process.env.PARALELO || 4);
+  await Promise.all(Array.from({ length: Math.min(n, tareas.length) }, async () => { while (tareas.length) { const [t, fn] = tareas.shift(); console.log('--- ' + t); await fn().catch(e => { nMal++; process.exitCode = 1; console.log('FALLA: el recorrido «' + t + '» se detuvo: ' + String(e.message).split('\n')[0]); }); } }));
   await b.close();
   if (sinAbrir.size) console.log('No se pudo llegar a (no cuenta como fallo):', [...sinAbrir].join('; '));
   console.log(`Comprobaciones: ${nOk + nMal} · bien ${nOk} · mal ${nMal}`);

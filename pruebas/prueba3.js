@@ -2,7 +2,7 @@ const { chromium, devices } = require('playwright');
 const path = require('path'), fs = require('fs');
 const FAKE = path.join(__dirname, 'fake');
 const OUT = path.join(__dirname, 'capturas', 'prueba3'); fs.mkdirSync(OUT, { recursive: true });
-const URL = 'http://127.0.0.1:8765/';
+const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const JSONF = path.join(__dirname, 'datos', 'historico-prueba.json');
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const errores = [];

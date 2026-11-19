@@ -3,7 +3,7 @@
 // desplegables suaves a media pantalla; Modelo 2D con filtros de capas legibles y columna que se oculta.
 const { chromium } = require('playwright'); const path = require('path'), fs = require('fs');
 const OUT = path.join(__dirname, 'capturas', 'prueba41'); fs.mkdirSync(OUT, { recursive: true });
-const URL = 'http://127.0.0.1:8765/', D = f => path.join(__dirname, 'datos', f);
+const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/', D = f => path.join(__dirname, 'datos', f);
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const errores = [];
 const ok = (c, m) => { if (!c) { console.log('FALLA:', m); process.exitCode = 1; } else console.log('ok  -', m); };
