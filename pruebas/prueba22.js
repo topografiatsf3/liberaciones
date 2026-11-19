@@ -2,7 +2,7 @@
 // la capa con base se elige sola para ver el porcentaje al abrir y se recuerda la capa elegida en cada frente
 const { chromium, devices } = require('playwright'); const path = require('path'), fs = require('fs');
 const OUT = path.join(__dirname, 'capturas', 'prueba22'); fs.mkdirSync(OUT, { recursive: true });
-const URL = 'http://127.0.0.1:8765/';
+const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const errores = [];
 const ok = (c, m) => { if (!c) { console.log('FALLA:', m); process.exitCode = 1; } else console.log('ok  -', m); };

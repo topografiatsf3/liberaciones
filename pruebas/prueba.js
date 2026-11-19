@@ -3,7 +3,7 @@ const { tipo, equipo } = require('./filtros');
 const path = require('path'), fs = require('fs');
 const FAKE = path.join(__dirname, 'fake');
 const OUT = path.join(__dirname, 'capturas', 'prueba'); fs.mkdirSync(OUT, { recursive: true });
-const URL = 'http://127.0.0.1:8765/';
+const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const TOPO = { uid: 't1', email: 'alexandre@gmail.com', displayName: 'Alexandre Bellido' };
 const errores = [];

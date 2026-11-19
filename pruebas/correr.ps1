@@ -5,7 +5,8 @@ param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Pruebas)
 Set-Location (Split-Path $PSScriptRoot -Parent)
 $env:Path = "C:\Program Files\nodejs;" + $env:Path
 if (-not $Pruebas) { $Pruebas = @("prueba") + (2..60 | ForEach-Object { "prueba$_" }) | Where-Object { Test-Path "pruebas\$_.js" } }
-$srv = Start-Process node -ArgumentList "pruebas\servidor.js","8765" -PassThru -WindowStyle Hidden
+$puerto = if ($env:PUERTO) { $env:PUERTO } else { "8765" }   # PUERTO=8792 prueba en otro puerto; sin PUERTO, 8765 como siempre
+$srv = Start-Process node -ArgumentList "pruebas\servidor.js",$puerto -PassThru -WindowStyle Hidden
 Start-Sleep -Seconds 1
 $fallas = 0
 try {

@@ -2,7 +2,7 @@
 // (sin tener que cerrar la app), sin perder lo que estaba escribiendo. Y al aprobar una solicitud el rol elegido no se pierde.
 const { chromium, devices } = require('playwright'); const path = require('path'), fs = require('fs');
 const OUT = path.join(__dirname, 'capturas', 'prueba17'); fs.mkdirSync(OUT, { recursive: true });
-const URL = 'http://127.0.0.1:8765/';
+const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const NUEVO = { uid: 'n1', email: 'nuevo.gabinete@gmail.com', displayName: 'Persona Nueva' };
 const errores = [];

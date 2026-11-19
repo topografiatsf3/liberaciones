@@ -1,7 +1,7 @@
 // Fotos HEIC (Samsung con «Imágenes de alta eficiencia», iPhone): se convierten a JPG en el teléfono antes de subirlas
 const { chromium, devices } = require('playwright'); const path = require('path'), fs = require('fs');
 const OUT = path.join(__dirname, 'capturas', 'prueba19'); fs.mkdirSync(OUT, { recursive: true });
-const URL = 'http://127.0.0.1:8765/';
+const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const HEIC = path.join(__dirname, 'datos', 'foto-prueba.heic'), PNG = path.join(__dirname, 'datos', 'foto-prueba.png');
 const errores = [];

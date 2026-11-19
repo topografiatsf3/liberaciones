@@ -2,7 +2,7 @@ const { chromium, devices } = require('playwright'); const path = require('path'
 const { tipo } = require('./filtros');
 const { supXml } = require('./xml');
 const OUT = path.join(__dirname, 'capturas', 'prueba5'); fs.mkdirSync(OUT, { recursive: true });
-const URL = 'http://127.0.0.1:8765/';
+const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const OPER = { uid: 'o1', email: 'operario@gmail.com', displayName: 'Pedro Operario' };
 const GAB = { uid: 'g1', email: 'gabinete@gmail.com', displayName: 'Gabinete Prueba' };

@@ -12,7 +12,7 @@ async function preparar(ctx) {
   await ctx.route(/fonts\./, r => r.abort());
 }
 async function cargar(p) {
-  await p.goto('http://127.0.0.1:8765/');
+  await p.goto('http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/');
   const d = JSON.parse(fs.readFileSync(path.join(__dirname, 'datos', 'historico-prueba.json')));
   await p.evaluate(([d, u]) => { localStorage.clear(); const st = {}; d.registros.forEach(r => { const { id, ...x } = r; ['fechaCampo', 'fechaLiberacion', 'fechaEntrega'].forEach(k => { x[k] = x[k] ? { __ts: x[k] } : null; }); x.creadoEn = x.fechaCampo; x.origen = 'excel'; st['liberaciones/' + id] = x; }); localStorage.setItem('__fakeDB', JSON.stringify(st)); localStorage.setItem('__fakeUser', JSON.stringify(u)); }, [d, ADMIN]);
   await p.reload(); await p.waitForSelector('#nav button');
@@ -106,7 +106,7 @@ const ext = p => p.$$eval('#chart .pk-ext', t => t.map(x => x.textContent));
   // 6. Celular
   const ctx2 = await b.newContext({ ...devices['iPhone 13'] }); await preparar(ctx2);
   const m = await ctx2.newPage(); m.on('pageerror', e => errores.push('m: ' + e.message));
-  await m.goto('http://127.0.0.1:8765/');
+  await m.goto('http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/');
   await m.evaluate(([s, u]) => { localStorage.setItem('__fakeDB', s); localStorage.setItem('__fakeUser', JSON.stringify(u)); }, [await p.evaluate(() => localStorage.getItem('__fakeDB')), ADMIN]);
   await m.reload(); await m.waitForSelector('#nav button'); await m.click('[data-v="panel"]'); await m.waitForSelector('#chart svg');
   await filtros(m, async () => { await seccion(m, 'cap'); await m.click('[data-cap="ultimas"]'); await seccion(m, 'pk'); await m.fill('#pPk1', '1+800'); await m.press('#pPk1', 'Enter'); await m.fill('#pPk2', '2+300'); await m.press('#pPk2', 'Enter'); }); await m.waitForTimeout(500);

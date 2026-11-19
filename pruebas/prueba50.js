@@ -1,13 +1,18 @@
 // Lote 5 · Grupo B (Campo, Ajustes, Modelo 2D): C8, C9, C10, C13, A5, A6, A7, A9, A11, A12, P9 y «Editar» con cambios.
 // Uso: PUERTO=8782 node pruebas\prueba50.js
+// Rápida: los 7 bloques (cada uno con su propio contexto) corren de a PARALELO (4 por defecto; PARALELO=1 los corre uno por uno, como antes) y cada uno
+// imprime su resultado junto al terminar. La espera de «que se termine de dibujar» al abrir y al cambiar de pantalla es una espera a que la página quede quieta.
 const { tipo } = require('./filtros');
 const { chromium } = require('playwright'); const path = require('path'), fs = require('fs'), os = require('os');
+const { quieto } = require('./ayuda'); const { AsyncLocalStorage } = require('async_hooks'); const bloque = new AsyncLocalStorage();
+const log = (...a) => { const b = bloque.getStore(); if (b) b.push(a.join(' ')); else console.log(...a); };
+const esp = (p, ms) => quieto(p, Math.max(80, Math.round(ms * 0.35)));  // sustituye a waitForTimeout(ms): espera a que la pantalla quede quieta
 const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
 const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', displayName: 'Brandon Villegas' };
 const OPER = { uid: 'o1', email: 'operario@gmail.com', displayName: 'Pedro Operario' };
 const GAB = { uid: 'g1', email: 'gabinete@gmail.com', displayName: 'Gabinete Prueba' };
 const errores = [];
-const ok = (c, m) => { if (!c) { console.log('FALLA:', m); process.exitCode = 1; } else console.log('ok  -', m); return !!c; };
+const ok = (c, m) => { if (!c) { log('FALLA:', m); process.exitCode = 1; } else log('ok  -', m); return !!c; };
 const ahora = Date.now(), hora = 36e5;
 const base = extra => ({ actividad: 'LIB', creadoPor: 'operario@gmail.com', origen: 'app', estructuraId: 'pp', subestructuraId: 'pp-oeste', elementoId: 'mt', tipoId: 'filtro1', capa: 'Capa 11', topografoId: 'GN', numero: '', equipo: 'ET', estado: 'PT', descripcion: 'Registro', pkInicio: 100, pkFin: 140, fechaCampo: { __ts: ahora - hora }, creadoEn: { __ts: ahora - hora }, archivos: [], ...extra });
 const DB = {
@@ -31,6 +36,8 @@ const DB = {
 const rutas = async c => {
   await c.route(/gstatic\.com\/firebasejs\/.*\/(firebase-[a-z]+\.js)/, r => { const f = r.request().url().match(/(firebase-[a-z]+\.js)/)[1]; r.fulfill({ path: path.join(__dirname, 'fake', f), contentType: 'application/javascript' }); });
   await c.route(/fonts\./, r => r.abort());
+  // ANTES=ruta\index.html corre la prueba contra otro index.html (por ejemplo una versión anterior, para ver que la prueba nota lo que arreglaba)
+  if (process.env.ANTES) await c.route(u => /\/(index\.html)?$/.test(u.pathname), r => r.fulfill({ path: process.env.ANTES, contentType: 'text/html; charset=utf-8' }));
 };
 async function abrir(b, u, hash) {
   const ctx = await b.newContext({ viewport: { width: 1366, height: 800 } }); await rutas(ctx); const p = await ctx.newPage();
@@ -38,20 +45,21 @@ async function abrir(b, u, hash) {
   p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts|net::|Failed to load resource/.test(m.text())) { errores.push(m.text()); console.log('CONSOLE', m.text()); } });
   await p.goto(URL);
   await p.evaluate(([d, u]) => { localStorage.clear(); localStorage.setItem('__fakeDB', JSON.stringify(d)); localStorage.setItem('__fakeUser', JSON.stringify(u)); }, [DB, u]);
-  await p.goto(URL + (hash || '')); await p.reload(); await p.waitForSelector('#nav button'); await p.waitForTimeout(700);
+  await p.goto(URL + (hash || '')); await p.reload(); await p.waitForSelector('#nav button'); await esp(p, 700);
   return { ctx, p };
 }
-const ir = async (p, v) => { await p.evaluate(v => document.querySelector(`#nav [data-v="${v}"]`).click(), v); await p.waitForTimeout(400); };
+const ir = async (p, v) => { await p.evaluate(v => document.querySelector(`#nav [data-v="${v}"]`).click(), v); await esp(p, 400); };
 const st = p => p.evaluate(() => window.__fakeStore());
 const vistaActual = p => p.evaluate(() => (document.body.className.match(/\bv-(\S+)/) || [])[1]);
 const hash = p => p.evaluate(() => location.hash);
-const abrirReg = async (p, id) => { await p.evaluate(id => { [...document.querySelectorAll('#view [data-id], #view [data-rid]')].find(e => (e.dataset.id || e.dataset.rid) === id).click(); }, id); await p.waitForTimeout(500); };
+const abrirReg = async (p, id) => { await p.evaluate(id => { [...document.querySelectorAll('#view [data-id], #view [data-rid]')].find(e => (e.dataset.id || e.dataset.rid) === id).click(); }, id); await esp(p, 500); };
 
 (async () => {
   const b = await chromium.launch();
+  const tareas = [];
 
   // C8, C9, C10 y «Editar» (operario)
-  {
+  tareas.push(async () => {
     const { ctx, p } = await abrir(b, OPER, '#ajustes');
     ok(await vistaActual(p) !== 'ajustes' && await hash(p) === '#' + await vistaActual(p), 'C8: operario entra con #ajustes: la dirección dice la pantalla que ve (' + await hash(p) + ')');
     await p.evaluate(() => { location.hash = '#todos'; }); await p.waitForTimeout(400);
@@ -84,10 +92,10 @@ const abrirReg = async (p, id) => { await p.evaluate(id => { [...document.queryS
     ok(chips.includes('No lleva código') && !chips.includes('Levantamiento'), 'C10: el estado NA se muestra «No lleva código» (' + [...new Set(chips)].join(', ') + ')');
 
     await ctx.close();
-  }
+  });
 
   // Extra (administrador)
-  {
+  tareas.push(async () => {
     const { ctx, p } = await abrir(b, ADMIN);
     // Extra: «Editar» otro registro mientras se edita uno con cambios pregunta
     await ir(p, 'todos'); await p.waitForTimeout(400); await abrirReg(p, 'mi1'); await p.click('#fEditar'); await p.waitForSelector('#fLib:not([hidden])'); await p.waitForTimeout(400);
@@ -103,10 +111,10 @@ const abrirReg = async (p, id) => { await p.evaluate(id => { [...document.queryS
       await p.keyboard.press('Escape'); await p.waitForTimeout(400);
     }
     await ctx.close();
-  }
+  });
 
   // C13: el nombre en «Registrado por» (gabinete no tiene la lista de usuarios)
-  {
+  tareas.push(async () => {
     const { ctx, p } = await abrir(b, GAB);
     await ir(p, 'todos'); await p.waitForTimeout(500);
     const ver = async id => { await abrirReg(p, id); const t = await p.textContent('#sheet .kv'); await p.keyboard.press('Escape'); await p.waitForTimeout(400); return t.replace(/\s+/g, ' '); };
@@ -114,9 +122,9 @@ const abrirReg = async (p, id) => { await p.evaluate(id => { [...document.queryS
     ok(/Registrado por\s*Ana Torres Quispe/.test(t1) && !/otra\.persona@/.test(t1), 'C13: con creadoNombre muestra el nombre sin el correo');
     ok(/Registrado por\s*viejo\.usuario(?!@)/.test(t2) && !/viejo\.usuario@/.test(t2), 'C13: sin creadoNombre muestra solo lo de antes de la «@»');
     await ctx.close();
-  }
+  });
   // C13: al crear se guarda el nombre
-  {
+  tareas.push(async () => {
     const { ctx, p } = await abrir(b, OPER);
     await ir(p, 'nueva'); await p.waitForSelector('#fLib:not([hidden])');
     await p.selectOption('#iTopo', 'GN'); await p.selectOption('#iEst', 'pp'); await p.selectOption('#iSub', 'pp-oeste'); await tipo(p, 'filtro1');
@@ -134,10 +142,10 @@ const abrirReg = async (p, id) => { await p.evaluate(id => { [...document.queryS
     ok(sug.length > 0 && !sug.includes('Capa 11'), 'A6: la capa oculta no se sugiere en «Nueva» (' + sug.join(', ') + ')');
     ok(sug.join() === 'Capa 2,Capa 10,Capa 12' || sug.length === 0 || sug.join() === [...sug].sort((x, y) => x.localeCompare(y, 'es', { numeric: true })).join(), 'A6: las sugeridas salen en orden natural (' + sug.join(', ') + ')');
     await ctx.close();
-  }
+  });
 
   // Ajustes (administrador)
-  {
+  tareas.push(async () => {
     const { ctx, p } = await abrir(b, ADMIN);
     await ir(p, 'ajustes'); await p.waitForSelector('.ajgrid [data-tab]');
     const tab = async t => { await p.evaluate(t => document.querySelector(`.ajgrid [data-tab="${t}"]`).click(), t); await p.waitForTimeout(600); };
@@ -199,10 +207,10 @@ const abrirReg = async (p, id) => { await p.evaluate(id => { [...document.queryS
     await p.keyboard.press('Escape'); await p.waitForTimeout(500);
     ok((await st(p))['usuarios/ana@gmail.com'].rol === 'operario', 'A12: al cancelar el rol no cambia');
     await ctx.close();
-  }
+  });
 
   // A9: recordar emparejamientos de una importación
-  {
+  tareas.push(async () => {
     const { ctx, p } = await abrir(b, ADMIN);
     const csv = path.join(os.tmpdir(), 'prueba50-imp.csv');
     fs.writeFileSync(csv, '﻿N° Registro;Key_Topografo;Descripcion;Km Inicio;Km Fin;Fecha Liberacion;Fecha de entrega;Estructura;Sub-Estructura;Elemento;Tipo de Liberacion\r\n'
@@ -227,10 +235,10 @@ const abrirReg = async (p, id) => { await p.evaluate(id => { [...document.queryS
     const vals = await p.$$eval('#hRes select[data-par]', s => s.map(x => x.dataset.par + '=' + x.value));
     ok(vals.includes('sub=pp-sur') && vals.includes('tipo=masivo'), 'A9: lo propuesto es lo elegido antes (' + vals.join(', ') + ')');
     await ctx.close();
-  }
+  });
 
   // P9: eje LandXML con una curva sin <Center>
-  {
+  tareas.push(async () => {
     const { ctx, p } = await abrir(b, ADMIN);
     const xml = c => `<?xml version="1.0"?><LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2" version="1.2"><Alignments><Alignment name="Eje" length="100" staStart="0"><CoordGeom><Line length="50"><Start>8300000 500000</Start><End>8300050 500000</End></Line><Curve length="50" radius="100" rot="ccw"><Start>8300050 500000</Start><End>8300090 500040</End>${c}</Curve></CoordGeom></Alignment></Alignments></LandXML>`;
     const malo = path.join(os.tmpdir(), 'prueba50-malo.xml');
@@ -243,8 +251,12 @@ const abrirReg = async (p, id) => { await p.evaluate(id => { [...document.queryS
     ok(/centro|Center/i.test(t) && !(await p.$('.dlg.on')), 'P9: el XML con la curva sin centro se rechaza con un aviso claro');
     const s = await st(p); ok(!(s['ejes/pp-oeste'] || {}).puntos || !(s['ejes/pp-oeste'].puntos || []).some(Number.isNaN), 'P9: no se guardó ningún eje con coordenadas NaN');
     await ctx.close();
-  }
+  });
 
+  const n = Math.max(1, +process.env.PARALELO || 4);
+  await Promise.all(Array.from({ length: Math.min(n, tareas.length) }, async () => { while (tareas.length) { const fn = tareas.shift(), buf = [];
+    await bloque.run(buf, fn).catch(e => { buf.push('FALLA: un bloque se detuvo: ' + String(e.message).split('\n')[0]); process.exitCode = 1; });
+    console.log(buf.join('\n')); } }));
   await b.close();
   ok(errores.length === 0, 'sin errores de página' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
 })().catch(e => { console.log('ERROR', e); process.exit(1); });
