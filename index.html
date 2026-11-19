@@ -1463,6 +1463,28 @@ body:has(.cap-bulk.flota.on) .toast{bottom:calc(var(--nav-h) + 24px + var(--bulk
 }
 #chart .pct,#chart text.lab2:not([data-banda]),#chart svg.pf-movil .nolib-t{pointer-events:none}
 #chart svg.pf-movil :is(rect.seg,rect.hueco,rect.nolib){pointer-events:fill}
+/* ---------- Anchos en celular: controles que no se salen de su caja (versión 1.43.3) ----------
+   Un desplegable toma el ancho de su opción más larga («AESEC · Abigail Elva Sofia Egocheaga Canchari») y, sin límite, se sale de su tarjeta
+   y ensancha toda la página. Safari y Chromium lo calculan igual: por eso el límite va en el control y en su contenedor, no en el motor. */
+.urow select{max-width:100%;min-width:0;box-sizing:border-box;text-overflow:ellipsis}
+@media (max-width:400px){.chart-h .tabs button{padding-inline:8px}}
+@media (max-width:340px){.chart-h .tabs{gap:0}.chart-h .tabs button{padding-inline:6px}}
+@media (max-width:480px){.ftab2 th,.ftab2 td{padding-inline:8px}.ftab2 th{letter-spacing:.02em}}
+.cmdk-i{grid-template-columns:auto auto minmax(0,1fr) auto}
+.cmdk-i.cmd{grid-template-columns:minmax(0,1fr) auto}
+@media (max-width:380px){
+  /* con el título en 0 px no se leía: código, estado y PK en una fila y el título debajo */
+  .cmdk-i:not(.cmd){grid-template-columns:minmax(0,1fr) auto}
+  .cmdk-i:not(.cmd)>*{grid-column:1/-1;justify-self:start;max-width:100%}
+  .cmdk-i:not(.cmd)>.mono:first-child{grid-column:1;grid-row:1}
+  .cmdk-i:not(.cmd) .pk{grid-column:2;grid-row:1;justify-self:end}
+}
+.pl-top .chip,.prot-e .chip{max-width:100%;min-width:0;white-space:normal;text-align:left;overflow-wrap:anywhere}
+@media (max-width:620px){
+  .pfila{grid-template-columns:minmax(0,auto) minmax(0,1fr) auto}
+  .pfila .st{white-space:normal;min-width:0}
+  .pf-n{min-width:0;overflow-wrap:anywhere}
+}
 </style>
 </head>
 <body>
@@ -4638,7 +4660,9 @@ function dibujarPerfil(sub, recs, bandas, totalBandas) {
   out.push(`<text class="pk-ext" x="${gx0}" y="${H - 6}">PK ${fmtPk(x0)}</text><text class="pk-ext" x="${gx1}" y="${H - 6}" text-anchor="end">PK ${fmtPk(x1)}</text>`);
   filasP.forEach((fp, i) => {
     if (fp.head) {
-      out.push(`<rect x="0" y="${fp.y}" width="${W}" height="${comp ? 16 : 18}" rx="6" fill="${TOK.surface2}"/><text class="grp" x="8" y="${fp.y + (comp ? 12 : 13)}">${esc(fp.t.nombre)}</text>`);
+      // Un texto de SVG no se recorta con CSS: si el nombre no cabe en el ancho, se acorta con «…» y el nombre completo queda en el title
+      const maxC = Math.max(8, Math.floor((W - 16) / 7.6)), nomT = fp.t.nombre.length > maxC ? fp.t.nombre.slice(0, maxC - 1).trimEnd() + "…" : fp.t.nombre;
+      out.push(`<rect x="0" y="${fp.y}" width="${W}" height="${comp ? 16 : 18}" rx="6" fill="${TOK.surface2}"/><text class="grp" x="8" y="${fp.y + (comp ? 12 : 13)}"><title>${esc(fp.t.nombre)}</title>${esc(nomT)}</text>`);
       return;
     }
     const b = fp.b, y0 = fp.y, y = y0 + LH;
