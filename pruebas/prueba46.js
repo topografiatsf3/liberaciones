@@ -302,13 +302,14 @@ let b;
   const opts = await p.$$eval('#iTopo option, #iEst option', o => o.map(x => x.textContent));
   ok(!opts.some(t => /Rechazado Topo|Estructura Rechazada/.test(t)), 'A4: tampoco aparecen como opción en «Nueva»');
   await p.evaluate(() => { window.__fakeNegar = false; });
-  // Sin señal: queda por subir, como siempre (no se revierte)
+  // Sin señal no se cambian las listas (lote D, D25): se avisa y no queda nada a la vista ni en cola; con señal, como siempre
   await ajustes('topografos');
   await ctx.setOffline(true); await p.evaluate(() => { window.__fakeOffline = true; });
   await p.fill('#tpId', 'YY'); await p.fill('#tpNom', 'Sin Senal Topo'); await p.click('#tpAdd'); await p.waitForTimeout(700);
-  { const tt = await p.textContent('#toast'), vis = /Sin Senal Topo/.test(await textoAj(p)); ok(/se subirá cuando haya señal/.test(tt) && vis, 'A4: sin señal el cambio queda a la vista, «se subirá cuando haya señal»: «' + tt.trim() + '» · a la vista: ' + vis); }
+  { const tt = await p.textContent('#toast'), vis = /Sin Senal Topo/.test(await textoAj(p)); ok(/Se necesita señal para cambiar las listas/.test(tt) && !vis && !(await p.evaluate(() => window.__fakeStore()['listas/topografos'].items.some(t => t.id === 'YY'))), 'A4/D25: sin señal no se agrega: «' + tt.trim() + '» · a la vista: ' + vis); }
   await ctx.setOffline(false); await p.evaluate(() => window.__fakeGoOnline()); await p.waitForTimeout(600);
-  ok(/Sin Senal Topo/.test(await textoAj(p)) && (await p.evaluate(() => window.__fakeStore()['listas/topografos'].items.some(t => t.id === 'YY'))), 'A4: al volver la señal se sube y sigue');
+  await p.fill('#tpId', 'YY'); await p.fill('#tpNom', 'Sin Senal Topo'); await p.click('#tpAdd'); await p.waitForTimeout(700);
+  ok(/Sin Senal Topo/.test(await textoAj(p)) && (await p.evaluate(() => window.__fakeStore()['listas/topografos'].items.some(t => t.id === 'YY'))), 'A4: con señal se agrega y sigue');
   await p.screenshot({ path: OUT + '/07-ajustes.png' });
 
   // ===== De vuelta el operario: su borrador avisa qué fotos volver a adjuntar =====
