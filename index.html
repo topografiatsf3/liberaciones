@@ -1726,19 +1726,43 @@ function rangoPk(a, b) {
 
 /* ---------- Fechas ---------- */
 const toDate = v => v ? (v.toDate ? v.toDate() : new Date(v)) : null;
+// Milisegundos de una fecha (0 si no hay): ordenar con esta clave, calculada una vez por registro, y no con toDate en el comparador
+const msF = v => toDate(v)?.getTime() || 0;
+// Copia ordenada por la fecha f(x) (desc: la más reciente primero); los empates quedan en su orden, igual que sort
+function ordenarMs(arr, f, desc) { const k = arr.map(x => msF(f(x))), i = arr.map((_, j) => j); i.sort(desc ? (a, b) => k[b] - k[a] : (a, b) => k[a] - k[b]); return i.map(j => arr[j]); }
+// ¿Cae hoy (fecha local)? Lo mismo que comparar toDateString con el de hoy, sin armar textos por registro
+const esHoyMs = () => { const d = new Date(), a = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), b = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime(); return t => t >= a && t < b; };
 const fmtFecha = (v, hora = true) => { const d = toDate(v); if (!d) return ""; return d.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" }) + (hora ? " " + d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: false }) : ""); };
 const localInput = d => { const p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
 
 /* ---------- Buscar en listas ---------- */
+// Versión de las listas: sube cuando llega la colección «listas» o cuando alguna lista es otra (o cambió de largo).
+// Las cachés que usan nombres de las listas (índices de L, texto de búsqueda) se rehacen al cambiar
+const LV = { v: 0, k: [] };
+function verListas() {
+  const l = S.listas, a = [l.estructuras, l.elementos, l.tipos, l.topografos, l.actividades, l.equipos], k = LV.k;
+  for (let i = 0; i < a.length; i++) if (k[2 * i] !== a[i] || k[2 * i + 1] !== a[i]?.length) { LV.v++; LV.k = a.flatMap(x => [x, x?.length]); break; }
+  return LV.v;
+}
+// Índices por id (el primero que aparece gana, como find)
+let LIX = { v: -1 };
+const primero = (arr, m = new Map()) => { (arr || []).forEach(e => { if (!m.has(e.id)) m.set(e.id, e); }); return m; };
+function idxL() {
+  const v = verListas(); if (LIX.v === v) return LIX;
+  const l = S.listas, sub = new Map(), antes = new Map();
+  (l.estructuras || []).forEach(e => primero(e.subs, sub));
+  (l.topografos || []).forEach(e => (e.antes || []).forEach(x => { if (!antes.has(x)) antes.set(x, e); }));
+  return LIX = { v, est: primero(l.estructuras), sub, ele: primero(l.elementos), tipo: primero(l.tipos), topo: primero(l.topografos), antes, act: primero(l.actividades), equipo: primero(l.equipos) };
+}
 const L = {
-  est: id => S.listas.estructuras.find(e => e.id === id),
-  sub: id => { for (const e of S.listas.estructuras) { const s = (e.subs || []).find(x => x.id === id); if (s) return s; } return null; },
-  ele: id => S.listas.elementos.find(e => e.id === id),
-  tipo: id => S.listas.tipos.find(e => e.id === id),
+  est: id => idxL().est.get(id),
+  sub: id => { const m = idxL().sub; return m.has(id) ? m.get(id) : null; },
+  ele: id => idxL().ele.get(id),
+  tipo: id => idxL().tipo.get(id),
   // También encuentra al topógrafo por una clave que tuvo antes (registros que se suben tarde desde un teléfono sin señal)
-  topo: id => S.listas.topografos.find(e => e.id === id) || (id ? S.listas.topografos.find(e => (e.antes || []).includes(id)) : undefined),
-  act: id => S.listas.actividades.find(e => e.id === id),
-  equipo: id => (S.listas.equipos || []).find(e => e.id === id)
+  topo: id => { const x = idxL(); return x.topo.get(id) || (id ? x.antes.get(id) : undefined); },
+  act: id => idxL().act.get(id),
+  equipo: id => idxL().equipo.get(id)
 };
 const nom = (o, alt = "") => o ? o.nombre : alt;
 // Clave actual de un topógrafo (si el registro trae una clave vieja, la nueva)
@@ -2285,7 +2309,7 @@ function entrarApp() {
     LISTAS_INICIALES.actividades.forEach(a => { if (!S.listas.actividades.some(x => x.id === a.id)) { const j = S.listas.actividades.findIndex(x => x.id === "ASP"); j < 0 ? S.listas.actividades.push({ ...a }) : S.listas.actividades.splice(j, 0, { ...a }); } });
     if (!(S.listas.equipos || []).length) S.listas.equipos = LISTAS_INICIALES.equipos.map(x => ({ ...x }));
     pintarNav();
-    S.listas.tipos.sort((a, b) => (a.orden || 0) - (b.orden || 0));
+    S.listas.tipos.sort((a, b) => (a.orden || 0) - (b.orden || 0)); LV.v++; // ordenada en su sitio: los índices de L se rehacen
     if (S.view === "nueva") repintarFormSuave();
     // Escribiendo en Ajustes no se repinta (se perdería lo escrito); se repinta al salir del campo
     else if (S.view === "ajustes" && document.activeElement?.closest?.("#ajBody")) S.aj._sucio = true;
@@ -2293,7 +2317,7 @@ function entrarApp() {
   }, errLeer("listas", "las listas")));
   if (escribe()) {
     S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("creadoPor", "==", S.email)), { includeMetadataChanges: true }, snap => {
-      S.mis = snap.docs.map(fila).filter(vivo).sort((a, b) => (toDate(b.fechaCampo)?.getTime() || 0) - (toDate(a.fechaCampo)?.getTime() || 0));
+      S.mis = ordenarMs(snap.docs.map(fila).filter(vivo), r => r.fechaCampo, true);
       if (!cambioReal("mis", snap)) return;
       estadoSync(); if (S.view === "mis") renderSuave(); else pintarNav();
     }, errLeer("mis", "tus registros")));
@@ -2304,7 +2328,7 @@ function entrarApp() {
   if (esGab() || puedeAjustes()) suscribirLevantamientos();
   S.subs.push(onSnapshot(collection(db, "capas"), snap => {
     S.capasCfg = {}; snap.docs.forEach(d => { S.capasCfg[d.id] = d.data(); }); S._cfgV = (S._cfgV || 0) + 1;
-    if (S.view === "panel") actualizarPanel();
+    if (S.view === "panel") enCuadro(panelPronto);
     if (S.view === "ajustes" && S.aj.tab === "capas" && !document.activeElement?.closest?.("#ajBody")) ajCapas();
     if (S.view === "nueva") { const dl = $("#dlCapas"); if (dl) repintarFormSuave(); }
   }, errLeer("capas", "las capas")));
@@ -2496,6 +2520,16 @@ function renderSuave() {
   }
   render();
 }
+// Avisos de datos que llegan juntos (las partes del resumen, aceptar en grupo): cada función se corre una sola vez por
+// cuadro; con la pestaña oculta (no hay cuadros), en el siguiente turno
+// Ancho de la ventana leído una vez (leer innerWidth después de escribir en la página obliga a recalcular el diseño):
+// se pone al día con cada cambio de tamaño y al empezar a dibujar el Panel
+let ANCHO = innerWidth; addEventListener("resize", () => { ANCHO = innerWidth; });
+const enCuadro = (() => {
+  const fs = new Set(); let prog = false;
+  const correr = () => { prog = false; const l = [...fs]; fs.clear(); l.forEach(f => f()); };
+  return f => { fs.add(f); if (prog) return; prog = true; if (document.hidden) setTimeout(correr, 0); else requestAnimationFrame(correr); };
+})();
 // Con includeMetadataChanges llegan avisos que solo cambian «subiendo/subido»: se redibuja solo si cambió algo visible
 const SNAPF = {};
 function cambioReal(clave, snap) {
@@ -3402,7 +3436,15 @@ const terminos = q => sinTilde(q).trim().split(/\s+/).filter(Boolean);
 // Un PK escrito («2+500», «0+060.5») coincide también si cae dentro del tramo del registro (inicio y fin inclusive)
 const pkTermino = x => /^\d+\+\d{3}(\.\d+)?$/.test(x) ? leerPk(x) : null;
 const enTramo = (r, p) => p != null && r.pkInicio != null && r.pkFin != null && p >= Math.min(r.pkInicio, r.pkFin) && p <= Math.max(r.pkInicio, r.pkFin);
-const coincide = (r, qs) => { if (!qs.length) return true; const t = textoBusqueda(r); return qs.every(x => t.includes(x) || enTramo(r, pkTermino(x))); };
+// Texto guardado por registro (un registro que cambia llega como otro objeto). Se rehace si cambian las listas (los nombres
+// de frente, tipo, topógrafo, equipo y actividad van en el texto) o si se cambió en el sitio la capa, el tipo, el topógrafo o el frente
+let TXT_C = new WeakMap(), _txtV = -1;
+function textoGuardado(r) {
+  const v = verListas(); if (v !== _txtV) { _txtV = v; TXT_C = new WeakMap(); }
+  const c = TXT_C.get(r); if (c && c[1] === r.capa && c[2] === r.tipoId && c[3] === r.topografoId && c[4] === r.subestructuraId) return c[0];
+  const t = textoBusqueda(r); TXT_C.set(r, [t, r.capa, r.tipoId, r.topografoId, r.subestructuraId]); return t;
+}
+const coincide = (r, qs) => { if (!qs.length) return true; const t = textoGuardado(r); return qs.every(x => t.includes(x) || enTramo(r, pkTermino(x))); };
 // Búsqueda que redibuja cuando se deja de escribir (150 ms) y devuelve el foco y el cursor al campo
 function buscadorDiferido(inp, guardar, repintar, sigue = () => true) {
   inp.addEventListener("input", () => {
@@ -3644,20 +3686,22 @@ function pintarLista(cual) {
   const noX = r => r.estado !== "X" || esAdmin() || pap, nBase = base.filter(noX).length, nDatos = datos.filter(noX).length;
   const sts = fl.st ? fl.st.split(",") : [];
   // Los números de los chips cuentan lo que se ve (con la búsqueda y sin los eliminados)
-  const ante = datos.filter(r => r.estado !== "X" || esAdmin() || pap).filter(r => coincide(r, qs));
+  // La búsqueda se evalúa una vez por registro (la usan los chips y la columna de filtros)
+  const co = new Map(), coinc = r => { let v = co.get(r); if (v === undefined) co.set(r, v = coincide(r, qs)); return v; };
+  const ante = datos.filter(r => r.estado !== "X" || esAdmin() || pap).filter(coinc);
   const cuenta = {}; ante.forEach(r => { cuenta[r.estado] = (cuenta[r.estado] || 0) + 1; });
   ante.forEach(r => { const s = seguimientoDe(r); if (s) cuenta[s] = (cuenta[s] || 0) + 1; });
   let vis = ante.filter(r => !sts.length || sts.includes(r.estado) || sts.includes(seguimientoDe(r)));
   // En Mis registros, lo observado (lo que hay que corregir) va primero
   if (cual === "mis") vis = [...vis.filter(r => r.estado === "OB"), ...vis.filter(r => r.estado !== "OB")];
   const lim = cual === "todos" ? S.verTodos : (S.verMis ||= 400);
-  [...sel].forEach(id => { if (!vis.some(r => r.id === id)) sel.delete(id); });
+  const idsVis = new Set(vis.map(r => r.id)); [...sel].forEach(id => { if (!idsVis.has(id)) sel.delete(id); });
   const nPend = (cuenta.PT || 0) + (cuenta.OB || 0);
   const chips = [["", "Todos", ante.length], ...(nPend && (cuenta.OB || 0) && (cuenta.PT || 0) ? [["PT,OB", "Pendientes + observados", nPend]] : []), ...["PT", "EP", "EC", "OB", "RE", "NA"].map(k => [k, ESTADOS[k], cuenta[k] || 0]), ...Object.keys(SEGUIM).map(k => [k, SEGUIM[k][1], cuenta[k] || 0])].filter(c => c[0] === "" || c[2] > 0 || c[0] === fl.st || sts.includes(c[0]));
   const tabla = tablaPC(), ns = sel.size, selRegs = vis.filter(r => sel.has(r.id));
   // Computadora: columna de filtros con conteos y cabeceras que ordenan y filtran
   const facOff = ls.get("lib.facOff", false), colFil = tabla && !pap && innerWidth >= 1200 && !facOff, puedeCol = tabla && !pap && innerWidth >= 1200, keysF = cual === "todos" ? ["sub", "tipo", "capa", "topo", "act", "equipo"] : ["sub", "tipo", "capa", "act"];
-  const pre = tabla && !pap ? base.filter(r => pasaFechaReg(fl, r) && (r.estado !== "X" || esAdmin()) && coincide(r, qs) && (!sts.length || sts.includes(r.estado) || sts.includes(seguimientoDe(r)))) : [];
+  const pre = tabla && !pap ? base.filter(r => pasaFechaReg(fl, r) && (r.estado !== "X" || esAdmin()) && coinc(r) && (!sts.length || sts.includes(r.estado) || sts.includes(seguimientoDe(r)))) : [];
   const C = tabla && !pap ? contarFac(pre, fl, keysF) : {};
   const fechaDe = r => r[campoFecha(fl)] || r.fechaCampo;
   const COLR = { cod: { t: "Código y estado", k: r => numDe(r.numero), st: true }, lib: { t: "Liberación", az: true, k: r => `${nom(L.tipo(r.tipoId)) || nom(L.act(r.actividad), r.actividad) || ""} ${capaDe(r)}`, fk: ["tipo", "capa", "act"] },
@@ -4131,9 +4175,14 @@ async function cargarTodoResumen(forzar) {
   if (S.view === "todos" && (S.filtro.todos.hist || terminos(S.filtro.todos.q || "").length)) conFoco("q", () => pintarLista("todos"));
 }
 // Todo el historial para Registros: los registros completos que ya están cargados más el resumen del resto
+// Se guarda mientras no cambien esas listas (cada aviso de datos trae una lista nueva); quien la usa no la modifica
+let _mezcla = { k: [], v: null };
 function mezclarHist() {
-  const m = new Map(); (BUS.todos || []).forEach(r => m.set(r.id, r)); [...S.todos, ...S.bandeja.todos()].forEach(r => m.set(r.id, r));
-  return [...m.values()].filter(vivo).sort((a, b) => (toDate(b.fechaCampo)?.getTime() || 0) - (toDate(a.fechaCampo)?.getTime() || 0));
+  const B = S.bandeja, k = [BUS.todos, S.todos, B.pend, B.ep, B.epHist, B.aspas, B.levs];
+  if (_mezcla.v && k.every((x, i) => x === _mezcla.k[i])) return _mezcla.v;
+  const m = new Map(); (BUS.todos || []).forEach(r => m.set(r.id, r)); [...S.todos, ...B.todos()].forEach(r => m.set(r.id, r));
+  const v = ordenarMs([...m.values()].filter(vivo), r => r.fechaCampo, true);
+  _mezcla = { k, v }; return v;
 }
 // Texto de búsqueda de cada registro, guardado para no rearmarlo con cada tecla
 const TXT_BUS = new WeakMap();
@@ -4158,7 +4207,8 @@ function abrirBuscador() {
     const okC = cmds.filter(c => qs.every(q => sinTilde(c.t).includes(q)));
     let okR = qs.length ? regs.filter(r => { const t = txtBus(r); return qs.every(q => t.includes(q) || enTramo(r, pkTermino(q))); }) : [];
     const exacto = qs.length === 1 && /\d{3,}/.test(qs[0]);
-    okR.sort((a, b) => (exacto ? (String(b.numero).toLowerCase().endsWith(qs[0]) - String(a.numero).toLowerCase().endsWith(qs[0])) : 0) || (toDate(b.fechaCampo)?.getTime() || 0) - (toDate(a.fechaCampo)?.getTime() || 0));
+    const kE = new Map(), kM = new Map(); okR.forEach(r => { kE.set(r, exacto ? +String(r.numero).toLowerCase().endsWith(qs[0]) : 0); kM.set(r, msF(r.fechaCampo)); });
+    okR.sort((a, b) => (kE.get(b) - kE.get(a)) || kM.get(b) - kM.get(a));
     const nR = okR.length; okR = okR.slice(0, 40);
     res = [...(qs.length ? okC.slice(0, 5) : okC.slice(0, 8)), ...okR.map(r => ({ r }))]; k = Math.min(k, Math.max(0, res.length - 1));
     box.innerHTML = res.length ? res.map((x, i) => x.r ? `<button type="button" class="cmdk-i" data-k="${i}" aria-selected="${i === k}"><span class="mono">${esc(x.r.numero || "Sin número")}</span>${chipsReg(x.r)}<span class="ct" title="${esc(nom(L.tipo(x.r.tipoId)))}${x.r.capa ? " · " + esc(x.r.capa) : ""} — ${esc(nom(L.sub(x.r.subestructuraId)))} · ${esc(fmtFecha(x.r.fechaCampo, false))}">${esc(nom(L.tipo(x.r.tipoId)))}${x.r.capa ? " · " + esc(x.r.capa) : ""}<small>${esc(nom(L.sub(x.r.subestructuraId)))} · ${esc(fmtFecha(x.r.fechaCampo, false))}</small></span><span class="mono pk">${esc(rangoPk(x.r.pkInicio, x.r.pkFin))}</span></button>`
@@ -4276,7 +4326,7 @@ function pintarAvisos(sub, recs) {
   if (!puedeAjustes() || !hay || oculto) { box.innerHTML = ""; return false; }
   const n = (x, u, v) => x === 1 ? u : v, tot = pr.sinPk.length + pr.fuera.length + pr.ocultos.length;
   // En celular el recuadro va plegado en una sola línea para que el gráfico se vea sin desplazarse
-  const cel = innerWidth < 760;
+  const cel = ANCHO < 760;
   box.innerHTML = `${cel ? `<details class="pinfo aviso pavisos pav-d"${S.panel._avAbierto ? " open" : ""}><summary><b>${tot} ${n(tot, "dato", "datos")} para corregir</b></summary>` : `<div class="pinfo aviso pavisos"><b>Datos para corregir en ${esc(sub.nombre)}</b>`}<ul>
     ${pr.sinPk.length ? `<li><span>${pr.sinPk.length} ${n(pr.sinPk.length, "registro", "registros")} sin progresiva</span><button type="button" class="linkbtn" data-prob="sinPk">Ver</button></li>` : ""}
     ${pr.fuera.length ? `<li><span>${pr.fuera.length} fuera del rango ${esc(fmtPk(pr.fr0))} a ${esc(fmtPk(pr.fr1))}</span><button type="button" class="linkbtn" data-prob="fuera">Ver</button></li>` : ""}
@@ -4462,23 +4512,32 @@ const COLOR = { PT: TOK.gPt, EP: TOK.gEp, EC: TOK.gEc, OB: TOK.gOb };
 let unsubPanel = [];
 function subsConDatos() { const out = []; for (const e of S.listas.estructuras) for (const s of e.subs || []) if (s.activo !== false && e.activo !== false) out.push({ e, s }); return out; }
 function estDeSub(subId) { return S.listas.estructuras.find(e => (e.subs || []).some(s => s.id === subId)); }
+const panelPronto = () => { if (S.view === "panel") actualizarPanel(); };
 function suscribirPanel(estId) {
   if (S.panelEst === estId && unsubPanel.length) return;
   unsubPanel.forEach(u => u()); unsubPanel = [];
   S.panelEst = estId; S.panelDatos = []; S.panelCargando = true;
   const subs = (L.est(estId)?.subs || []).map(s => s.id), partes = {}, porSub = {};
   if (!subs.length) S.panelCargando = false;
+  // Cada parte se desempaca solo cuando cambia (las demás conservan sus registros y la caché de capaN); se juntan
+  // como unirPartesRes (la parte de número mayor gana). Las partes que llegan juntas se dibujan una vez por cuadro,
+  // y lo que llega de otro frente no redibuja la vista de un frente (salvo que cambie «Cargando…»)
   const listo = (sid, k, m) => {
-    (partes[sid] ||= {})[k] = m;
-    porSub[sid] = desempacar(sid, estId, unirPartesRes(partes[sid]));
+    (partes[sid] ||= {})[k] = Object.fromEntries(desempacar(sid, estId, m).map(r => [r.id, r]));
+    const ps = partes[sid], un = {}; Object.keys(ps).sort().forEach(j => Object.assign(un, ps[j]));
+    porSub[sid] = Object.values(un);
     S.panelDatos = Object.values(porSub).flat();
+    const antes = S.panelCargando;
     S.panelCargando = subs.some(s => Object.keys(partes[s] || {}).length < PARTES_RES);
-    if (S.view === "panel") actualizarPanel();
+    if (sid !== S.panel.subId && antes === S.panelCargando && (S.panel.vista === "perfil" || S.panel.vista === "lista")) return;
+    if (S.view === "panel") enCuadro(panelPronto);
   };
   subs.forEach(sid => { for (let k = 0; k < PARTES_RES; k++) unsubPanel.push(onSnapshot(docRes(sid, k), snap => listo(sid, k, snap.exists() ? snap.data().r : {}), e => { console.warn("panel", e); listo(sid, k, {}); })); });
   S.subs.push(() => { unsubPanel.forEach(u => u()); unsubPanel = []; S.panelEst = ""; });
 }
-const natural = (a, b) => String(a).localeCompare(String(b), "es", { numeric: true, sensitivity: "base" });
+// Mismo orden que localeCompare("es", { numeric, sensitivity: "base" }), con el comparador armado una sola vez
+const COL_NAT = new Intl.Collator("es", { numeric: true, sensitivity: "base" });
+const natural = (a, b) => COL_NAT.compare(String(a), String(b));
 const hoyStr = () => new Date().toDateString();
 // Filtros de estado, topógrafo y fecha del Panel: solo resaltan lo que coincide; lo que falta y el % cuentan todo lo liberado
 const hayFiltrosPanel = () => { const P = S.panel; return !!(P.desde || P.hasta || P.st || P.topo || P.hoy); };
@@ -4711,7 +4770,7 @@ const bandaKey = (tipoId, capa) => tipoId + "|" + (capa || "");
 function visCapas() { const P = S.panel; if (!P._vis || P._visSub !== P.subId) { P._vis = ls.get("lib.vis." + P.subId, {}); P._visSub = P.subId; } return P._vis; }
 function guardarVis() { ls.set("lib.vis." + S.panel.subId, S.panel._vis || {}); }
 // En el celular, si la persona no eligió capas en ese frente, se ven solo las últimas 5 de cada tipo (en computadora, todas)
-const ultimasPorDefecto = () => innerWidth < 760 && !Object.keys(visCapas()).length;
+const ultimasPorDefecto = () => ANCHO < 760 && !Object.keys(visCapas()).length;
 function ultimas5() {
   const P = S.panel, bs = P._bandas || [];
   if (P._ult?.bs === bs) return P._ult.set;
@@ -4756,6 +4815,8 @@ function actualizarPanel() {
   P.pfComp ??= ls.get("lib.pfComp", false);
   if (P.vista === "modelo") { if ($("#mBody")) dibujarModelo(); return; }
   if (!sub || !$("#chart")) return;
+  // Anchos leídos antes de escribir nada (después costaría recalcular el diseño de toda la página)
+  ANCHO = innerWidth; P._cw = $("#chart").clientWidth;
   const planta = P.vista === "planta";
   const est = estDeSub(P.subId);
   // «base» es todo lo liberado (sin filtros): de ahí salen los números, las bandas, los huecos y el %.
@@ -4763,8 +4824,9 @@ function actualizarPanel() {
   const base = filtrarPanel(false, planta ? "" : P.subId), conF = hayFiltrosPanel();
   const recs = conF ? base.filter(coincidePanel()) : base;
   P._coinc = conF ? new Set(recs.map(r => r.id)) : null;
-  const hoy = base.filter(r => toDate(r.fechaCampo)?.toDateString() === hoyStr()).length;
-  const cnt = k => base.filter(r => r.estado === k).length;
+  const esHoy = esHoyMs(), nEst = {}; let hoy = 0;
+  base.forEach(r => { if (esHoy(msF(r.fechaCampo))) hoy++; nEst[r.estado] = (nEst[r.estado] || 0) + 1; });
+  const cnt = k => nEst[k] || 0;
   const pDe = $("#pStatsDe"); if (pDe) pDe.textContent = (planta ? `Toda la estructura ${nom(est)} (todos sus frentes)` : `Solo el frente ${sub.nombre}`) + (conF ? " · sin filtros" : "");
   $("#pStats").innerHTML = `<div class="stat" title="Con fecha de campo de hoy (no cuenta cuándo se subieron a la app)"><b>${hoy}</b><span>Liberadas hoy en campo</span></div><div class="stat PT"><b>${cnt("PT") + cnt("OB")}</b><span>Pendientes${cnt("OB") ? ` (${cnt("OB")} ${cnt("OB") === 1 ? "observada" : "observadas"})` : ""}</span></div><div class="stat EP"><b>${cnt("EP")}</b><span>En proceso</span></div><div class="stat EC"><b>${cnt("EC")}</b><span>Entregadas a Calidad</span></div>`;
   let lst, nVis = 0, nCoinc = 0;
@@ -4807,7 +4869,7 @@ function actualizarPanel() {
   const fn = $("#pFilNota");
   if (fn) { fn.hidden = !conF; fn.textContent = conF ? `Con filtros: se resalta lo que coincide (${nCoinc.toLocaleString("es-PE")} de ${nVis.toLocaleString("es-PE")}); lo que falta y el % cuentan todo lo liberado.` : ""; }
   pintarChips();
-  lst = lst.slice().sort((a, b) => (toDate(b.fechaCampo)?.getTime() || 0) - (toDate(a.fechaCampo)?.getTime() || 0));
+  lst = ordenarMs(lst, r => r.fechaCampo, true);
   $("#pListaT").textContent = S.panelCargando ? "Cargando…" : `${lst.length} liberaciones con estos filtros`;
   $("#pLista").innerHTML = lst.slice(0, 40).map(filaPanel).join("") + (lst.length > 40 ? `<p class="muted small" style="text-align:center;margin:8px 0">Se muestran las 40 más recientes.</p>` : "");
 }
@@ -4887,13 +4949,14 @@ function zonasToque(zs, lim0, lim1, yc) {
 }
 // Perfil: las capas apiladas de abajo (primera en construirse) hacia arriba, a lo largo de la progresiva
 function dibujarPerfil(sub, recs, bandas, totalBandas) {
-  const P = S.panel, box = $("#chart"); const W = Math.max(300, box.clientWidth), movil = W < 560;
+  const P = S.panel, box = $("#chart"); const W = Math.max(300, P._cw ?? box.clientWidth), movil = W < 560; P._cw = null;
   const conPk = recs.filter(r => r.pkInicio != null), sinPk = recs.length - conPk.length;
   const visRecs = bandas.flatMap(b => b.rs);
   // Rango del frente: el que se definió en Ajustes → Lugares; solo si falta, se toma de los registros
   const { x0, x1, fr0, fr1 } = rangoPanel(sub, conPk, visRecs);
   const fueraFrente = conPk.filter(r => { const [a, b] = ivDe(r); return b < fr0 || a > fr1; }).length;
-  const ocultosTipo = conPk.filter(r => !S.listas.tipos.some(t => t.id === r.tipoId && t.enGrafico)).length;
+  const enGraf = new Set(S.listas.tipos.filter(t => t.enGrafico).map(t => t.id));
+  const ocultosTipo = conPk.filter(r => !enGraf.has(r.tipoId)).length;
   const fueraInfo = $("#pFalta");
   if (!bandas.length) {
     box.innerHTML = `<div class="empty"><b>${S.panelCargando ? "Cargando…" : totalBandas ? "Todas las capas están ocultas" : "Sin liberaciones con progresiva"}</b>${S.panelCargando ? "" : totalBandas ? "Elige qué capas ver en «Capas visibles»." : "Cuando se registren liberaciones en este frente aparecerán aquí."}</div>`;
@@ -4907,13 +4970,14 @@ function dibujarPerfil(sub, recs, bandas, totalBandas) {
   const largoVis = x1 - x0;
   // filas de arriba hacia abajo (la última capa construida arriba); un encabezado por tipo con varias capas
   const filasP = []; let yy = top + 4, prevT = null;
+  const nTipo = new Map(); bandas.forEach(x => nTipo.set(x.t.id, (nTipo.get(x.t.id) || 0) + 1));
   bandas.slice().reverse().forEach(b => {
-    const grupo = bandas.filter(x => x.t.id === b.t.id).length > 1 || !!b.capa;
+    const grupo = nTipo.get(b.t.id) > 1 || !!b.capa;
     if (grupo && prevT !== b.t.id) { filasP.push({ head: true, t: b.t, y: yy }); yy += comp ? 18 : 20; }
     filasP.push({ b, y: yy, grupo }); yy += LH + bh + gap; prevT = b.t.id;
   });
   const fondo = yy, H = fondo + 26;
-  const hoy = hoyStr(), out = [HATCH], huecosT = [];
+  const esHoy = esHoyMs(), out = [HATCH], huecosT = [];
   const animar = P._animado !== sub.id; P._animado = sub.id;
   const st = paso(largoVis, gx1 - gx0), ticks = []; for (let v = Math.ceil(x0 / st) * st; v <= x1 + 1e-6; v += st) ticks.push(v);
   ticks.forEach(v => out.push(`${movil ? "" : `<line class="grid" x1="${X(v).toFixed(1)}" x2="${X(v).toFixed(1)}" y1="${top - 4}" y2="${fondo}"/>`}${pcP ? "" : `<text class="tick" x="${X(v).toFixed(1)}" y="${top - 10}" text-anchor="middle">${fmtPk(v)}</text>`}`));
@@ -4939,17 +5003,20 @@ function dibujarPerfil(sub, recs, bandas, totalBandas) {
       const xa = X(a), w = Math.max(4, X(e) - xa), hx = w === 4 ? xa + (X(e) - xa) / 2 - 2 : xa; zs.push({ x: hx, w, at: `data-gap="${k}"` });
       out.push(`<rect class="hueco" data-gap="${k}" x="${hx.toFixed(1)}" y="${y + 2}" width="${w.toFixed(1)}" height="${bh - 4}" rx="3" fill="url(#falta)" stroke="${TOK.faltaBorde}" stroke-width="1.2" stroke-dasharray="4 3"/>`);
     });
+    const naCfg = b.na.length ? cfgTipo(sub.id, b.t.id).noAplica : [];
     b.na.forEach(x => {
       const a = Math.max(x0, x.pkInicio), e = Math.min(x1, x.pkFin); if (e <= a) return;
-      const xa = X(a), w = X(e) - xa; zs.push({ x: xa, w, at: `data-na="${esc(b.t.id)}|${cfgTipo(sub.id, b.t.id).noAplica.indexOf(x)}"` });
-      out.push(`<rect class="nolib" data-na="${esc(b.t.id)}|${cfgTipo(sub.id, b.t.id).noAplica.indexOf(x)}" x="${xa.toFixed(1)}" y="${y + 2}" width="${w.toFixed(1)}" height="${bh - 4}" rx="3" fill="url(#nolib)"><title>No se libera · ${esc(rangoPk(x.pkInicio, x.pkFin))}${x.cota ? " · cota " + esc(x.cota) : ""}${x.nota ? " · " + esc(x.nota) : ""}</title></rect>`);
+      const xa = X(a), w = X(e) - xa, dna = `${esc(b.t.id)}|${naCfg.indexOf(x)}`; zs.push({ x: xa, w, at: `data-na="${dna}"` });
+      out.push(`<rect class="nolib" data-na="${dna}" x="${xa.toFixed(1)}" y="${y + 2}" width="${w.toFixed(1)}" height="${bh - 4}" rx="3" fill="url(#nolib)"><title>No se libera · ${esc(rangoPk(x.pkInicio, x.pkFin))}${x.cota ? " · cota " + esc(x.cota) : ""}${x.nota ? " · " + esc(x.nota) : ""}</title></rect>`);
       if (w > 86) out.push(`<text class="nolib-t" x="${(xa + w / 2).toFixed(1)}" y="${y + bh / 2 + 4}" text-anchor="middle">No se libera</text>`);
     });
-    b.rs.slice().sort((p, q) => (toDate(p.fechaCampo)?.getTime() || 0) - (toDate(q.fechaCampo)?.getTime() || 0)).forEach(r => {
-      const [ri, rf] = ivDe(r), a = Math.max(x0, ri), e = Math.min(x1, rf); if (e < x0 || a > x1) return;
+    // de la más antigua a la más reciente (la fecha se convierte una vez por registro)
+    const ms = b.rs.map(r => msF(r.fechaCampo));
+    b.rs.map((_, j) => j).sort((p, q) => ms[p] - ms[q]).forEach(j => {
+      const r = b.rs[j], [ri, rf] = ivDe(r), a = Math.max(x0, ri), e = Math.min(x1, rf); if (e < x0 || a > x1) return;
       // en el celular un tramo más angosto que 4 px se dibuja de 4 centrado en su lugar (no tapa el centro de un hueco vecino)
-      const x00 = X(a), w = Math.max(4, X(e) - x00), xa = movil && w === 4 ? x00 + (X(e) - x00) / 2 - 2 : x00, esHoy = toDate(r.fechaCampo)?.toDateString() === hoy; zs.push({ x: xa, w, at: `data-id="${esc(r.id)}"` });
-      out.push(`<rect class="seg${animar ? " seg-anim" : ""}${atenuado(r) ? " dimf" : ""}" data-id="${esc(r.id)}" x="${xa.toFixed(1)}" y="${y + 2}" width="${w.toFixed(1)}" height="${bh - 4}" rx="3" fill="${relleno(r.estado) || COLOR.PT}" stroke="${esHoy ? TOK.ink : "#fff"}" stroke-width="${esHoy ? 1.8 : 1.2}" style="animation-delay:${Math.min(i * 25, 400)}ms"/>`);
+      const x00 = X(a), w = Math.max(4, X(e) - x00), xa = movil && w === 4 ? x00 + (X(e) - x00) / 2 - 2 : x00, deHoy = esHoy(ms[j]); zs.push({ x: xa, w, at: `data-id="${esc(r.id)}"` });
+      out.push(`<rect class="seg${animar ? " seg-anim" : ""}${atenuado(r) ? " dimf" : ""}" data-id="${esc(r.id)}" x="${xa.toFixed(1)}" y="${y + 2}" width="${w.toFixed(1)}" height="${bh - 4}" rx="3" fill="${relleno(r.estado) || COLOR.PT}" stroke="${deHoy ? TOK.ink : "#fff"}" stroke-width="${deHoy ? 1.8 : 1.2}" style="animation-delay:${Math.min(i * 25, 400)}ms"/>`);
     });
     if (movil) out.splice(marca, 0, ...zonasToque(zs, gx0 - 2, W, y + bh / 2));
     // El nombre solo se lee; para ocultar la capa está el ojo a su izquierda (en el celular, con su zona de 44 × 44)
@@ -5062,8 +5129,8 @@ function pintarFalta() {
   if (!box) return;
   const F = P.ft ||= { orden: "largo", dir: -1, agrupar: true, ...ls.get("lib.ft", {}) };
   if (P._ftSub !== P.subId) { P.ftCapas = new Set(); P._ftSub = P.subId; }
-  const conHueco = bandas.filter(b => huecosT.some(g => g.key === b.key));
-  P.ftCapas = new Set([...P.ftCapas].filter(k => conHueco.some(b => b.key === k)));
+  const conGap = new Set(huecosT.map(g => g.key)), conHueco = bandas.filter(b => conGap.has(b.key)), kHueco = new Set(conHueco.map(b => b.key));
+  P.ftCapas = new Set([...P.ftCapas].filter(k => kHueco.has(k)));
   box.hidden = false;
   const total = huecosT.reduce((t, g) => t + g.b - g.a, 0);
   if (!conHueco.length) { box.innerHTML = `<h2>Qué falta liberar</h2><p class="muted" style="margin:0 0 12px">Nada: las capas visibles están completas entre PK ${fmtPk(x0)} y ${fmtPk(x1)}.</p>`; return; }
@@ -5077,7 +5144,8 @@ function pintarFalta() {
   const filaH = g => `<tr data-gap="${g.i}"><td class="fcap">${F.agrupar ? "" : capaDe(g)}</td><td class="mono">${fmtPk(g.a)}</td><td class="mono">${fmtPk(g.b)}</td><td class="mono fm">${mts(g.largo)}</td></tr>`;
   let cuerpo;
   if (F.agrupar) {
-    const grupos = conHueco.filter(b => !P.ftCapas.size || P.ftCapas.has(b.key)).map(b => { const gs = filas.filter(g => g.key === b.key).sort((p, q) => p.a - q.a); return { b, gs, a: gs[0].a, bb: gs[gs.length - 1].b, largo: gs.reduce((t, g) => t + g.largo, 0) }; });
+    const porKey = new Map(); filas.forEach(g => { let l = porKey.get(g.key); if (!l) porKey.set(g.key, l = []); l.push(g); });
+    const grupos = conHueco.filter(b => !P.ftCapas.size || P.ftCapas.has(b.key)).map(b => { const gs = (porKey.get(b.key) || []).slice().sort((p, q) => p.a - q.a); return { b, gs, a: gs[0].a, bb: gs[gs.length - 1].b, largo: gs.reduce((t, g) => t + g.largo, 0) }; });
     const vg = (x, o) => o === "capa" ? ordenB.get(x.b.key) : o === "desde" ? x.a : o === "hasta" ? x.bb : x.largo;
     grupos.sort((p, q) => (vg(p, F.orden) - vg(q, F.orden)) * F.dir);
     cuerpo = grupos.map(x => `<tr class="ftg"><td class="fcap">${capaDe(x.gs[0])}</td><td colspan="2" class="muted small">${x.gs.length} ${x.gs.length === 1 ? "tramo" : "tramos"}</td><td class="mono fm">${mts(x.largo)}</td></tr>${x.gs.map(filaH).join("")}`).join("");
@@ -7128,25 +7196,27 @@ function suscribirPapelera() {
   S.subs.push(() => { unsubPapelera?.(); unsubPapelera = null; S.papelera = null; });
 }
 
+// Los avisos de la Bandeja que llegan juntos (aceptar en grupo) se pintan una vez por cuadro, sin quitar el foco al buscador
+const bandejaPronto = () => { if (S.view === "bandeja") renderSuave(); };
 function suscribirBandeja() {
   S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("estado", "in", ["PT", "OB"])), { includeMetadataChanges: true }, snap => {
-    S.bandeja.pend = snap.docs.map(fila).filter(r => conCodigo(r.actividad) && vivo(r)); if (!cambioReal("bPend", snap)) return; pintarNav(); if (S.view === "bandeja") renderSuave();
+    S.bandeja.pend = snap.docs.map(fila).filter(r => conCodigo(r.actividad) && vivo(r)); if (!cambioReal("bPend", snap)) return; pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto);
   }, e => console.warn("bandeja", e)));
   S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("estado", "==", "EP"), where("origen", "==", "app")), { includeMetadataChanges: true }, snap => {
-    S.bandeja.ep = snap.docs.map(fila).filter(vivo); if (cambioReal("bEp", snap) && S.view === "bandeja") renderSuave();
+    S.bandeja.ep = snap.docs.map(fila).filter(vivo); if (cambioReal("bEp", snap) && S.view === "bandeja") enCuadro(bandejaPronto);
   }, e => { console.warn("bandeja ep", e); S.bandeja.errEP = e.code === "failed-precondition" ? "Firebase pide un índice para esta lista: abre la consola del navegador (F12) y sigue el enlace que aparece para crearlo. Tarda unos minutos." : "No se pudo leer esta lista: " + e.message; if (S.view === "bandeja") pintarBandeja(); }));
   getDoc(doc(db, "config", "general")).then(d => { if (d.exists()) S.config = d.data(); }).catch(() => {});
 }
 /* ---------- Aspas para vuelo de dron: llegan a la bandeja del administrador y del jefe de área para procesarlas ---------- */
 function suscribirAspas() {
   S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("actividad", "==", "ASP")), { includeMetadataChanges: true }, snap => {
-    S.bandeja.aspas = snap.docs.map(fila).filter(vivo); pintarNav(); if (S.view === "bandeja") pintarBandeja();
+    S.bandeja.aspas = snap.docs.map(fila).filter(vivo); if (!cambioReal("bAsp", snap)) return; pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto);
   }, e => console.warn("aspas", e)));
 }
 /* ---------- Levantamientos (sin código): llegan a gabinete y al jefe de área para que se den por enterados ---------- */
 function suscribirLevantamientos() {
   S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("estado", "==", "NA"), where("origen", "==", "app")), { includeMetadataChanges: true }, snap => {
-    S.bandeja.levs = snap.docs.map(fila).filter(r => r.actividad !== "ASP" && vivo(r)); pintarNav(); if (S.view === "bandeja") pintarBandeja();
+    S.bandeja.levs = snap.docs.map(fila).filter(r => r.actividad !== "ASP" && vivo(r)); if (!cambioReal("bLev", snap)) return; pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto);
   }, e => console.warn("levantamientos", e)));
 }
 // Una fila resumida del historial (_res) no trae el seguimiento: se busca completa antes de actuar (si no, el resumen quedaba sin actualizar)
@@ -7205,10 +7275,8 @@ function pintarSeguimiento(k) {
   const B = S.bandeja, C = SEG[k], ver = k === "ASP" ? "aspVer" : "levVer", por = B[ver] !== "hechas";
   const todos = C.fuente(), fuente = todos.filter(r => por ? !r[C.campo] : r[C.campo]);
   const q = terminos(B.q);
-  const cuando = r => toDate(r[C.campo + "En"])?.getTime() || 0;
-  const vis = fuente.filter(r => coincide(r, q))
-    .sort((a, b) => por ? (toDate(a.fechaCampo)?.getTime() || 0) - (toDate(b.fechaCampo)?.getTime() || 0) : cuando(b) - cuando(a));
-  B.sel = new Set([...B.sel].filter(id => vis.some(r => r.id === id)));
+  const vis = ordenarMs(fuente.filter(r => coincide(r, q)), por ? r => r.fechaCampo : r => r[C.campo + "En"], !por);
+  const idsVis = new Set(vis.map(r => r.id)); B.sel = new Set([...B.sel].filter(id => idsVis.has(id)));
   const ns = B.sel.size, lim = B.ver || 60, nPor = porHacer(k).length, nHechas = todos.length - nPor;
   const quien = r => esc(r[C.campo + "Nombre"] || r[C.campo + "Por"] || "");
   const arch = r => { const a = r.archivos || [], c = a.filter(x => x.tipo === "csv").length, f = a.length - c; return [c ? c + " CSV" : "", f ? f + (f === 1 ? " foto" : " fotos") : ""].filter(Boolean).join(" · ") || '<span class="muted">Sin archivos</span>'; };
@@ -7266,14 +7334,14 @@ function pintarBandeja() {
   const q = terminos(B.q), F = B.f ||= {}, KB = ["sub", "tipo", "capa", "topo"], fB = r => t === "EP" ? r.fechaLiberacion || r.fechaCampo : r.fechaCampo;
   // Filtros de la Bandeja (se recuerdan): frente (o toda la estructura), tipo, capa y topógrafo
   const pasaB = r => KB.every(k => pasaFac(F, k, r));
-  let vis = fuente.filter(r => pasaB(r) && coincide(r, q))
-    .sort((a, b) => (toDate(t === "EP" ? fB(b) : fB(a))?.getTime() || 0) - (toDate(t === "EP" ? fB(a) : fB(b))?.getTime() || 0));
-  const pcB = tablaPC(), puedeCol = pcB && innerWidth >= 1200, colFil = puedeCol && !ls.get("lib.facOff", false), C = pcB ? contarFac(fuente.filter(r => coincide(r, q)), F, KB) : {}, nFil = KB.filter(k => lstF(F[k]).length).length;
+  const co = new Map(), coinc = r => { let v = co.get(r); if (v === undefined) co.set(r, v = coincide(r, q)); return v; };
+  let vis = ordenarMs(fuente.filter(r => pasaB(r) && coinc(r)), fB, t === "EP");
+  const pcB = tablaPC(), puedeCol = pcB && innerWidth >= 1200, colFil = puedeCol && !ls.get("lib.facOff", false), C = pcB ? contarFac(fuente.filter(coinc), F, KB) : {}, nFil = KB.filter(k => lstF(F[k]).length).length;
   const COLB = { ...(t === "EP" ? { cod: { t: "Código", k: r => numDe(r.numero) } } : {}), lib: { t: "Liberación", az: true, k: r => `${nom(L.tipo(r.tipoId)) || nom(L.act(r.actividad), r.actividad) || ""} ${capaDe(r)}`, fk: ["tipo", "capa"] },
     fr: { t: "Frente", az: true, k: r => nom(L.sub(r.subestructuraId)) || "", fk: ["sub"] }, pk: { t: "Progresiva", k: r => r.pkInicio ?? 1e12 },
     fe: { t: t === "EP" ? "Aceptada y topógrafo" : "Fecha y topógrafo", k: r => toDate(fB(r))?.getTime() || 0, fk: ["topo"] } };
   if (pcB && F.ord) vis = ordenarCol(vis, F.ord, COLB);
-  B.sel = new Set([...B.sel].filter(id => vis.some(r => r.id === id)));
+  const idsVis = new Set(vis.map(r => r.id)); B.sel = new Set([...B.sel].filter(id => idsVis.has(id)));
   const nPT = B.pend.filter(r => r.estado === "PT").length, nOB = B.pend.length - nPT, nEP = B.ep.length + B.epHist.length, ns = B.sel.size;
   const lim = B.ver || 60;
   $("#view").innerHTML = `
