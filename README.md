@@ -21,6 +21,17 @@ Desde el 18/11/2026 la versión lleva tres números, **grande.mediano.mínimo** 
 
 `VERSION_APP` en `index.html` y `CACHE` en `sw.js` (`liberaciones-v1.43.1`) suben juntos; `pruebas/prueba12.js` espera el nombre de la caché.
 
+## Versión 1.44.1: controles que no se salen en celular y primeros arreglos de la auditoría del código
+
+Cambio mínimo. **Reglas de Firebase nuevas (fase 1), ya publicadas el 18/11/2026**: entregar a Calidad exige un XML de verdad, gabinete solo hace los pasos de estado que ofrece la app (y puede guardar la edición de su propio observado), la lista de usuarios la leen solo jefe y administrador, y los pedidos de acceso solo traen correo, nombre y fecha.
+
+- **Celular (también iPhone)**: el desplegable de la clave de topógrafo ya no se sale de su tarjeta en Ajustes → Usuarios y Solicitudes (corría toda la página de lado). Lo mismo en los chips de «Más liberados» de la Planta, el título de grupo del Perfil, la lista de liberaciones del Panel a 320 px, las pestañas del Panel, Ctrl+K y las zonas de Protocolos.
+- **Acciones en grupo**: si una parte no se guarda, el aviso dice cuántos sí y cuántos faltan, y al repetir no se duplica el historial. Campo manda a la papelera de a un registro por envío (lo que admite la regla del resumen).
+- **Menos lecturas**: renombrar una capa y «Desde registros» leen solo su tipo; «Nueva» lee el resumen del frente una vez.
+- **CSV**: un texto que empieza por `=`, `@`, o `+`/`-` seguido de letra ya no se ejecuta como fórmula en Excel.
+- **Errores que avisan**: una lista que deja de cargar (permiso, cuota) lo dice una vez; los cortes pasajeros de red no.
+- Copia para trabajar sin señal de hasta 100 MB; el aviso del filtro por fechas dice que los conteos son de los 3.000 más recientes; las descargas liberan su memoria.
+
 ## Versión 1.44.0: movimiento que explica qué pasó
 
 Cambio mediano. No cambia las reglas de Firebase ni la forma de trabajar: mismas pantallas, colores y pasos.
