@@ -1566,7 +1566,7 @@ const ADMIN = "brandonkluivertvillegasfranco@gmail.com";
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 let db;
-try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager(), cacheSizeBytes: 100 * 1024 * 1024 }) }); }
 catch (e) { db = initializeFirestore(app, {}); }
 
 /* ---------- Listas iniciales (se cargan una sola vez; luego se editan en Ajustes) ---------- */
@@ -2002,6 +2002,16 @@ function toast(msg, tipo = "", accion) {
   t.onmouseenter = t.onfocusin = accion ? () => clearTimeout(tTimer) : null;
   t.onmouseleave = t.onfocusout = accion ? ir : null;
 }
+// Escuchas y lecturas que fallan: queda la huella en la consola y, si no es un corte pasajero de red, se avisa una sola vez por clave
+const AVISOS_LEER = new Set();
+function errLeer(clave, que) {
+  return e => {
+    console.warn(clave, e);
+    const c = e?.code || ""; if (["unavailable", "deadline-exceeded", "cancelled", "aborted", "network-request-failed"].includes(c) || AVISOS_LEER.has(clave) || !S.dentro) return;
+    AVISOS_LEER.add(clave);
+    toast(`No se pudo leer ${que}: ` + (c === "permission-denied" ? "sin permiso (revisa que las reglas de Firebase estén publicadas)." : e?.message || "error"), "bad");
+  };
+}
 
 /* ---------- Pantalla de entrada ---------- */
 /* ---------- App instalada (ícono en el celular o la computadora) ---------- */
@@ -2258,13 +2268,13 @@ function entrarApp() {
     // Escribiendo en Ajustes no se repinta (se perdería lo escrito); se repinta al salir del campo
     else if (S.view === "ajustes" && document.activeElement?.closest?.("#ajBody")) S.aj._sucio = true;
     else render();
-  }, e => console.warn("listas", e)));
+  }, errLeer("listas", "las listas")));
   if (escribe()) {
     S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("creadoPor", "==", S.email)), { includeMetadataChanges: true }, snap => {
       S.mis = snap.docs.map(fila).filter(vivo).sort((a, b) => (toDate(b.fechaCampo)?.getTime() || 0) - (toDate(a.fechaCampo)?.getTime() || 0));
       if (!cambioReal("mis", snap)) return;
       estadoSync(); if (S.view === "mis") renderSuave(); else pintarNav();
-    }, e => console.warn("mis", e)));
+    }, errLeer("mis", "tus registros")));
   }
   if (veTodo()) suscribirTodos();
   if (esGab()) suscribirBandeja();
@@ -2275,20 +2285,20 @@ function entrarApp() {
     if (S.view === "panel") actualizarPanel();
     if (S.view === "ajustes" && S.aj.tab === "capas" && !document.activeElement?.closest?.("#ajBody")) ajCapas();
     if (S.view === "nueva") { const dl = $("#dlCapas"); if (dl) repintarFormSuave(); }
-  }, e => console.warn("capas", e)));
+  }, errLeer("capas", "las capas")));
   S.subs.push(onSnapshot(collection(db, "ejes"), snap => {
     S.ejes = {}; snap.docs.forEach(d => { S.ejes[d.id] = d.data(); });
     if (S.view === "panel" && S.panel.vista === "planta") actualizarPanel();
     if (S.view === "ajustes" && S.aj.tab === "lugares" && !document.activeElement?.closest?.("#ajBody")) ajLugares();
-  }, e => console.warn("ejes", e)));
+  }, errLeer("ejes", "los ejes")));
   if (puedeAjustes()) {
-    S.subs.push(onSnapshot(collection(db, "solicitudes"), snap => { S.solicitudes = snap.docs.map(d => ({ id: d.id, ...d.data() })); pintarNav(); if (S.view === "ajustes" && S.aj.tab === "usuarios") repintarAjSuave(); }, e => console.warn("solicitudes", e)));
-    S.subs.push(onSnapshot(collection(db, "usuarios"), snap => { S.usuarios = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.nombre || a.id).localeCompare(b.nombre || b.id)); if (S.view === "ajustes" && S.aj.tab === "usuarios") repintarAjSuave(); }, e => console.warn("usuarios", e)));
+    S.subs.push(onSnapshot(collection(db, "solicitudes"), snap => { S.solicitudes = snap.docs.map(d => ({ id: d.id, ...d.data() })); pintarNav(); if (S.view === "ajustes" && S.aj.tab === "usuarios") repintarAjSuave(); }, errLeer("solicitudes", "las solicitudes")));
+    S.subs.push(onSnapshot(collection(db, "usuarios"), snap => { S.usuarios = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.nombre || a.id).localeCompare(b.nombre || b.id)); if (S.view === "ajustes" && S.aj.tab === "usuarios") repintarAjSuave(); }, errLeer("usuarios", "los usuarios")));
   }
   getDoc(doc(db, "config", "general")).then(d => {
     S.config = d.exists() ? d.data() : {};
     if (puedeAjustes() && navigator.onLine && !resRepartido()) reconstruirResumen().then(n => { S.config.resumenV = 2; if (n && S.view === "panel") toast(`Panel preparado con ${n.toLocaleString("es-PE")} registros`); }).catch(e => console.warn("resumen", e));
-  }).catch(() => {});
+  }).catch(errLeer("config", "la configuración"));
   pintarCabecera(); cargarFiltros(); cargarBandeja();
   const pedida = location.hash.slice(1), guardada = ls.get("lib.vista", "");
   // Sin vista pedida ni guardada, cada rol abre en su tarea diaria (versión 29): gabinete en la Bandeja, el jefe en el Panel, campo en «Nueva»
@@ -2315,7 +2325,7 @@ function suscribirTodos() {
     S.todos = snap.docs.map(fila).filter(vivo); S.todosLleno = snap.docs.length >= S.limiteTodos;
     if (!cambioReal("todos", snap)) return;
     estadoSync(); if (S.view === "todos") renderSuave();
-  }, e => console.warn("todos", e));
+  }, errLeer("todos", "los registros"));
   S.subs.push(() => unsubTodos && unsubTodos());
 }
 const vivo = r => !r.borrado;
@@ -2701,9 +2711,9 @@ function archRow(a, i) {
 // Una foto guardada solo se muestra si de verdad es una imagen en base64 (si no, podría traer código: XSS)
 const fotoSegura = s => typeof s === "string" && /^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=\s]+$/.test(s) ? s : "";
 function descargar(nombre, contenido, tipo) {
+  if (!contenido.startsWith("data:")) { bajarBlob(nombre, new Blob([contenido], { type: tipo })); return; } // bajarBlob libera el Blob
   const a = document.createElement("a");
-  a.href = contenido.startsWith("data:") ? contenido : URL.createObjectURL(new Blob([contenido], { type: tipo }));
-  a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
+  a.href = contenido; a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
 }
 
 function opciones(lista, sel, vacio) {
@@ -2833,6 +2843,11 @@ function tiposUsados(excl = []) {
 // Cuántas veces se usó cada tipo en un frente: el resumen del frente (se pide una vez por sesión; sin señal sale de la copia guardada)
 // más los tipos que tienen capas configuradas ahí. Mientras llega, cuenta con los registros que ya están en el teléfono.
 const T_FRENTE = {}, T_FRENTE_PEDIDO = new Set();
+// Una sola lectura del resumen por frente para «Nueva» (usos de tipos y solapes); si falla, la siguiente vez se vuelve a pedir
+const RES_UNA = {};
+function resumenFrenteUna(sid) {
+  return RES_UNA[sid] || (RES_UNA[sid] = leerResumenFrente(sid).catch(e => { delete RES_UNA[sid]; throw e; }));
+}
 function usosFrente(sid) {
   if (!sid) return {};
   const cache = T_FRENTE[sid], c = cache ? { ...cache.c } : {}, vistos = new Set(cache ? cache.ids : []);
@@ -2840,7 +2855,7 @@ function usosFrente(sid) {
   [...(S.mis || []), ...(S.todos || [])].forEach(r => { if (r.subestructuraId === sid && r.tipoId && !vistos.has(r.id) && vivo(r) && r.estado !== "X") { vistos.add(r.id); c[r.tipoId] = (c[r.tipoId] || 0) + 1; } });
   if (!cache && !T_FRENTE_PEDIDO.has(sid)) {
     T_FRENTE_PEDIDO.add(sid);
-    leerResumenFrente(sid).then(m => {
+    resumenFrenteUna(sid).then(m => {
       const k = {}; Object.values(m || {}).forEach(a => { if (a && a[0]) k[a[0]] = (k[a[0]] || 0) + 1; });
       T_FRENTE[sid] = { c: k, ids: Object.keys(m || {}) }; repintarSelectorTipo(sid);
     }).catch(e => { console.warn("tipos del frente", e); T_FRENTE_PEDIDO.delete(sid); });
@@ -3278,7 +3293,7 @@ const RESF = {};
 function precargarFrente(subId) {
   if (!subId || RESF[subId] || RESF[subId] === null) return;
   RESF[subId] = null;
-  leerResumenFrente(subId).then(m => { RESF[subId] = desempacar(subId, estDeSub(subId)?.id || "", m); }).catch(() => { delete RESF[subId]; });
+  resumenFrenteUna(subId).then(m => { RESF[subId] = desempacar(subId, estDeSub(subId)?.id || "", m); }).catch(() => { delete RESF[subId]; });
 }
 function solapados(subId, tipoId, capa, a, b, propio) {
   const datos = S.panelDatos.some(r => r.subestructuraId === subId) ? S.panelDatos.filter(r => r.subestructuraId === subId) : RESF[subId] || [];
@@ -3533,15 +3548,16 @@ function activosReg(fl, cual) {
   if (fl.st) it.push(["st", fl.st.split(",").map(etqEstado).join(" + ")]);
   return it;
 }
-// Registros con filtro de fechas: se escucha solo ese rango en Firebase
+// Registros con filtro de fechas: se escucha solo ese rango en Firebase (hasta LIM_FECHA; si se llena, el aviso lo dice)
+const LIM_FECHA = 3000;
 function suscribirFechaTodos(fl) {
   const rg = rangoFecha(fl), cf = campoFecha(fl), key = rg ? cf + ":" + rg[0].getTime() + "-" + rg[1].getTime() : "";
   if (key === (S._fqKey || "")) return;
   S._fqUnsub?.(); S._fqUnsub = null; S._fqKey = key; S.todosFecha = null;
   if (!rg) return;
-  S._fqUnsub = onSnapshot(query(collection(db, "liberaciones"), where(cf, ">=", Timestamp.fromDate(rg[0])), where(cf, "<", Timestamp.fromDate(rg[1])), orderBy(cf, "desc"), limit(3000)), { includeMetadataChanges: true }, snap => {
-    S.todosFecha = snap.docs.map(fila).filter(vivo); S.todosFechaLleno = snap.docs.length >= 3000; if (S.view === "todos") pintarLista("todos");
-  }, e => { console.warn("registros por fecha", e); S.todosFecha = []; if (S.view === "todos") pintarLista("todos"); });
+  S._fqUnsub = onSnapshot(query(collection(db, "liberaciones"), where(cf, ">=", Timestamp.fromDate(rg[0])), where(cf, "<", Timestamp.fromDate(rg[1])), orderBy(cf, "desc"), limit(LIM_FECHA)), { includeMetadataChanges: true }, snap => {
+    S.todosFecha = snap.docs.map(fila).filter(vivo); S.todosFechaLleno = snap.docs.length >= LIM_FECHA; if (S.view === "todos") pintarLista("todos");
+  }, e => { errLeer("fecha", "los registros por fecha")(e); S.todosFecha = []; if (S.view === "todos") pintarLista("todos"); });
   if (!S._fqReg) { S._fqReg = true; S.subs.push(() => { S._fqUnsub?.(); S._fqUnsub = null; S._fqKey = ""; S._fqReg = false; }); }
 }
 // «+2» junto al código cuando un levantamiento con dron tiene varios códigos (uno por protocolo)
@@ -3651,7 +3667,7 @@ function pintarLista(cual) {
   ${pap || colFil ? "" : pcFil ? `<div class="rfil" id="rFil">${controlesReg(fl, cual, false)}${hayFiltro ? '<button type="button" class="btn-txt" id="rfX">Limpiar filtros</button>' : ""}</div>`
     : `<button type="button" class="fil-btn" id="rFilBtn" style="margin:0 0 8px;border-top:0;padding-top:0"><span class="fil-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg></span><b>${activos.length ? `${activos.length} ${activos.length === 1 ? "filtro" : "filtros"}` : "Filtrar por fecha, tipo, frente…"}</b>${CHEV}</button>${activos.length ? `<div class="fchips" id="rChips" style="margin-top:0">${activos.map(([k, t]) => `<button type="button" class="chip on" data-quitar="${k}" aria-label="Quitar filtro ${esc(t)}">${esc(t)}<span class="x" aria-hidden="true">✕</span></button>`).join("")}</div>` : ""}`}
   ${puedeCol && activos.length ? `<div class="fchips fact" id="rChips"><span class="fact-n">${vis.length.toLocaleString("es-PE")} ${vis.length === 1 ? "registro" : "registros"} con</span>${activos.map(([k, t]) => `<button type="button" class="chip on" data-quitar="${k}" aria-label="Quitar filtro ${esc(t)}">${esc(t)}<span class="x" aria-hidden="true">✕</span></button>`).join("")}<button type="button" class="btn-txt" id="rfX">Limpiar todo</button></div>` : ""}
-  ${cargandoFecha ? '<p class="rf-nota">Buscando los registros de esas fechas…</p>' : porFecha && S.todosFechaLleno ? '<p class="rf-nota">Hay muchos registros en esas fechas; se muestran los 3000 más recientes. Acorta el rango para verlos todos.</p>' : ""}
+  ${cargandoFecha ? '<p class="rf-nota">Buscando los registros de esas fechas…</p>' : porFecha && S.todosFechaLleno ? `<p class="rf-nota">Hay muchos registros en esas fechas; se muestran los ${LIM_FECHA.toLocaleString("es-PE")} más recientes y los conteos son solo de esos. Acorta el rango para verlos todos.</p>` : ""}
   ${fl.fecha === "rango" && fl.f1 && fl.f2 && fl.f1 > fl.f2 ? '<p class="rf-nota">«Desde» era posterior a «Hasta»: se tomaron al revés.</p>' : ""}
   ${parcial ? `<p class="rf-nota" id="rParcial">Estos filtros revisan solo los últimos ${S.todos.length.toLocaleString("es-PE")} registros. <button type="button" class="btn-txt" id="rHist">Buscar en todo el historial</button></p>` : ""}
   ${loteF ? `<p class="pinfo aviso imp-ver" role="note"><span>Solo la importación <b>«${esc(nombreLote(loteF))}»</b>${S.loteRegs ? ` · ${S.loteRegs.length.toLocaleString("es-PE")} ${S.loteRegs.length === 1 ? "registro" : "registros"}` : " · cargando…"}</span><button type="button" class="btn-txt" id="rLoteX">Ver todos los registros</button></p>` : ""}
@@ -3944,7 +3960,7 @@ function abrirFicha(r) {
         const a = datosArch[btn.dataset.arch];
         if (a && a.tipo === "foto" && fotoSegura(a.datos) && !btn.querySelector("img")) btn.querySelector(".ext").outerHTML = `<img src="${esc(fotoSegura(a.datos))}" alt="">`;
       }
-    }, e => console.warn("archivos", e));
+    }, errLeer("archivos", "los archivos"));
     $("#fArch").addEventListener("click", e => {
       const btn = e.target.closest("[data-arch]"); if (!btn) return;
       const a = datosArch[btn.dataset.arch];
@@ -5191,8 +5207,8 @@ const MOD = { secc: {}, sup: {}, res: {}, bases: {}, med: {}, cargando: {}, supO
 function suscribirHayModelo() {
   if (MOD.haySub) return;
   const cuenta = { sup: {}, base: {} }, listo = () => { MOD.hay = {}; new Set([...Object.keys(cuenta.sup), ...Object.keys(cuenta.base)]).forEach(k => { MOD.hay[k] = { n: cuenta.sup[k] || 0, b: cuenta.base[k] || 0 }; }); if (S.view === "panel" && S.panel.vista === "modelo") marcarFrentes(); };
-  const u1 = onSnapshot(collection(db, "superficiesRes"), snap => { cuenta.sup = {}; snap.docs.forEach(d => { const n = Object.keys(d.data().r || {}).length; if (n) cuenta.sup[d.id] = n; }); listo(); }, e => console.warn("modelos", e));
-  const u2 = onSnapshot(collection(db, "bases"), snap => { cuenta.base = {}; snap.docs.forEach(d => { const k = d.data().subId; if (k) cuenta.base[k] = (cuenta.base[k] || 0) + 1; }); listo(); }, e => console.warn("modelos", e));
+  const u1 = onSnapshot(collection(db, "superficiesRes"), snap => { cuenta.sup = {}; snap.docs.forEach(d => { const n = Object.keys(d.data().r || {}).length; if (n) cuenta.sup[d.id] = n; }); listo(); }, errLeer("modelos", "los modelos"));
+  const u2 = onSnapshot(collection(db, "bases"), snap => { cuenta.base = {}; snap.docs.forEach(d => { const k = d.data().subId; if (k) cuenta.base[k] = (cuenta.base[k] || 0) + 1; }); listo(); }, errLeer("modelos", "los modelos"));
   MOD.haySub = () => { u1(); u2(); MOD.haySub = null; MOD.hay = null; };
   S.subs.push(() => MOD.haySub?.());
 }
@@ -5703,7 +5719,7 @@ const renombrarCapa = (...a) => (colaCapas = colaCapas.then(() => renombrarCapaY
 async function renombrarCapaYa(subId, tipoId, viejo, nuevo) {
   const es = d => d.subId === subId && (d.tipoId || "") === tipoId && (d.capa || "").trim() === viejo;
   try {
-    const regs = (await getDocsFromServer(query(collection(db, "liberaciones"), where("subestructuraId", "==", subId)))).docs.map(fila)
+    const regs = (await getDocsFromServer(query(collection(db, "liberaciones"), where("subestructuraId", "==", subId), where("tipoId", "==", tipoId)))).docs.map(fila)
       .filter(r => r.tipoId === tipoId && capaDe(r) === viejo);
     await lotes(regs, (b, r) => { const dat = { capa: nuevo, editadoEn: serverTimestamp(), editadoPor: S.email }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Capa renombrada: ${viejo} → ${nuevo}`); }, 120);
     if (BUS.todos) BUS.todos.forEach(r => { if (r.subestructuraId === subId && r.tipoId === tipoId && capaDe(r) === viejo) r.capa = nuevo; });
@@ -7015,7 +7031,7 @@ function aplicarHist() {
 // Sin señal la escritura queda en el teléfono y se sube sola; con señal se espera la confirmación
 // Con señal muy lenta (el teléfono cree que hay señal pero no responde) no se espera más de 8 s: queda guardado en el teléfono
 async function escribir(p, ok, mal) {
-  const err = e => { BUS.en = 0; toast(mal + (e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); };
+  const err = e => { BUS.en = 0; toast(mal + (e.parcial ? e.message + "." : e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); };
   if (!navigator.onLine) { p.catch(err); toast(ok + " · se subirá cuando haya señal", "pend"); return true; }
   try {
     const r = await Promise.race([p.then(() => "ok"), new Promise(res => setTimeout(() => res("lento"), 8000))]);
@@ -7023,7 +7039,18 @@ async function escribir(p, ok, mal) {
     toast(ok); return true;
   } catch (e) { err(e); return false; }
 }
-function lotes(regs, fn, n = 150) { const ps = []; for (let i = 0; i < regs.length; i += n) { const b = writeBatch(db); regs.slice(i, i + n).forEach(r => fn(b, r)); ps.push(b.commit()); } return Promise.all(ps); }
+// Todos los lotes se arman y se mandan a la vez (sin señal quedan en cola; en serie, el 2.º no se encolaría hasta que el 1.º confirme).
+// Si solo algunos fallan, el error dice cuántos registros se guardaron y cuántos no (si fallan todos, sube el error original).
+function lotes(regs, fn, n = 150) {
+  const ps = [], tam = [];
+  for (let i = 0; i < regs.length; i += n) { const sub = regs.slice(i, i + n), b = writeBatch(db); sub.forEach(r => fn(b, r)); tam.push(sub.length); ps.push(b.commit()); }
+  return Promise.allSettled(ps).then(rs => {
+    const mal = rs.filter(x => x.status === "rejected"); if (!mal.length) return;
+    if (mal.length === rs.length) throw mal[0].reason;
+    const hechos = rs.reduce((s, x, i) => s + (x.status === "fulfilled" ? tam[i] : 0), 0), e = new Error(`se guardaron ${hechos} de ${regs.length} registros; faltan ${regs.length - hechos} (${mal[0].reason?.code === "permission-denied" ? "sin permiso" : mal[0].reason?.message || "error"}). Revisa la lista y repite lo que falte`);
+    e.parcial = true; e.hechos = hechos; throw e;
+  });
+}
 const hist = (b, r, accion, nota) => b.set(doc(collection(db, "historial")), { liberacionId: r.id, accion, usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: nota || "" });
 async function aPapelera(regs0) {
   const regs = regs0.filter(puedeBorrar); if (!regs.length) { toast("No tienes permiso para borrar eso.", "bad"); return 0; }
@@ -7035,7 +7062,7 @@ async function aPapelera(regs0) {
     b.update(doc(db, "liberaciones", r.id), { borrado: true, borradoPor: S.email, borradoNombre: S.perfil?.nombre || "", borradoEn: serverTimestamp() });
     if (r.subestructuraId) quitarResumen(b, r.id, r.subestructuraId);
     hist(b, r, "borrado", "Enviado a la papelera");
-  });
+  }, gestion ? 150 : 1); // campo: la regla del resumen solo admite que desaparezca una fila por envío
   const ids = new Set(regs.map(r => r.id));
   S.bandeja.sel.clear(); S.selReg?.clear?.();
   if (S._ficha && ids.has(S._ficha.id)) cerrarFicha();
@@ -7073,7 +7100,7 @@ function suscribirPapelera() {
   unsubPapelera = onSnapshot(query(collection(db, "liberaciones"), where("borrado", "==", true)), snap => {
     S.papelera = snap.docs.map(fila).sort((a, b) => (toDate(b.borradoEn)?.getTime() || 0) - (toDate(a.borradoEn)?.getTime() || 0));
     if (S.view === "todos") render();
-  }, e => { console.warn("papelera", e); S.papelera = []; });
+  }, e => { errLeer("papelera", "la papelera")(e); S.papelera = []; });
   S.subs.push(() => { unsubPapelera?.(); unsubPapelera = null; S.papelera = null; });
 }
 
@@ -7098,14 +7125,21 @@ function suscribirLevantamientos() {
     S.bandeja.levs = snap.docs.map(fila).filter(r => r.actividad !== "ASP" && vivo(r)); pintarNav(); if (S.view === "bandeja") pintarBandeja();
   }, e => console.warn("levantamientos", e)));
 }
+// Una fila resumida del historial (_res) no trae el seguimiento: se busca completa antes de actuar (si no, el resumen quedaba sin actualizar)
+async function completosSeg(regs0) {
+  if (!regs0.some(r => r._res)) return regs0;
+  const c = await completos(regs0); if (c.faltan.length) { toast(motivoFalta(c), "bad"); return null; }
+  return c.regs;
+}
 async function marcarVisto(regs0, si = true) {
+  if (!(regs0 = await completosSeg(regs0))) return 0;
   const regs = regs0.filter(r => r.estado === "NA" && r.actividad !== "ASP" && !!r.visto !== si); if (!regs.length) return 0;
   const n = regs.length;
   if (!si && !await confirmar("Quitar «Enterado»", `${n === 1 ? "El levantamiento vuelve" : `Los ${n} levantamientos vuelven`} a «Por ver».`, "Quitar")) return 0;
   const sal = MOV.salir(regs.map(r => r.id), si ? 1 : -1);
   const p = lotes(regs, (b, r) => {
     b.update(doc(db, "liberaciones", r.id), si ? { visto: true, vistoPor: S.email, vistoNombre: S.perfil?.nombre || "", vistoEn: serverTimestamp() } : { visto: false, vistoPor: "", vistoNombre: "", vistoEn: null });
-    if (!r._res) resumenEn(b, r.id, { ...r, visto: si });
+    resumenEn(b, r.id, { ...r, visto: si });
     hist(b, r, si ? "visto" : "novisto", si ? "Enterado" : "Vuelve a por ver");
   });
   S.bandeja.sel.clear();
@@ -7114,13 +7148,14 @@ async function marcarVisto(regs0, si = true) {
   sal.fin(ok); return ok ? n : 0;
 }
 async function marcarProcesado(regs0, si = true) {
+  if (!(regs0 = await completosSeg(regs0))) return 0;
   const regs = regs0.filter(r => r.actividad === "ASP" && !!r.procesado !== si); if (!regs.length) return 0;
   const n = regs.length;
   if (!si && !await confirmar("Devolver a «Por procesar»", `${n === 1 ? "El levantamiento vuelve" : `Los ${n} levantamientos vuelven`} a la lista de aspas por procesar.`, "Devolver")) return 0;
   const sal = MOV.salir(regs.map(r => r.id), si ? 1 : -1);
   const p = lotes(regs, (b, r) => {
     b.update(doc(db, "liberaciones", r.id), si ? { procesado: true, procesadoPor: S.email, procesadoNombre: S.perfil?.nombre || "", procesadoEn: serverTimestamp() } : { procesado: false, procesadoPor: "", procesadoNombre: "", procesadoEn: null });
-    if (!r._res) resumenEn(b, r.id, { ...r, procesado: si });
+    resumenEn(b, r.id, { ...r, procesado: si });
     hist(b, r, si ? "procesado" : "sinprocesar", si ? "Aspas procesadas" : "Devuelto a por procesar");
   });
   S.bandeja.sel.clear();
@@ -7469,7 +7504,9 @@ async function exportarSel(regs, que = "seleccion", de, { resumidos = false } = 
   try { excelRegistros(regs, que, de); toast(`${regs.length} ${regs.length === 1 ? "registro exportado" : "registros exportados"} a Excel`); }
   catch (e) { console.error("excel", e); descargar(`registros_${que}_${hoyISO()}.csv`, "\ufeff" + csvRegistros(regs).map(csvLinea).join("\r\n"), "text/csv;charset=utf-8"); toast("No se pudo armar el Excel; se descargó en CSV.", "bad"); }
 }
-function csvLinea(arr) { return arr.map(v => { const s = v == null ? "" : String(v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(","); }
+// Un texto que empieza por «=», «@», o «+»/«-» seguido de una letra, Excel lo ejecuta como fórmula: se le antepone « ' » (números, PK y cotas como «-12.5» o «+3» no se tocan)
+const formulaCsv = s => /^([=@]|[+-]\p{L})/u.test(s) ? "'" + s : s;
+function csvLinea(arr) { return arr.map(v => { const s = formulaCsv(v == null ? "" : String(v)); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(","); }
 const fISO = v => { const d = toDate(v); return d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}` : ""; };
 function ajExportar() {
   cuerpoAj();
@@ -7520,7 +7557,7 @@ function ajExportar() {
         lineas = [["Fecha", "Estructura", "Sub-Estructura", "Tipo de Liberacion", "Capa", "Registradas en campo", "Metros registrados", "Codigos generados", "Entregadas a Calidad", "Pendientes de ese dia", "Rechazadas"], ...filas.map(o => [o.f, nom(L.est(o.r.estructuraId)), nom(L.sub(o.r.subestructuraId)), nom(L.tipo(o.r.tipoId)), capaN(o.r), o.reg, Math.round(o.m * 10) / 10, o.gen, o.ent, o.pend, o.rech])];
         nombre = `avance_diario_${desde}_${hasta}.csv`;
       }
-      descargar(nombre, "﻿" + lineas.map(csvLinea).join("\r\n"), "text/csv;charset=utf-8");
+      descargar(nombre, "\ufeff" + lineas.map(csvLinea).join("\r\n"), "text/csv;charset=utf-8");
       st.textContent = `${nombre}: ${lineas.length - 1} filas de ${regs.length} registros.`;
     } catch (e) { console.error(e); st.textContent = "No se pudo exportar: " + (e.code === "failed-precondition" ? "Firebase pide un índice; abre la consola del navegador y sigue el enlace." : e.message); }
     finally { $("#xReg").disabled = $("#xDia").disabled = false; }
@@ -7667,7 +7704,7 @@ async function frenteLibre(s) {
 }
 // Lo que cuelga del frente (eje, capas configuradas y su resumen vacío) se borra junto con él
 async function borrarDatosFrente(id) {
-  let partes = 1; try { const s = await getDoc(doc(db, "secciones", id)); partes = (s.exists() && s.data().partes) || 1; } catch (e) {}
+  let partes = 1; try { const s = await getDoc(doc(db, "secciones", id)); partes = (s.exists() && s.data().partes) || 1; } catch (e) { console.warn("secciones del frente", e); toast("No se pudo leer las secciones del frente; puede quedar parte de su modelo sin borrar: " + (e.code === "permission-denied" ? "sin permiso" : e.message), "bad"); }
   const ps = [deleteDoc(doc(db, "ejes", id)), deleteDoc(doc(db, "capas", id)), deleteDoc(doc(db, "superficiesRes", id)), deleteDoc(doc(db, "secciones", id)),
     ...Array.from({ length: partes - 1 }, (_, k) => deleteDoc(doc(db, "secciones", id + "~p" + (k + 1)))), ...[0, 1, 2, 3].map(k => deleteDoc(docRes(id, k)))];
   await Promise.all(ps.map(p => p.catch(e => console.warn("quitar frente", id, e))));
@@ -8023,7 +8060,7 @@ function ajCapas() {
     if (btn.id === "cDesdeReg") {
       btn.disabled = true; btn.textContent = "Buscando…";
       try {
-        const snap = await getDocs(query(collection(db, "liberaciones"), where("subestructuraId", "==", A.capSub)));
+        const snap = await getDocs(query(collection(db, "liberaciones"), where("subestructuraId", "==", A.capSub), where("tipoId", "==", A.capTipo)));
         const enReg = [...new Set(snap.docs.map(d => d.data()).filter(r => r.tipoId === A.capTipo && r.estado !== "X").map(r => capaDe(r)).filter(Boolean))];
         const cotas = {}; snap.docs.forEach(d => { const r = d.data(); if (r.tipoId === A.capTipo && r.capa && r.cota && !cotas[r.capa.trim()]) cotas[r.capa.trim()] = r.cota; });
         const nuevas = enReg.filter(n => !cfg.capas.some(c => c.nombre === n));
@@ -8398,7 +8435,7 @@ function ajHistorico() {
       { const xr = s.dataset.par === "tipo" ? ((A.imp.lect?.tipo || []).find(z => z.raw === s.dataset.raw)?.ele || "") : ""; recordarPar(s.dataset.par, s.dataset.raw + (s.dataset.par === "tipo" ? "|" + xr : ""), s.value); } if (s.closest("#hLect")) A.imp.lectAb = true; emparejarImp(A.imp); if (!A.imp.faltan.sub.length && !A.imp.faltan.tipo.length) { A.imp.clas = null; $("#hImp").disabled = true; revisar(); } }
     else if (e.target.id === "hNombre") A.imp.nombre = e.target.value.trim() || A.imp.nombre; });
   $("#hRes").addEventListener("click", e => {
-    if (e.target.id === "hDifCsv") descargar(`diferencias_${hoyISO()}.csv`, "﻿" + [["Código", "Qué es", "Dato", "En la app", "En el archivo"], ...difsImp(A.imp)].map(csvLinea).join("\r\n"), "text/csv;charset=utf-8");
+    if (e.target.id === "hDifCsv") descargar(`diferencias_${hoyISO()}.csv`, "\ufeff" + [["Código", "Qué es", "Dato", "En la app", "En el archivo"], ...difsImp(A.imp)].map(csvLinea).join("\r\n"), "text/csv;charset=utf-8");
   });
   $("#hImp").addEventListener("click", importarHist);
   $("#hCancel")?.addEventListener("click", () => { A.imp = null; A.impMsg = ""; ajHistorico(); });
@@ -8692,33 +8729,35 @@ async function unirTipo(viejoId, destinoId, yaConfirmado) {
     // Lo que había antes, para «Deshacer»
     const antes = tiposFrescos(), pos = antes.findIndex(t => t.id === viejo.id), item = clon(antes[pos]);
     const capasAntes = Object.entries(S.capasCfg || {}).filter(([, c]) => c?.tipos?.[viejo.id]).map(([sid, c]) => ({ sid, val: clon(c.tipos[viejo.id]), teniaDest: !!c.tipos[dest.id] }));
+    let capasMal = ""; // el aviso final lo lleva (un aviso suelto lo taparía el de «Unido»)
     await lotes(regs, (b, r) => { const dat = { tipoId: dest.id, elementoId: dest.elementoId || r.elementoId || "", editadoEn: serverTimestamp(), editadoPor: S.email }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Tipo unido: «${viejo.nombre}» → «${dest.nombre}»`); }, 120);
     // Las capas configuradas del tipo quitado pasan al tipo correcto (si este no tenía) en cada frente
-    await Promise.all(capasAntes.map(x => updateDoc(doc(db, "capas", x.sid), { [`tipos.${viejo.id}`]: deleteField(), ...(x.teniaDest ? {} : { [`tipos.${dest.id}`]: x.val }) }))).catch(e => console.warn("capas al unir", e));
+    await Promise.all(capasAntes.map(x => updateDoc(doc(db, "capas", x.sid), { [`tipos.${viejo.id}`]: deleteField(), ...(x.teniaDest ? {} : { [`tipos.${dest.id}`]: x.val }) }))).catch(e => { console.warn("capas al unir", e); capasMal = " Pero la configuración de capas no se pudo pasar (" + sinPermiso(e).replace(/\.$/, "") + "): revisa Ajustes → Capas."; });
     // Superficies XML y bases del tipo quitado pasan al tipo correcto (el Modelo 2D las muestra con su nombre)
     const movidos = new Set(); let yaDest = new Set();
     try { yaDest = new Set((await getDocsFromServer(query(collection(db, "bases"), where("tipoId", "==", dest.id)))).docs.map(x => claveGrupo(x.data()))); } catch (e) { console.warn("bases del destino", e); }
     await moverGrupos("tipoId", viejo.id, d => { if (d.tipoId !== viejo.id) return null; movidos.add(claveGrupo(d)); return { tipoId: dest.id }; }).catch(e => { console.warn("superficies al unir", e); toast("Los registros se unieron, pero sus superficies XML no se pudieron pasar en el modelo: " + e.message + ". Vuelve a unir con señal.", "bad"); });
     yaDest.forEach(k => movidos.delete(k));
     if (BUS.todos) BUS.todos.forEach(r => { if (r.tipoId === viejo.id) r.tipoId = dest.id; });
-    T_FRENTE_PEDIDO.clear(); Object.keys(T_FRENTE).forEach(k => delete T_FRENTE[k]);
+    T_FRENTE_PEDIDO.clear(); Object.keys(T_FRENTE).forEach(k => delete T_FRENTE[k]); Object.keys(RES_UNA).forEach(k => delete RES_UNA[k]);
     const ok = await Promise.resolve(guardarLista("tipos", tiposFrescos().filter(t => t.id !== viejo.id), `Unido con «${dest.nombre}» · ${nRegs(n)}`));
     if (!ok) return;
-    toast(`«${viejo.nombre}» unido con «${dest.nombre}» · ${nRegs(n)}.`, "", { t: "Deshacer", fn: () => deshacerUnionTipo({ item, pos, dest, regs, capasAntes, movidos }) });
+    toast(`«${viejo.nombre}» unido con «${dest.nombre}» · ${nRegs(n)}.${capasMal}`, capasMal ? "bad" : "", { t: "Deshacer", fn: () => deshacerUnionTipo({ item, pos, dest, regs, capasAntes, movidos }) });
   } catch (e) { console.error(e); toast("No se pudo unir: " + sinPermiso(e), "bad"); }
 }
 // Devuelve el tipo a la lista, y sus registros, capas, superficies y bases a como estaban
 async function deshacerUnionTipo({ item, pos, dest, regs, capasAntes, movidos }) {
   if (!navigator.onLine) { toast("Se necesita señal para deshacer.", "bad"); return; }
+  let capasMal = ""; // el aviso final lo lleva (un aviso suelto lo taparía el de «Unión deshecha»)
   try {
     const its = tiposFrescos();
     if (!its.some(o => o.id === item.id)) { its.splice(Math.min(pos, its.length), 0, item); if (!await Promise.resolve(guardarTipos(its, `«${item.nombre}» restaurado`, false))) return; }
     await lotes(regs, (b, r) => { const dat = { tipoId: item.id, elementoId: r.elementoId || "", editadoEn: serverTimestamp(), editadoPor: S.email }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Unión deshecha: vuelve a «${item.nombre}»`); }, 120);
-    await Promise.all(capasAntes.map(x => updateDoc(doc(db, "capas", x.sid), { [`tipos.${item.id}`]: x.val, ...(x.teniaDest ? {} : { [`tipos.${dest.id}`]: deleteField() }) }))).catch(e => console.warn("capas al deshacer", e));
+    await Promise.all(capasAntes.map(x => updateDoc(doc(db, "capas", x.sid), { [`tipos.${item.id}`]: x.val, ...(x.teniaDest ? {} : { [`tipos.${dest.id}`]: deleteField() }) }))).catch(e => { console.warn("capas al deshacer", e); capasMal = " Pero la configuración de capas no se pudo devolver (" + sinPermiso(e).replace(/\.$/, "") + "): revisa Ajustes → Capas."; });
     if (movidos.size) await moverGrupos("tipoId", dest.id, d => d.tipoId === dest.id && movidos.has(claveGrupo(d)) ? { tipoId: item.id } : null).catch(e => { console.warn("superficies al deshacer", e); toast("Los registros volvieron, pero sus superficies XML no: " + e.message, "bad"); });
     const ids = new Set(regs.map(r => r.id)); if (BUS.todos) BUS.todos.forEach(r => { if (ids.has(r.id)) r.tipoId = item.id; });
-    T_FRENTE_PEDIDO.clear(); Object.keys(T_FRENTE).forEach(k => delete T_FRENTE[k]);
-    toast(`Unión deshecha: «${item.nombre}» volvió${regs.length ? ` con ${regs.length === 1 ? "su registro" : `sus ${regs.length} registros`}` : ""}.`);
+    T_FRENTE_PEDIDO.clear(); Object.keys(T_FRENTE).forEach(k => delete T_FRENTE[k]); Object.keys(RES_UNA).forEach(k => delete RES_UNA[k]);
+    toast(`Unión deshecha: «${item.nombre}» volvió${regs.length ? ` con ${regs.length === 1 ? "su registro" : `sus ${regs.length} registros`}` : ""}.${capasMal}`, capasMal ? "bad" : "");
   } catch (e) { console.error(e); toast("No se pudo deshacer: " + sinPermiso(e), "bad"); }
   repintarTipos();
 }
@@ -8884,7 +8923,8 @@ async function quitarTipo(t) {
   } catch (e) { toast("No se pudo revisar: " + e.message, "bad"); return; }
   quitarDeLista("tipos", t.id, t.nombre, repintarTipos);
   // Sin registros: su configuración de capas ya no sirve (un tipo nuevo con el mismo nombre no la hereda)
-  for (const [sid, c] of Object.entries(S.capasCfg || {})) if (c?.tipos?.[t.id]) updateDoc(doc(db, "capas", sid), { [`tipos.${t.id}`]: deleteField() }).catch(e => console.warn("capas del tipo", e));
+  let avisado = false;
+  for (const [sid, c] of Object.entries(S.capasCfg || {})) if (c?.tipos?.[t.id]) updateDoc(doc(db, "capas", sid), { [`tipos.${t.id}`]: deleteField() }).catch(e => { console.warn("capas del tipo", e); if (!avisado) { avisado = true; toast("El tipo se quitó, pero parte de su configuración de capas no se pudo borrar: " + sinPermiso(e).replace(/\.$/, "") + ".", "bad"); } });
 }
 async function quitarElemento(e) {
   if (S.listas.tipos.some(t => t.elementoId === e.id)) { toast(`«${e.nombre}» tiene tipos: quítalos o pásalos a otro elemento primero (o únelo con otro elemento).`, "bad"); return; }

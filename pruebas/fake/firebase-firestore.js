@@ -71,13 +71,16 @@ function limpiarDel(v) { if (!esObj(v)) return v; const o = {}; for (const k in 
 function emit() { if (emitting) { again = true; return; } emitting = true; do { again = false; for (const l of [...listeners]) { try { l.fire(); } catch (e) { console.error(e); } } } while (again); emitting = false; }
 export function onSnapshot(ref, a, b, c) {
   let next = a, err = b; if (typeof a === 'object' && a && typeof b === 'function') { next = b; err = c; }
-  const l = { fire: () => next(ref.type === 'doc' ? snapDoc(ref.path) : runQuery(ref)) };
+  const l = { path: ref.path, err, fire: () => next(ref.type === 'doc' ? snapDoc(ref.path) : runQuery(ref)) };
   listeners.add(l); setTimeout(() => l.fire(), 0);
   return () => listeners.delete(l);
 }
-export async function getDoc(ref) { return snapDoc(ref.path); }
+export async function getDoc(ref) { (window.__fakeLecturas ||= []).push({ doc: ref.path }); if (window.__fakeLeerMal && window.__fakeLeerMal(ref.path)) { const e = new Error('Lectura rechazada.'); e.code = 'permission-denied'; throw e; } return snapDoc(ref.path); }
 function apply(ops) {
   const paths = [];
+  // Contador para pruebas: cada envío (lote o escritura suelta) con las rutas que toca; __fakeFallar(rutas) -> true rechaza solo ese envío
+  (window.__fakeEnvios ||= []).push(ops.map(o => o.k + ':' + o.ref.path));
+  if (window.__fakeFallar && window.__fakeFallar(ops.map(o => o.ref.path))) { const e = new Error('Fallo simulado del envío.'); e.code = 'internal'; return Promise.reject(e); }
   // Simula que el servidor rechaza la grabación por permisos (no se escribe nada)
   if (window.__fakeNegar) { const e = new Error('Missing or insufficient permissions.'); e.code = 'permission-denied'; return Promise.reject(e); }
   for (const o of ops) {
@@ -92,6 +95,8 @@ function apply(ops) {
 }
 window.__fakeGoOnline = () => { window.__fakeOffline = false; pending.clear(); commits.forEach(f => f()); commits = []; emit(); };
 window.__fakeStore = () => store;
+// Para pruebas: hace fallar la escucha de una ruta (colección o documento) con ese código de error
+window.__fakeEscuchaFalla = (path, code) => { let n = 0; for (const l of [...listeners]) if (l.path === path && l.err) { const e = new Error('Escucha simulada: ' + code); e.code = code; l.err(e); n++; } return n; };
 export const setDoc = (ref, data, opt) => apply([{ k: 'set', ref, data, merge: opt && opt.merge }]);
 export const updateDoc = (ref, data) => apply([{ k: 'update', ref, data }]);
 export const deleteDoc = ref => apply([{ k: 'delete', ref }]);
@@ -99,8 +104,9 @@ export function writeBatch() {
   const ops = [];
   return { set(ref, data, opt) { ops.push({ k: 'set', ref, data, merge: opt && opt.merge }); }, update(ref, data) { ops.push({ k: 'update', ref, data }); }, delete(ref) { ops.push({ k: 'delete', ref }); }, commit: () => apply(ops) };
 }
-export async function getDocs(q) { return runQuery(q); }
-export async function getDocsFromServer(q) { return runQuery(q); }
+const logQ = q => (window.__fakeLecturas ||= []).push({ col: q.path, w: (q.c || []).filter(x => x.t === 'where').map(x => x.f) });
+export async function getDocs(q) { logQ(q); return runQuery(q); }
+export async function getDocsFromServer(q) { logQ(q); return runQuery(q); }
 export async function getDocFromServer(ref) { return snapDoc(ref.path); }
 
 export async function runTransaction(db, fn) {
