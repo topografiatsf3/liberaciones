@@ -21,6 +21,16 @@ Desde el 18/11/2026 la versión lleva tres números, **grande.mediano.mínimo** 
 
 `VERSION_APP` en `index.html` y `CACHE` en `sw.js` (`liberaciones-v1.43.1`) suben juntos; `pruebas/prueba12.js` espera el nombre de la caché.
 
+## Versión 1.44.2: más rápida, sobre todo el Panel en celular
+
+Cambio mínimo: no cambia lo que la app hace ni cómo se ve (salida comparada antes y después con 3.000 y 10.000 registros, 0 diferencias). No cambia las reglas de Firebase.
+
+- **Panel**: un solo redibujo por cuadro cuando llegan varias partes del resumen (entrar al Panel en celular con 3.000 registros: de 13 redibujos y 3,6 s de trabas a 2 redibujos y 0,5 s). El ancho de la pantalla se lee una vez. La animación de entrada de los tramos ya no se corta.
+- **Buscar** guarda el texto de cada registro y lo evalúa una vez (una tecla en celular con 10.000: de 0,37 s a 0,11 s). **Ordenar** usa un comparador guardado y claves numéricas.
+- **Bandeja**: aceptar en grupo redibuja 2 veces en vez de 113; las listas de aspas y levantamientos ya no quitan el foco a quien escribe en el buscador; avisan si dejan de cargar.
+- Las listas (frentes, tipos, topógrafos…) se buscan por índice.
+- Sin hacer: aligerar «Mis registros» con cientos de tarjetas (no se pudo garantizar que no cambiara el desplazamiento).
+
 ## Versión 1.44.1: controles que no se salen en celular y primeros arreglos de la auditoría del código
 
 Cambio mínimo. **Reglas de Firebase nuevas (fase 1), ya publicadas el 18/11/2026**: entregar a Calidad exige un XML de verdad, gabinete solo hace los pasos de estado que ofrece la app (y puede guardar la edición de su propio observado), la lista de usuarios la leen solo jefe y administrador, y los pedidos de acceso solo traen correo, nombre y fecha.

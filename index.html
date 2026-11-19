@@ -2079,7 +2079,7 @@ addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false);
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
 // Versión: grande.mediano.mínimo (1.43.0 es la antigua «versión 43»). Mínimo: arreglo chico; mediano: función nueva o cambio que se nota; grande: rediseño o cambio de reglas
-const VERSION_APP = "1.44.1";
+const VERSION_APP = "1.44.2";
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -7201,7 +7201,7 @@ const bandejaPronto = () => { if (S.view === "bandeja") renderSuave(); };
 function suscribirBandeja() {
   S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("estado", "in", ["PT", "OB"])), { includeMetadataChanges: true }, snap => {
     S.bandeja.pend = snap.docs.map(fila).filter(r => conCodigo(r.actividad) && vivo(r)); if (!cambioReal("bPend", snap)) return; pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto);
-  }, e => console.warn("bandeja", e)));
+  }, errLeer("bandeja", "la bandeja")));
   S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("estado", "==", "EP"), where("origen", "==", "app")), { includeMetadataChanges: true }, snap => {
     S.bandeja.ep = snap.docs.map(fila).filter(vivo); if (cambioReal("bEp", snap) && S.view === "bandeja") enCuadro(bandejaPronto);
   }, e => { console.warn("bandeja ep", e); S.bandeja.errEP = e.code === "failed-precondition" ? "Firebase pide un índice para esta lista: abre la consola del navegador (F12) y sigue el enlace que aparece para crearlo. Tarda unos minutos." : "No se pudo leer esta lista: " + e.message; if (S.view === "bandeja") pintarBandeja(); }));
@@ -7211,13 +7211,13 @@ function suscribirBandeja() {
 function suscribirAspas() {
   S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("actividad", "==", "ASP")), { includeMetadataChanges: true }, snap => {
     S.bandeja.aspas = snap.docs.map(fila).filter(vivo); if (!cambioReal("bAsp", snap)) return; pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto);
-  }, e => console.warn("aspas", e)));
+  }, errLeer("aspas", "las aspas")));
 }
 /* ---------- Levantamientos (sin código): llegan a gabinete y al jefe de área para que se den por enterados ---------- */
 function suscribirLevantamientos() {
   S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("estado", "==", "NA"), where("origen", "==", "app")), { includeMetadataChanges: true }, snap => {
     S.bandeja.levs = snap.docs.map(fila).filter(r => r.actividad !== "ASP" && vivo(r)); if (!cambioReal("bLev", snap)) return; pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto);
-  }, e => console.warn("levantamientos", e)));
+  }, errLeer("levantamientos", "los levantamientos")));
 }
 // Una fila resumida del historial (_res) no trae el seguimiento: se busca completa antes de actuar (si no, el resumen quedaba sin actualizar)
 async function completosSeg(regs0) {
