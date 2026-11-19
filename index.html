@@ -1565,6 +1565,8 @@ body:has(.cap-bulk.flota.on) .toast{bottom:calc(var(--nav-h) + 24px + var(--bulk
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, getDoc, getDocs, getDocsFromServer, getDocFromServer, runTransaction, documentId, setDoc, deleteField, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit, writeBatch, serverTimestamp, Timestamp, waitForPendingWrites } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+// Páginas de lo ya hecho (startAfter) y conteos del servidor (1 lectura por cada 1.000 que coinciden)
+import { startAfter, getCountFromServer } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
 window.__arranco = true;
 // Colores leídos de las variables de DESIGN.md (así el gráfico y el plano usan los mismos que el CSS)
@@ -2089,6 +2091,17 @@ function hayAlgoEscrito() {
   const f = S.form; return ["pkInicio", "pkFin", "cota", "capa", "area", "descripcion", "observaciones"].some(k => String(f[k] || "").trim()) || (f.archivos || []).length > 0;
 }
 let recargando = false, hayVersionNueva = false;
+// Versión mínima (config/general.versionMin, opcional): si esta es más vieja, se actualiza con el mismo cuidado que una versión nueva
+// (sola si no hay nada escrito; si lo hay, con el aviso). Si tras recargar sigue la vieja (la copia nueva aún no llega) no se insiste en bucle
+const numsVer = v => String(v || "").split(".").map(x => parseInt(x, 10) || 0);
+const verMenor = (a, b) => { const x = numsVer(a), y = numsVer(b); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0); return false; };
+function revisarVersionMin() {
+  const m = S.config?.versionMin; if (!m || recargando || !verMenor(VERSION_APP, m)) return;
+  const g = ls.get("lib.verMin", null), mismo = g && g.m === m && g.v === VERSION_APP && Date.now() - g.t < 600000;
+  if (mismo && g.n >= 2) { if (!g.avisado) { ls.set("lib.verMin", { ...g, avisado: true }); toast(`Esta versión (${VERSION_APP}) ya no sirve: hace falta la ${m}. Cierra la app y vuelve a abrirla con señal.`, "bad"); } return; }
+  if (!hayAlgoEscrito()) ls.set("lib.verMin", { m, v: VERSION_APP, n: (mismo ? g.n : 0) + 1, t: Date.now() });
+  document.dispatchEvent(new Event("version-nueva"));
+}
 // La versión nueva se aplica sola: al momento si no hay nada escrito; si lo hay, en cuanto se vuelva a la app sin nada pendiente
 function recargarApp() { if (recargando) return; recargando = true; if (S.view === "nueva") guardarBorrador(); ls.set("lib.actualizada", VERSION_APP); location.reload(); }
 document.addEventListener("version-nueva", () => {
@@ -2341,10 +2354,14 @@ function entrarApp() {
     S.subs.push(onSnapshot(collection(db, "solicitudes"), snap => { S.solicitudes = snap.docs.map(d => ({ id: d.id, ...d.data() })); pintarNav(); if (S.view === "ajustes" && S.aj.tab === "usuarios") repintarAjSuave(); }, errLeer("solicitudes", "las solicitudes")));
     S.subs.push(onSnapshot(collection(db, "usuarios"), snap => { S.usuarios = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.nombre || a.id).localeCompare(b.nombre || b.id)); if (S.view === "ajustes" && S.aj.tab === "usuarios") repintarAjSuave(); }, errLeer("usuarios", "los usuarios")));
   }
-  getDoc(doc(db, "config", "general")).then(d => {
+  // Configuración en vivo (versión 1.45; antes se leía una vez): una pestaña abierta días toma el prefijo y las opciones nuevas, y la versión mínima
+  let cfg1 = true;
+  S.subs.push(onSnapshot(doc(db, "config", "general"), d => {
     S.config = d.exists() ? d.data() : {};
+    revisarVersionMin();
+    if (!cfg1) return; cfg1 = false;
     if (puedeAjustes() && navigator.onLine && !resRepartido()) reconstruirResumen().then(n => { S.config.resumenV = 2; if (n && S.view === "panel") toast(`Panel preparado con ${n.toLocaleString("es-PE")} registros`); }).catch(e => console.warn("resumen", e));
-  }).catch(errLeer("config", "la configuración"));
+  }, errLeer("config", "la configuración")));
   pintarCabecera(); cargarFiltros(); cargarBandeja();
   const pedida = location.hash.slice(1), guardada = ls.get("lib.vista", "");
   // Sin vista pedida ni guardada, cada rol abre en su tarea diaria (versión 29): gabinete en la Bandeja, el jefe en el Panel, campo en «Nueva»
@@ -2365,10 +2382,34 @@ function repintarFormSuave() {
   f?.addEventListener("focusout", luego, { once: true });
 }
 let unsubTodos = null;
+// Registros: en vivo los S.limiteTodos últimos; «Cargar registros más antiguos» (versión 1.45) lee cada página siguiente una vez
+// (startAfter) y la suma, en vez de volver a escuchar todo lo cargado. Lo que sale de la escucha empujado por lo nuevo se conserva
+// (si no, quedaría un hueco antes de la primera página leída); la ficha de un registro siempre se lee al día
+const TODOS_V = { vivo: [], mas: [], caidos: new Map(), ult: null, masLleno: false };
+function unirTodos() {
+  const T = TODOS_V, ids = new Set(T.vivo.map(r => r.id)), cai = [...T.caidos.values()].filter(r => !ids.has(r.id)).sort((a, b) => (toDate(b.creadoEn)?.getTime() || 0) - (toDate(a.creadoEn)?.getTime() || 0));
+  cai.forEach(r => ids.add(r.id));
+  S.todos = [...T.vivo, ...cai, ...T.mas.filter(r => !ids.has(r.id))].filter(vivo);
+}
+async function masTodos(btn) {
+  const T = TODOS_V; if (!T.ult || T.leyendo) return; T.leyendo = true;
+  if (btn) { btn.disabled = true; btn.textContent = "Cargando…"; }
+  try {
+    const sn = await getDocs(query(collection(db, "liberaciones"), orderBy("creadoEn", "desc"), startAfter(T.ult), limit(100)));
+    const ya = new Set(T.mas.map(r => r.id)); T.mas = [...T.mas, ...sn.docs.map(fila).filter(r => !ya.has(r.id))];
+    if (sn.docs.length) T.ult = sn.docs[sn.docs.length - 1]; T.masLleno = sn.docs.length >= 100;
+    S.verTodos += 100; unirTodos(); S.todosLleno = T.masLleno;
+  } catch (e) { toast("No se pudieron cargar: " + e.message, "bad"); }
+  T.leyendo = false; if (S.view === "todos") renderSuave();
+}
 function suscribirTodos() {
   if (unsubTodos) unsubTodos();
+  const T = TODOS_V; T.vivo = []; T.mas = []; T.caidos.clear(); T.ult = null; T.masLleno = false;
   unsubTodos = onSnapshot(query(collection(db, "liberaciones"), orderBy("creadoEn", "desc"), limit(S.limiteTodos)), { includeMetadataChanges: true }, snap => {
-    S.todos = snap.docs.map(fila).filter(vivo); S.todosLleno = snap.docs.length >= S.limiteTodos;
+    const nuevos = snap.docs.map(fila);
+    if (T.mas.length) { const ids = new Set(nuevos.map(r => r.id)); T.vivo.forEach(r => { if (!ids.has(r.id)) T.caidos.set(r.id, r); }); }
+    else T.ult = snap.docs[snap.docs.length - 1] || null;
+    T.vivo = nuevos; unirTodos(); S.todosLleno = T.mas.length ? T.masLleno : snap.docs.length >= S.limiteTodos;
     if (!cambioReal("todos", snap)) return;
     estadoSync(); if (S.view === "todos") renderSuave();
   }, errLeer("todos", "los registros"));
@@ -2483,6 +2524,14 @@ $("#btnSalir").addEventListener("click", async () => {
   cortar(); signOut(auth);
 });
 
+// Escuchas que solo sirven a una pantalla (versión 1.45): se sueltan al salir de ella pasado un margen corto (si se vuelve
+// enseguida no se paga de nuevo) y la pantalla las vuelve a abrir al entrar, mostrando lo último mientras llega lo nuevo
+const SOLTAR_MS = 45000, SOLTAR = { panel: () => soltarPanel(), todos: () => { soltarPapelera(); soltarFechaTodos(); }, bandeja: () => soltarHechas() }, soltarT = {};
+function escuchasAlCambiar(antes, v) {
+  clearTimeout(soltarT[v]); delete soltarT[v];
+  if (!antes || antes === v || !SOLTAR[antes] || soltarT[antes]) return;
+  soltarT[antes] = setTimeout(() => { delete soltarT[antes]; if (S.view !== antes && S.dentro) SOLTAR[antes](); }, SOLTAR_MS);
+}
 function ir(v, desdeHistorial) {
   // Salir mientras se edita un registro con cambios pregunta antes (versión 43; también con «Atrás»); sin cambios, sale
   if (S.view === "nueva" && v !== "nueva" && S.editando && S.form && $("#fLib")) {
@@ -2493,6 +2542,7 @@ function ir(v, desdeHistorial) {
   if (S.view === "nueva" && v !== "nueva") { if (S.editando) { borrarEdicion(); S.form = null; } else guardarBorrador(); }
   const conFicha = !$("#sheet").hidden && history.state && history.state.ficha, navAntes = v !== S.view ? MOV.marcaNav() : null;
   MOV.cortar();
+  escuchasAlCambiar(S.view, v);
   S.view = v; ls.set("lib.vista", v); document.body.className = document.body.className.replace(/\bv-\S+/g, "").trim() + " v-" + v;
   if (!desdeHistorial && conFicha) history.replaceState(null, "", "#" + v);
   else if (!desdeHistorial && location.hash.slice(1) !== v) trasPop(() => history.pushState(null, "", "#" + v));
@@ -3617,13 +3667,17 @@ const LIM_FECHA = 3000;
 function suscribirFechaTodos(fl) {
   const rg = rangoFecha(fl), cf = campoFecha(fl), key = rg ? cf + ":" + rg[0].getTime() + "-" + rg[1].getTime() : "";
   if (key === (S._fqKey || "")) return;
-  S._fqUnsub?.(); S._fqUnsub = null; S._fqKey = key; S.todosFecha = null;
+  // Al volver a Registros con el mismo rango se muestra lo último mientras llega lo nuevo
+  const sigue = key && key === S._fqPrev; S._fqPrev = "";
+  S._fqUnsub?.(); S._fqUnsub = null; S._fqKey = key; if (!sigue) S.todosFecha = null;
   if (!rg) return;
   S._fqUnsub = onSnapshot(query(collection(db, "liberaciones"), where(cf, ">=", Timestamp.fromDate(rg[0])), where(cf, "<", Timestamp.fromDate(rg[1])), orderBy(cf, "desc"), limit(LIM_FECHA)), { includeMetadataChanges: true }, snap => {
     S.todosFecha = snap.docs.map(fila).filter(vivo); S.todosFechaLleno = snap.docs.length >= LIM_FECHA; if (S.view === "todos") pintarLista("todos");
   }, e => { errLeer("fecha", "los registros por fecha")(e); S.todosFecha = []; if (S.view === "todos") pintarLista("todos"); });
-  if (!S._fqReg) { S._fqReg = true; S.subs.push(() => { S._fqUnsub?.(); S._fqUnsub = null; S._fqKey = ""; S._fqReg = false; }); }
+  if (!S._fqReg) { S._fqReg = true; S.subs.push(() => { S._fqUnsub?.(); S._fqUnsub = null; S._fqKey = ""; S._fqPrev = ""; S._fqReg = false; }); }
 }
+// Al salir de Registros se suelta la escucha por fechas (versión 1.45)
+function soltarFechaTodos() { if (!S._fqUnsub) return; S._fqUnsub(); S._fqUnsub = null; S._fqPrev = S._fqKey; S._fqKey = ""; }
 // «+2» junto al código cuando un levantamiento con dron tiene varios códigos (uno por protocolo)
 const masCodigos = r => { const n = new Set((r.protocolos || []).map(x => x.numero).filter(Boolean)).size; return n > 1 ? `<span class="num-mas">+${n - 1}</span>` : ""; };
 const opcionesFrente = (sel, todos = "Todos") => `<option value="">${todos}</option>` + S.listas.estructuras.filter(e => e.activo !== false).map(e => `<optgroup label="${esc(e.nombre)}"><option value="${esc(e.id)}" ${sel === e.id ? "selected" : ""}>Toda ${esc(e.nombre)}</option>${(e.subs || []).filter(x => x.activo !== false).map(x => `<option value="${esc(x.id)}" ${sel === x.id ? "selected" : ""}>${esc(x.nombre)}</option>`).join("")}</optgroup>`).join("");
@@ -3815,7 +3869,7 @@ function pintarLista(cual) {
   ligarBulk();
   if (S._ficha && !$("#sheet").hidden) marcarFilaAbierta(S._ficha.id);
   $("#bMas")?.addEventListener("click", () => { if (cual === "todos") S.verTodos += 100; else S.verMis += 400; pintarLista(cual); });
-  $("#bMasSrv")?.addEventListener("click", () => { S.limiteTodos += 100; S.verTodos += 100; suscribirTodos(); });
+  $("#bMasSrv")?.addEventListener("click", e => masTodos(e.target));
   MOV.trasPintar();
 }
 function resumenArch(r) {
@@ -4516,7 +4570,9 @@ const panelPronto = () => { if (S.view === "panel") actualizarPanel(); };
 function suscribirPanel(estId) {
   if (S.panelEst === estId && unsubPanel.length) return;
   unsubPanel.forEach(u => u()); unsubPanel = [];
-  S.panelEst = estId; S.panelDatos = []; S.panelCargando = true;
+  // Al volver al Panel (la escucha se soltó al salir) se deja lo último mostrado hasta que lleguen todas las partes: no se ve vacío ni parpadea
+  let sigue = S._panelPrev === estId && S.panelDatos.length > 0; S._panelPrev = "";
+  S.panelEst = estId; if (!sigue) { S.panelDatos = []; S.panelCargando = true; }
   const subs = (L.est(estId)?.subs || []).map(s => s.id), partes = {}, porSub = {};
   if (!subs.length) S.panelCargando = false;
   // Cada parte se desempaca solo cuando cambia (las demás conservan sus registros y la caché de capaN); se juntan
@@ -4526,15 +4582,18 @@ function suscribirPanel(estId) {
     (partes[sid] ||= {})[k] = Object.fromEntries(desempacar(sid, estId, m).map(r => [r.id, r]));
     const ps = partes[sid], un = {}; Object.keys(ps).sort().forEach(j => Object.assign(un, ps[j]));
     porSub[sid] = Object.values(un);
+    let ya = false; if (sigue) { if (subs.some(s => Object.keys(partes[s] || {}).length < PARTES_RES)) return; sigue = false; ya = true; }
     S.panelDatos = Object.values(porSub).flat();
     const antes = S.panelCargando;
     S.panelCargando = subs.some(s => Object.keys(partes[s] || {}).length < PARTES_RES);
-    if (sid !== S.panel.subId && antes === S.panelCargando && (S.panel.vista === "perfil" || S.panel.vista === "lista")) return;
+    if (!ya && sid !== S.panel.subId && antes === S.panelCargando && (S.panel.vista === "perfil" || S.panel.vista === "lista")) return;
     if (S.view === "panel") enCuadro(panelPronto);
   };
   subs.forEach(sid => { for (let k = 0; k < PARTES_RES; k++) unsubPanel.push(onSnapshot(docRes(sid, k), snap => listo(sid, k, snap.exists() ? snap.data().r : {}), e => { console.warn("panel", e); listo(sid, k, {}); })); });
-  S.subs.push(() => { unsubPanel.forEach(u => u()); unsubPanel = []; S.panelEst = ""; });
+  S.subs.push(() => { unsubPanel.forEach(u => u()); unsubPanel = []; S.panelEst = ""; S._panelPrev = ""; });
 }
+// Al salir del Panel se suelta su escucha (cada cambio del resumen bajaba la parte entera aunque se estuviera en otra pantalla)
+function soltarPanel() { if (!unsubPanel.length) return; unsubPanel.forEach(u => u()); unsubPanel = []; S._panelPrev = S.panelEst; S.panelEst = ""; }
 // Mismo orden que localeCompare("es", { numeric, sensitivity: "base" }), con el comparador armado una sola vez
 const COL_NAT = new Intl.Collator("es", { numeric: true, sensitivity: "base" });
 const natural = (a, b) => COL_NAT.compare(String(a), String(b));
@@ -5295,14 +5354,30 @@ let rzT; addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(
    Lecturas: 1 documento con las secciones de diseño del frente, 1 resumen de superficies (en vivo) y las
    superficies del frente una sola vez por sesión; después solo se leen las nuevas. */
 const MOD = { secc: {}, sup: {}, res: {}, bases: {}, med: {}, cargando: {}, supOk: {}, unsub: null, unsubB: null, resSub: "", hay: null, hayB: {}, haySub: null };
-// Qué frentes ya tienen modelo (liberaciones subidas o base), para marcarlos en la lista de frentes
+// Qué frentes ya tienen modelo (liberaciones subidas o base), para marcarlos en la lista de frentes.
+// Versión 1.45: se lee una vez (y otra si pasaron HAY_MS) en vez de escuchar las dos colecciones enteras toda la sesión;
+// el frente abierto se cuenta con lo que ya llega en vivo de su modelo (MOD.res y MOD.bases)
+const HAY_MS = 10 * 60000;
+Object.defineProperty(MOD, "hay", { configurable: true, get() {
+  const c = MOD.hayC; if (!c) return null;
+  const sup = { ...c.sup }, base = { ...c.base };
+  const k = MOD.unsub && MOD.resSub, r = k && MOD.res[k], m = k && MOD.bases[k];
+  if (r) { const n = Object.keys(r).length; if (n) sup[k] = n; else delete sup[k]; }
+  if (m) { if (m.size) base[k] = m.size; else delete base[k]; }
+  const h = {}; new Set([...Object.keys(sup), ...Object.keys(base)]).forEach(k => { h[k] = { n: sup[k] || 0, b: base[k] || 0 }; }); return h;
+}, set(v) { if (v == null) MOD.hayC = null; } });
 function suscribirHayModelo() {
-  if (MOD.haySub) return;
-  const cuenta = { sup: {}, base: {} }, listo = () => { MOD.hay = {}; new Set([...Object.keys(cuenta.sup), ...Object.keys(cuenta.base)]).forEach(k => { MOD.hay[k] = { n: cuenta.sup[k] || 0, b: cuenta.base[k] || 0 }; }); if (S.view === "panel" && S.panel.vista === "modelo") marcarFrentes(); };
-  const u1 = onSnapshot(collection(db, "superficiesRes"), snap => { cuenta.sup = {}; snap.docs.forEach(d => { const n = Object.keys(d.data().r || {}).length; if (n) cuenta.sup[d.id] = n; }); listo(); }, errLeer("modelos", "los modelos"));
-  const u2 = onSnapshot(collection(db, "bases"), snap => { cuenta.base = {}; snap.docs.forEach(d => { const k = d.data().subId; if (k) cuenta.base[k] = (cuenta.base[k] || 0) + 1; }); listo(); }, errLeer("modelos", "los modelos"));
-  MOD.haySub = () => { u1(); u2(); MOD.haySub = null; MOD.hay = null; };
-  S.subs.push(() => MOD.haySub?.());
+  if (MOD.haySub || (MOD.hayC && Date.now() - MOD.hayT < HAY_MS)) return;
+  const yo = MOD.haySub = {};
+  Promise.all([getDocs(collection(db, "superficiesRes")), getDocs(collection(db, "bases"))]).then(([a, b]) => {
+    if (MOD.haySub !== yo) return;
+    const cuenta = { sup: {}, base: {} };
+    a.docs.forEach(d => { const n = Object.keys(d.data().r || {}).length; if (n) cuenta.sup[d.id] = n; });
+    b.docs.forEach(d => { const k = d.data().subId; if (k) cuenta.base[k] = (cuenta.base[k] || 0) + 1; });
+    MOD.hayC = cuenta; MOD.hayT = Date.now(); MOD.haySub = null;
+    if (S.view === "panel" && S.panel.vista === "modelo") marcarFrentes();
+  }).catch(e => { if (MOD.haySub === yo) MOD.haySub = null; errLeer("modelos", "los modelos")(e); });
+  if (!MOD._hayReg) { MOD._hayReg = true; S.subs.push(() => { MOD.haySub = null; MOD.hayC = null; MOD.hayT = 0; MOD._hayReg = false; }); }
 }
 const txtHay = h => [h.n ? `${h.n} ${h.n === 1 ? "liberación" : "liberaciones"}` : "", h.b ? (h.b === 1 ? "base" : `${h.b} bases`) : ""].filter(Boolean).join(" + ");
 function marcarFrentes() {
@@ -7186,15 +7261,18 @@ async function borrarSiempre(regs0, titulo) {
   return ok ? n : 0;
 }
 let unsubPapelera = null;
+// Se suelta al salir de Registros (soltarPapelera); al volver se muestra lo último mientras llega lo nuevo
+let papSigue = false, papReg = false;
 function suscribirPapelera() {
   if (unsubPapelera) return;
-  S.papelera = null;
+  if (!papSigue) S.papelera = null; papSigue = false;
   unsubPapelera = onSnapshot(query(collection(db, "liberaciones"), where("borrado", "==", true)), snap => {
     S.papelera = snap.docs.map(fila).sort((a, b) => (toDate(b.borradoEn)?.getTime() || 0) - (toDate(a.borradoEn)?.getTime() || 0));
     if (S.view === "todos") render();
   }, e => { errLeer("papelera", "la papelera")(e); S.papelera = []; });
-  S.subs.push(() => { unsubPapelera?.(); unsubPapelera = null; S.papelera = null; });
+  if (!papReg) { papReg = true; S.subs.push(() => { unsubPapelera?.(); unsubPapelera = null; S.papelera = null; papSigue = false; papReg = false; }); }
 }
+function soltarPapelera() { if (!unsubPapelera) return; unsubPapelera(); unsubPapelera = null; papSigue = S.papelera != null; }
 
 // Los avisos de la Bandeja que llegan juntos (aceptar en grupo) se pintan una vez por cuadro, sin quitar el foco al buscador
 const bandejaPronto = () => { if (S.view === "bandeja") renderSuave(); };
@@ -7202,22 +7280,150 @@ function suscribirBandeja() {
   S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("estado", "in", ["PT", "OB"])), { includeMetadataChanges: true }, snap => {
     S.bandeja.pend = snap.docs.map(fila).filter(r => conCodigo(r.actividad) && vivo(r)); if (!cambioReal("bPend", snap)) return; pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto);
   }, errLeer("bandeja", "la bandeja")));
-  S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("estado", "==", "EP"), where("origen", "==", "app")), { includeMetadataChanges: true }, snap => {
-    S.bandeja.ep = snap.docs.map(fila).filter(vivo); if (cambioReal("bEp", snap) && S.view === "bandeja") enCuadro(bandejaPronto);
-  }, e => { console.warn("bandeja ep", e); S.bandeja.errEP = e.code === "failed-precondition" ? "Firebase pide un índice para esta lista: abre la consola del navegador (F12) y sigue el enlace que aparece para crearlo. Tarda unos minutos." : "No se pudo leer esta lista: " + e.message; if (S.view === "bandeja") pintarBandeja(); }));
-  getDoc(doc(db, "config", "general")).then(d => { if (d.exists()) S.config = d.data(); }).catch(() => {});
+  S.bandeja.epTope = EP_TOPE; S.bandeja.epN = null; S.bandeja.epLleno = false; suscribirEP();
+  S.subs.push(() => { S.bandeja._epU?.(); S.bandeja._epU = null; });
+  // (la configuración ya se escucha en vivo desde entrarApp)
 }
-/* ---------- Aspas para vuelo de dron: llegan a la bandeja del administrador y del jefe de área para procesarlas ---------- */
-function suscribirAspas() {
-  S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("actividad", "==", "ASP")), { includeMetadataChanges: true }, snap => {
-    S.bandeja.aspas = snap.docs.map(fila).filter(vivo); if (!cambioReal("bAsp", snap)) return; pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto);
-  }, errLeer("aspas", "las aspas")));
+// «En proceso» de la app: con el flujo normal son pocas (se entregan). Si llegaran a cientos se escuchan las primeras
+// EP_TOPE (por id: no pide índice nuevo) y «Ver más» sube el tope; el número de la pestaña lo da un conteo del servidor
+const EP_TOPE = 300;
+function suscribirEP() {
+  const B = S.bandeja, tope = B.epTope || EP_TOPE; B._epU?.();
+  B._epU = onSnapshot(query(collection(db, "liberaciones"), where("estado", "==", "EP"), where("origen", "==", "app"), limit(tope)), { includeMetadataChanges: true }, snap => {
+    B.ep = snap.docs.map(fila).filter(vivo); B.epLleno = snap.docs.length >= tope;
+    if (!B.epLleno) B.epN = null;
+    else getCountFromServer(query(collection(db, "liberaciones"), where("estado", "==", "EP"), where("origen", "==", "app"))).then(c => { if (!B.epLleno) return; const n = c.data().count; if (n !== B.epN) { B.epN = n; pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto); } }).catch(e => console.warn("conteo ep", e));
+    if (cambioReal("bEp", snap) && S.view === "bandeja") enCuadro(bandejaPronto);
+  }, e => { console.warn("bandeja ep", e); B.errEP = e.code === "failed-precondition" ? "Firebase pide un índice para esta lista: abre la consola del navegador (F12) y sigue el enlace que aparece para crearlo. Tarda unos minutos." : "No se pudo leer esta lista: " + e.message; if (S.view === "bandeja") pintarBandeja(); });
 }
-/* ---------- Levantamientos (sin código): llegan a gabinete y al jefe de área para que se den por enterados ---------- */
-function suscribirLevantamientos() {
-  S.subs.push(onSnapshot(query(collection(db, "liberaciones"), where("estado", "==", "NA"), where("origen", "==", "app")), { includeMetadataChanges: true }, snap => {
-    S.bandeja.levs = snap.docs.map(fila).filter(r => r.actividad !== "ASP" && vivo(r)); if (!cambioReal("bLev", snap)) return; pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto);
-  }, errLeer("levantamientos", "los levantamientos")));
+// Cuántas «En proceso» hay (las de la app, o su conteo si pasan del tope, más las del histórico cargadas)
+const nEnProceso = () => { const B = S.bandeja; return (B.epLleno && B.epN != null ? Math.max(B.epN, B.ep.length) : B.ep.length) + B.epHist.length; };
+/* ---------- Aspas (administrador y jefe de área las procesan) y levantamientos sin código (gabinete y jefe se dan por enterados) ----------
+   Versión 1.45: en vivo se escucha solo lo «por hacer» (procesado / visto == false); lo hecho se lee al abrir «Procesadas» o
+   «Enterados», de a SEG_PAG, el más reciente primero, y su número es un conteo del servidor. Firestore no encuentra un campo
+   que falta, y los registros nacen sin él: esos se ven por la escucha de lo editado desde la última vez (suscribirSinCampo)
+   y se les pone false una sola vez (las reglas ya lo permiten: soloProcesado, soloVisto y gabinete en los levantamientos). */
+const SEG_PAG = 200;
+const SEGQ = {
+  ASP: { campo: "procesado", w: () => [where("actividad", "==", "ASP")], es: r => r.actividad === "ASP", ve: () => puedeAjustes(), lista: "aspas", clave: "bAsp", que: ["aspas", "las aspas"] },
+  LEV: { campo: "visto", w: () => [where("estado", "==", "NA"), where("origen", "==", "app")], es: r => r.estado === "NA" && r.origen === "app" && r.actividad !== "ASP", ve: () => esGab() || puedeAjustes(), lista: "levs", clave: "bLev", que: ["levantamientos", "los levantamientos"] }
+};
+// por: lo pendiente (escucha); sin: los que aún no tienen el campo; hechas: primera página de lo hecho (escucha, al abrirla);
+// mas: páginas siguientes (leídas una vez); caidas: lo que salió de la primera página empujado por lo nuevo (si no, quedaría un hueco)
+const SEGV = {};
+const segNuevo = () => ({ por: [], sin: new Map(), hechas: [], mas: [], caidas: new Map(), hOk: false, hLleno: false, hU: null, hUlt: null, n: null, nT: 0 });
+function segUnir(k) {
+  const s = SEGV[k], Q = SEGQ[k], m = new Map();
+  for (const r of [...s.mas, ...s.caidas.values(), ...s.hechas]) if (Q.es(r) && r[Q.campo] === true && vivo(r)) m.set(r.id, r);
+  s.sin.forEach((r, id) => { if (vivo(r)) m.set(id, r); else m.delete(id); });
+  for (const r of s.por) if (Q.es(r) && vivo(r)) m.set(r.id, r); else m.delete(r.id);
+  S.bandeja[Q.lista] = [...m.values()];
+}
+const segAviso = k => { segUnir(k); pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto); };
+function suscribirSeg(k) {
+  const s = SEGV[k] = segNuevo(), Q = SEGQ[k];
+  s.n = ls.get(`lib.segN.${k}.${S.email}`, null); S.bandeja[Q.lista] = [];
+  S.subs.push(onSnapshot(query(collection(db, "liberaciones"), ...Q.w(), where(Q.campo, "==", false)), { includeMetadataChanges: true }, snap => {
+    s.por = snap.docs.map(fila); segUnir(k); if (!cambioReal(Q.clave, snap)) return; contarSeg(k); pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto);
+  }, errLeer(...Q.que)));
+  S.subs.push(() => { s.hU?.(); s.hU = null; clearTimeout(s.nT); if (SEGV[k] === s) delete SEGV[k]; });
+}
+function suscribirAspas() { suscribirSeg("ASP"); suscribirSinCampo(); }
+function suscribirLevantamientos() { suscribirSeg("LEV"); suscribirSinCampo(); }
+// Número de lo hecho: conteo del servidor (1 lectura cada 1.000), al entrar y cuando cambia lo pendiente; sin señal, el último conocido.
+// Si lo hecho ya está entero en la pantalla, se cuenta ahí
+function contarSeg(k) {
+  const s = SEGV[k]; if (!s) return; clearTimeout(s.nT);
+  if (s.hOk && !s.hLleno) return;
+  const tok = s.nTok = (s.nTok || 0) + 1;
+  s.nT = setTimeout(async () => {
+    const Q = SEGQ[k], col = collection(db, "liberaciones"), w = [...Q.w(), where(Q.campo, "==", true)];
+    try {
+      // Se cuenta cuando el servidor ya tiene lo que se acaba de marcar aquí (si no, el conteo saldría con lo de antes)
+      await waitForPendingWrites(db); if (tok !== s.nTok) return;
+      const [a, b] = await Promise.all([getCountFromServer(query(col, ...w)), getCountFromServer(query(col, ...w, where("borrado", "==", true)))]);
+      const n = Math.max(0, a.data().count - b.data().count); if (SEGV[k] !== s || n === s.n) return;
+      s.n = n; ls.set(`lib.segN.${k}.${S.email}`, n); if (S.view === "bandeja") enCuadro(bandejaPronto);
+    } catch (e) { console.warn("conteo", k, e); }
+  }, s.n == null ? 0 : 250);
+}
+function segHechasN(k) {
+  const s = SEGV[k], Q = SEGQ[k], cargadas = SEG[k].fuente().filter(r => r[Q.campo]).length;
+  return !s ? cargadas : s.hOk && !s.hLleno ? cargadas : Math.max(s.n ?? 0, cargadas);
+}
+// Primera página de lo hecho, en vivo mientras se está en la Bandeja (se suelta al salir); «Ver más» lee las siguientes
+function abrirHechas(k) {
+  const s = SEGV[k]; if (!s || s.hU) return;
+  const Q = SEGQ[k];
+  s.hU = onSnapshot(query(collection(db, "liberaciones"), orderBy(Q.campo + "En", "desc"), limit(SEG_PAG)), snap => {
+    const nuevas = snap.docs.map(fila);
+    if (s.mas.length) { const ids = new Set(nuevas.map(r => r.id)); s.hechas.forEach(r => { if (!ids.has(r.id)) s.caidas.set(r.id, r); }); nuevas.forEach(r => s.caidas.delete(r.id)); }
+    else { s.hLleno = snap.docs.length >= SEG_PAG; s.hUlt = snap.docs[snap.docs.length - 1] || null; }
+    s.hechas = nuevas; s.hOk = true; segUnir(k); if (!s.hLleno) clearTimeout(s.nT);
+    if (S.view === "bandeja") enCuadro(bandejaPronto);
+  }, e => { errLeer(...Q.que)(e); s.hOk = true; s.hU = null; if (S.view === "bandeja") enCuadro(bandejaPronto); });
+}
+async function masHechas(k) {
+  const s = SEGV[k]; if (!s || !s.hLleno || !s.hUlt || s.leyendo) return;
+  const Q = SEGQ[k]; s.leyendo = true;
+  try {
+    const sn = await getDocs(query(collection(db, "liberaciones"), orderBy(Q.campo + "En", "desc"), startAfter(s.hUlt), limit(SEG_PAG)));
+    if (SEGV[k] !== s) return;
+    const ya = new Set(s.mas.map(r => r.id)); s.mas = [...s.mas, ...sn.docs.map(fila).filter(r => !ya.has(r.id))];
+    s.hLleno = sn.docs.length >= SEG_PAG; s.hUlt = sn.docs[sn.docs.length - 1] || s.hUlt; segUnir(k);
+  } catch (e) { toast("No se pudo cargar: " + e.message, "bad"); }
+  s.leyendo = false; if (S.view === "bandeja") pintarBandeja();
+}
+// Al salir de la Bandeja se suelta la escucha de lo hecho (lo ya mostrado queda hasta que vuelva a llegar)
+// (desde ahí el número de lo hecho vuelve a ser el conteo del servidor)
+function soltarHechas() { for (const k in SEGV) { const s = SEGV[k]; if (!s.hU) continue; s.hU(); s.hU = null; s.mas = []; s.caidas.clear(); s.hOk = false; s.hLleno = false; s.hUlt = null; segUnir(k); contarSeg(k); } }
+// Registros sin procesado/visto: los editados desde la última vez en este equipo (en vivo) se miran y se les pone false.
+// La primera vez en el equipo (o con otro rol) se revisan todos una sola vez: lo mismo que antes se leía en cada apertura
+let sinCampoU = null;
+function suscribirSinCampo() {
+  if (sinCampoU || !S.email) return;
+  const ks = Object.keys(SEGQ).filter(k => SEGQ[k].ve()); if (!ks.length) return;
+  const clave = `lib.segMarca.${ks.join("")}.${S.email}`, M = 10 * 60000;
+  let marca = ls.get(clave, 0), completo = marca > 0, maxVisto = 0, t0 = marca ? marca - M : Date.now() - 864e5, vivo_ = true;
+  const falta = new Map(), escribiendo = new Set();
+  const guardarMarca = () => { if (!completo || !maxVisto) return; let m = maxVisto; falta.forEach(t => { m = Math.min(m, t - 1); }); if (m > marca) { marca = m; ls.set(clave, m); } };
+  const revisar = (docs, deLaEscucha) => {
+    const nuevos = [], toca = new Set();
+    for (const d of docs) {
+      const r = fila(d), t = toDate(r.editadoEn)?.getTime() || 0;
+      if (deLaEscucha && !r._pend && t > maxVisto) maxVisto = t;
+      for (const k of ks) {
+        const Q = SEGQ[k], s = SEGV[k]; if (!s) continue;
+        if (Q.es(r) && r[Q.campo] === undefined) { s.sin.set(r.id, r); toca.add(k); falta.set(r.id + "|" + k, t); if (!escribiendo.has(r.id + "|" + k)) nuevos.push([k, r]); }
+        else if (s.sin.delete(r.id)) { toca.add(k); falta.delete(r.id + "|" + k); }
+      }
+    }
+    toca.forEach(segAviso);
+    if (nuevos.length) ponerFalse(nuevos);
+  };
+  const ponerFalse = async lista => {
+    lista.forEach(([k, r]) => escribiendo.add(r.id + "|" + k));
+    for (let i = 0; i < lista.length; i += 400) {
+      const parte = lista.slice(i, i + 400), b = writeBatch(db);
+      parte.forEach(([k, r]) => b.update(doc(db, "liberaciones", r.id), { [SEGQ[k].campo]: false }));
+      try {
+        await b.commit(); if (!vivo_) return;
+        const toca = new Set(); parte.forEach(([k, r]) => { falta.delete(r.id + "|" + k); SEGV[k]?.sin.delete(r.id); toca.add(k); }); toca.forEach(segAviso); guardarMarca();
+      } catch (e) { console.warn("seguimiento sin campo", e); parte.forEach(([k, r]) => escribiendo.delete(r.id + "|" + k)); }
+    }
+  };
+  const escuchar = () => {
+    sinCampoU?.();
+    sinCampoU = onSnapshot(query(collection(db, "liberaciones"), where("editadoEn", ">=", Timestamp.fromDate(new Date(t0)))), snap => {
+      revisar(snap.docs, true); guardarMarca();
+      // Una pestaña abierta días: la escucha se rehace desde la marca para no cargar con todo lo editado desde que se abrió
+      if (snap.docs.length > 600 && completo && marca - M > t0) { t0 = marca - M; setTimeout(() => { if (vivo_) escuchar(); }, 0); }
+    }, e => console.warn("seguimiento sin campo", e));
+  };
+  escuchar();
+  if (!completo) Promise.all(ks.map(k => getDocs(query(collection(db, "liberaciones"), ...SEGQ[k].w())).then(sn => revisar(sn.docs, false))))
+    .then(() => { if (!vivo_) return; completo = true; if (!maxVisto) maxVisto = Date.now() - 864e5; guardarMarca(); }).catch(e => console.warn("seguimiento sin campo", e));
+  S.subs.push(() => { vivo_ = false; sinCampoU?.(); sinCampoU = null; });
 }
 // Una fila resumida del historial (_res) no trae el seguimiento: se busca completa antes de actuar (si no, el resumen quedaba sin actualizar)
 async function completosSeg(regs0) {
@@ -7266,22 +7472,27 @@ const porHacer = k => SEG[k].fuente().filter(r => !r[SEG[k].campo]);
 // Pestañas de la bandeja según el rol: gabinete (por aceptar, observadas, en proceso, levantamientos), jefe (aspas, levantamientos), administrador (todas)
 function tabsBandeja(t) {
   const B = S.bandeja, ts = [];
-  if (esGab()) ts.push(["PT", "Por aceptar", B.pend.filter(r => r.estado === "PT").length], ["OB", "Observadas", B.pend.filter(r => r.estado === "OB").length], ["EP", ESTADOS.EP, B.ep.length + B.epHist.length]);
+  if (esGab()) ts.push(["PT", "Por aceptar", B.pend.filter(r => r.estado === "PT").length], ["OB", "Observadas", B.pend.filter(r => r.estado === "OB").length], ["EP", ESTADOS.EP, nEnProceso()]);
   if (puedeAjustes()) ts.push(["ASP", "Aspas", porHacer("ASP").length]);
   ts.push(["LEV", "Levantamientos", porHacer("LEV").length]);
   return `<div class="tabs" role="group">${ts.map(([k, n, c]) => `<button type="button" data-bt="${k}" aria-pressed="${t === k}">${n} <span class="cnt">${c}</span></button>`).join("")}</div>`;
 }
 function pintarSeguimiento(k) {
-  const B = S.bandeja, C = SEG[k], ver = k === "ASP" ? "aspVer" : "levVer", por = B[ver] !== "hechas";
+  const B = S.bandeja, C = SEG[k], ver = k === "ASP" ? "aspVer" : "levVer", por = B[ver] !== "hechas", sv = SEGV[k];
+  // Lo hecho se lee al abrirlo (versión 1.45); mientras llega la primera vez se dice «Cargando…»
+  if (!por && sv) abrirHechas(k);
+  const cargando = !por && sv && !sv.hOk && !sv.hechas.length;
   const todos = C.fuente(), fuente = todos.filter(r => por ? !r[C.campo] : r[C.campo]);
   const q = terminos(B.q);
   const vis = ordenarMs(fuente.filter(r => coincide(r, q)), por ? r => r.fechaCampo : r => r[C.campo + "En"], !por);
   const idsVis = new Set(vis.map(r => r.id)); B.sel = new Set([...B.sel].filter(id => idsVis.has(id)));
-  const ns = B.sel.size, lim = B.ver || 60, nPor = porHacer(k).length, nHechas = todos.length - nPor;
+  const ns = B.sel.size, lim = B.ver || 60, nPor = porHacer(k).length, nHechas = segHechasN(k);
+  // Lo hecho que sigue en el servidor (sin buscar): «Ver más» lo trae de a SEG_PAG
+  const masSrv = !por && sv?.hLleno && !terminos(B.q).length, resto = masSrv ? Math.max(nHechas, vis.length) - lim : vis.length - lim;
   const quien = r => esc(r[C.campo + "Nombre"] || r[C.campo + "Por"] || "");
   const arch = r => { const a = r.archivos || [], c = a.filter(x => x.tipo === "csv").length, f = a.length - c; return [c ? c + " CSV" : "", f ? f + (f === 1 ? " foto" : " fotos") : ""].filter(Boolean).join(" · ") || '<span class="muted">Sin archivos</span>'; };
   const acc = r => por ? `<button type="button" class="mini ok-btn" data-a="${C.kOk}" title="${C.okLargo}" aria-label="${C.okLargo}">${C.okCorto}</button>` : `<button type="button" class="mini" data-a="${C.kDes}" title="${C.des}" aria-label="${C.des}">${C.desCorto}</button>`;
-  const lista = !vis.length ? `<div class="empty card"><b>${fuente.length ? "Nada coincide con la búsqueda" : por ? C.vacioPor : C.vacioHechas}</b>${fuente.length || !por ? "" : C.vacioTxt}</div>`
+  const lista = cargando ? `<div class="empty card"><b>Cargando…</b></div>` : !vis.length ? `<div class="empty card"><b>${fuente.length ? "Nada coincide con la búsqueda" : por ? C.vacioPor : C.vacioHechas}</b>${fuente.length || !por ? "" : C.vacioTxt}</div>`
     : tablaPC() ? `<div class="card twrap"><table class="rtab btab" id="blist"><thead><tr><th class="ck"></th><th>Descripción</th><th>Frente</th><th>Archivos</th><th>${por ? "Registrado por" : C.hechoPor}</th><th class="tacc">Acciones</th></tr></thead><tbody>${vis.slice(0, lim).map(r => `<tr data-rid="${esc(r.id)}" class="${B.sel.has(r.id) ? "sel" : ""}"><td class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></td><td class="tdesc"><b>${esc(r.descripcion || "")}</b>${r.observaciones ? `<span>${esc(r.observaciones)}</span>` : ""}${marcasFila(r)}${r.pkInicio != null ? `<small class="tq mono">${esc(rangoPk(r.pkInicio, r.pkFin))}</small>` : ""}${lineaQuien(r, r.fechaCampo)}</td>${tdFrente(r)}<td class="nw">${arch(r)}</td><td class="tquien">${por ? esc(r.creadoPor || "") : `${quien(r)}<small class="tq">${esc(fechaCorta(r[C.campo + "En"]))}</small>`}</td><td class="tacc"><div class="bact">${acc(r)}${btnMas(r)}</div></td></tr>`).join("")}</tbody></table></div><p class="nota-g">${C.nota} Usa ⋯ o el clic derecho para ver todas las acciones.</p>`
     : `<div class="list" id="blist">${vis.slice(0, lim).map((r, i) => `<div class="brow ${B.sel.has(r.id) ? "sel" : ""}" data-rid="${esc(r.id)}"><label class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></label><div class="bcard">${conMas(tarjeta(r, i), r)}${por ? "" : `<div class="muted small" style="padding:4px 2px 0">${C.hechoPor} por ${quien(r)} · ${esc(fmtFecha(r[C.campo + "En"]))}</div>`}<div class="bact">${acc(r)}</div></div></div>`).join("")}</div>`;
   return { vis, fuente, lim, html: `
@@ -7291,7 +7502,7 @@ function pintarSeguimiento(k) {
     ${por ? `<button type="button" class="mini ok-btn" data-bk="${C.kOk}">${C.oks}</button>` : `<button type="button" class="mini" data-bk="${C.kDes}">${C.des}</button>`}<button type="button" class="mini" data-bk="exportar">Exportar a Excel</button><button type="button" class="mini" data-bk="limpiar">Deseleccionar</button></div>
   ${vis.length > 1 ? `<label class="check small muted bsel-todo"><input type="checkbox" id="bAll2" aria-label="Seleccionar todo" ${vis.slice(0, lim).every(r => B.sel.has(r.id)) ? "checked" : ""}>Seleccionar ${Math.min(vis.length, lim)} para ${por ? (k === "ASP" ? "marcar como procesados" : "marcar enterados") : "devolver"}</label>` : ""}
   ${lista}
-  ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : ""}` };
+  ${resto > 0 && (vis.length > lim || masSrv) ? `<button class="btn sec more" id="bMas" type="button">Ver más (${resto})</button>` : ""}` };
 }
 // La Bandeja recuerda la pestaña y los filtros de frente y topógrafo (por persona)
 const guardarBandeja = () => { const B = S.bandeja; ls.set("lib.bandeja." + S.email, { tab: B.tab, f: B.f || {} }); };
@@ -7342,7 +7553,7 @@ function pintarBandeja() {
     fe: { t: t === "EP" ? "Aceptada y topógrafo" : "Fecha y topógrafo", k: r => toDate(fB(r))?.getTime() || 0, fk: ["topo"] } };
   if (pcB && F.ord) vis = ordenarCol(vis, F.ord, COLB);
   const idsVis = new Set(vis.map(r => r.id)); B.sel = new Set([...B.sel].filter(id => idsVis.has(id)));
-  const nPT = B.pend.filter(r => r.estado === "PT").length, nOB = B.pend.length - nPT, nEP = B.ep.length + B.epHist.length, ns = B.sel.size;
+  const nPT = B.pend.filter(r => r.estado === "PT").length, nOB = B.pend.length - nPT, nEP = nEnProceso(), ns = B.sel.size;
   const lim = B.ver || 60;
   $("#view").innerHTML = `
   <h1 class="view-title">Bandeja de gabinete</h1>
@@ -7359,7 +7570,7 @@ function pintarBandeja() {
     ${t === "EP" ? `<button type="button" class="mini ok-btn" data-bk="entregar">Entregar a Calidad</button><button type="button" class="mini" data-bk="exportar">Exportar a Excel</button>` : `<button type="button" class="mini ok-btn" data-bk="aceptar">Aceptar y generar códigos</button><button type="button" class="mini" data-bk="observar">Observar</button>${t === "OB" ? '<button type="button" class="mini" data-bk="reabrir">Devolver a pendientes</button>' : ""}<button type="button" class="mini" data-bk="exportar">Exportar a Excel</button>`}<button type="button" class="mini" data-bk="limpiar">Deseleccionar</button>${t === "EP" ? "" : '<button type="button" class="mini warn-mini aparte" data-bk="rechazar">Rechazar</button><button type="button" class="mini warn-mini" data-bk="papelera">Mandar a la papelera</button>'}</div>
   ${vis.length ? `<label class="check small muted bsel-todo"><input type="checkbox" id="bAll2" aria-label="Seleccionar todo" ${vis.slice(0, lim).every(r => B.sel.has(r.id)) ? "checked" : ""}>Seleccionar ${Math.min(vis.length, lim)} para ${t === "EP" ? "entregar" : "aceptar"} en grupo</label>` : ""}
   ${tablaPC() && vis.length ? `<div class="card twrap"><table class="rtab btab compacta" id="blist"><thead><tr><th class="ck"></th>${Object.entries(COLB).map(([k, d]) => thCol(F, k, d)).join("")}<th class="tacc">Acciones</th></tr></thead><tbody>${vis.slice(0, lim).map(r => `<tr data-rid="${esc(r.id)}" class="${B.sel.has(r.id) ? "sel" : ""}"><td class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></td>${t === "EP" ? `<td class="mono nw">${r.numero ? esc(r.numero) + masCodigos(r) : '<span class="muted">—</span>'}</td>` : ""}<td class="tdesc" title="${esc(r.nombreLiberacion || r.descripcion || "")}"><div class="tl"><b>${esc(nom(L.tipo(r.tipoId)) || (r.actividad !== "LIB" ? nom(L.act(r.actividad), r.actividad) : ""))}${capaDe(r) ? " · " + esc(capaDe(r)) : ""}</b><span>${esc(r.nombreLiberacion || r.descripcion || "")}</span></div>${r.estado === "OB" && r.notaObservacion ? `<span class="tn">Observación: ${esc(r.notaObservacion)}</span>` : ""}${marcasFila(r)}</td>${tdFrente(r)}<td class="mono nw">${esc(rangoPk(r.pkInicio, r.pkFin))}</td><td class="tqd">${lineaQuien(r, fB(r))}</td><td class="tacc"><div class="bact">${t === "EP" ? '<button type="button" class="mini ok-btn" data-a="entregar" title="Entregar a Calidad" aria-label="Entregar a Calidad">Entregar</button>' : '<button type="button" class="mini ok-btn" data-a="aceptar" title="Aceptar y generar código" aria-label="Aceptar y generar código">Aceptar</button>'}${btnMas(r)}</div></td></tr>`).join("")}</tbody></table></div><p class="nota-g">Clic en el título de una columna para ordenar o filtrar. Usa ⋯ o el clic derecho para ver todas las acciones. Teclado: <kbd>j</kbd>/<kbd>k</kbd> moverse · <kbd>x</kbd> marcar (Mayús+clic marca un rango) · <kbd>Enter</kbd> abrir · <kbd>a</kbd> aceptar · <kbd>o</kbd> observar · <kbd>e</kbd> entregar · <kbd>←</kbd>/<kbd>→</kbd> en la ficha.</p>` : `<div class="list" id="blist">${vis.length ? vis.slice(0, lim).map((r, i) => `<div class="brow ${B.sel.has(r.id) ? "sel" : ""}" data-rid="${esc(r.id)}"><label class="ck"><input type="checkbox" data-sel ${B.sel.has(r.id) ? "checked" : ""} aria-label="Seleccionar"></label><div class="bcard">${conMas(tarjeta(r, i), r)}<div class="bact">${t === "EP" ? `<button type="button" class="mini ok-btn" data-a="entregar">Entregar a Calidad</button><button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini ok-btn" data-a="aceptar">Aceptar y generar código</button>${t === "PT" ? `<button type="button" class="mini" data-a="observar">Observar</button>` : `<button type="button" class="mini" data-a="reabrir">Devolver a pendientes</button>`}`}</div></div></div>`).join("") : `<div class="empty card"><b>${fuente.length ? "Nada coincide con la búsqueda" : t === "PT" ? "No hay registros por aceptar" : t === "OB" ? "No hay observadas" : "No hay liberaciones en proceso"}</b>${fuente.length ? "" : "Cuando lleguen de campo aparecerán aquí al instante."}</div>`}</div>`}
-  ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : ""}
+  ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : t === "EP" && B.epLleno && !terminos(B.q).length && !nFil ? `<button class="btn sec more" id="bMasEP" type="button">Ver más (${Math.max(1, nEnProceso() - vis.length)})</button>` : ""}
   ${t === "EP" && !B.epHistOk ? `<button class="btn sec more" id="bHist" type="button">Cargar también las del histórico sin entregar</button>` : ""}
   ${colFil ? "</div></div>" : ""}`;
   if (!S._popSigue) cerrarPop(); S._popSigue = false;
@@ -7394,6 +7605,8 @@ function pintarBandeja() {
     else if (k === "observar") observar(regs); else if (k === "rechazar") rechazar(regs); else if (k === "reabrir") reabrir(regs); else aceptarVarios(ids);
   });
   $("#bMas")?.addEventListener("click", () => { B.ver = (B.ver || 60) + 60; pintarBandeja(); });
+  // «En proceso» con más de las que se escuchan: se sube el tope de la escucha
+  $("#bMasEP")?.addEventListener("click", e => { e.target.disabled = true; e.target.textContent = "Cargando…"; B.epTope = (B.epTope || EP_TOPE) + EP_TOPE; B.ver = (B.ver || 60) + 60; suscribirEP(); });
   // Mayús+clic en una casilla marca (o desmarca) todo el tramo desde la anterior
   $("#blist")?.addEventListener("click", e => { if (e.target.matches("[data-sel]")) B._shift = e.shiftKey; }, true);
   $("#blist")?.addEventListener("change", e => {
@@ -7431,7 +7644,8 @@ function pintarBandejaSeg(k) {
   $("#bAll")?.addEventListener("change", e => todo(e.target.checked)); $("#bAll2")?.addEventListener("change", e => todo(e.target.checked));
   $("#bBulk").addEventListener("click", e => { const b = e.target.closest("[data-bk]"); if (!b) return; const regs = regsDe([...B.sel]), q = b.dataset.bk;
     if (q === "limpiar") { B.sel.clear(); pintarBandeja(); } else if (q === "exportar") exportarSel(regs); else C.marcar(regs, q === C.kOk); });
-  $("#bMas")?.addEventListener("click", () => { B.ver = (B.ver || 60) + 60; pintarBandeja(); });
+  // Si lo cargado de lo hecho no alcanza para la página siguiente, se lee la siguiente del servidor
+  $("#bMas")?.addEventListener("click", () => { B.ver = (B.ver || 60) + 60; const sv = SEGV[k]; if (B[k === "ASP" ? "aspVer" : "levVer"] === "hechas" && sv?.hLleno && fuente.length < B.ver) masHechas(k); pintarBandeja(); });
   $("#blist")?.addEventListener("change", e => { if (!e.target.matches("[data-sel]")) return; const id = e.target.closest("[data-rid]").dataset.rid; e.target.checked ? B.sel.add(id) : B.sel.delete(id); pintarBandeja(); });
   $("#blist")?.addEventListener("click", e => {
     const row = e.target.closest("[data-rid]"); if (!row) return;
