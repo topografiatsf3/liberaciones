@@ -21,6 +21,19 @@ Desde el 18/11/2026 la versión lleva tres números, **grande.mediano.mínimo** 
 
 `VERSION_APP` en `index.html` y `CACHE` en `sw.js` (`liberaciones-v1.43.1`) suben juntos; `pruebas/prueba12.js` espera el nombre de la caché.
 
+## Versión 1.44.0: movimiento que explica qué pasó
+
+Cambio mediano. No cambia las reglas de Firebase ni la forma de trabajar: mismas pantallas, colores y pasos.
+
+- **Ritmo único de 0,2 s**, sin librerías. Se apaga solo con «reducir movimiento» del teléfono. El dato se escribe al momento; la animación corre mientras tanto y nada impide tocar.
+- **Bandeja**: al aceptar, observar, rechazar, entregar, devolver, mandar a la papelera o marcar enterado y procesado, la fila sale de lado (derecha si avanza, izquierda si vuelve a campo) y las de abajo suben; el contador de la pestaña da un salto. Si el guardado falla, la fila vuelve a su sitio.
+- **«Aceptar y generar código»** y **«Entregar a Calidad»**: el botón dice «Generando código…», se pone verde con el visto y el código («SKT-TOP-02745 generado» o «N códigos generados») y se cierra.
+- **«Nueva»**: «Guardando…» → «Guardado», y el registro aparece resaltado una vez en «Mis registros».
+- **Ficha, diálogos, menús «⋯», Ctrl+K, barra de acciones en grupo y avisos** entran y salen con el mismo ritmo; el cambio de pantalla hace un fundido y la marca del menú se desliza.
+- **Cargas** («Buscando en todo el historial…», «Cargando papelera…») con filas de esqueleto.
+- Las tarjetas ya no se animan con cada redibujo ni con cada letra del buscador. El Perfil, la Planta y el Modelo 2D no se tocaron.
+- Pruebas: corren con las animaciones apagadas (`navigator.webdriver`); `localStorage["lib.anim"] = "1"` las enciende y `node pruebas/prueba51.js --tanda` corre toda la tanda con ellas encendidas.
+
 ## Versión 1.43.2: los menores de la revisión
 
 Cambio mínimo. No cambia las reglas de Firebase.

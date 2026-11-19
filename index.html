@@ -91,7 +91,7 @@ button{cursor:pointer}
 /* Navegación */
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 .nav .wrap{display:flex;gap:0;padding-block:0}
-.nav button{flex:1;border:0;background:transparent;border-radius:0;padding:10px 4px 9px;font-weight:600;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:inset 0 2px 0 transparent;transition:color .15s,box-shadow .15s}
+.nav button{flex:1;border:0;background:transparent;border-radius:0;padding:10px 4px 9px;font-weight:600;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:inset 0 2px 0 transparent;transition:color var(--d-e),box-shadow var(--d-e)}
 .nav button svg{width:20px;height:20px}
 .nav button[aria-current="page"]{color:var(--accent-strong);box-shadow:inset 0 2px 0 var(--accent)}
 .nav .badge,.me-aj .badge{background:var(--ob);color:#fff;border-radius:999px;font-size:12px;font-weight:600;padding:0 6px;margin-left:4px;line-height:17px}
@@ -196,7 +196,7 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 }
 .archs{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .archs:empty{display:none}
-.arch{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;animation:entra .2s ease-out both}
+.arch{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;animation:entra var(--d) ease-out both}
 .arch img,.arch .ext{width:48px;height:48px;border-radius:4px;object-fit:cover;flex:none;background:var(--surface-2)}
 .arch .ext{display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;font-weight:500;color:var(--accent-strong)}
 .arch .an{flex:1;min-width:0;display:flex;flex-direction:column;font-size:13px}
@@ -221,7 +221,7 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 .sheet .actions .btn.block{flex:1 1 100%}
 .sheet .actions .btn{flex:1 1 auto}
 @media (max-width:380px){.nav .wrap{gap:0;padding-left:4px;padding-right:4px}}
-.lb{position:fixed;inset:0;z-index:70;background:rgba(12,24,21,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;opacity:0;transition:opacity .25s}
+.lb{position:fixed;inset:0;z-index:70;background:rgba(12,24,21,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;opacity:0;transition:opacity var(--d)}
 .lb.on{opacity:1}
 .lb img{max-width:100%;max-height:calc(100vh - 120px);border-radius:8px;box-shadow:var(--flota)}
 .lbbar{display:flex;gap:10px}
@@ -245,7 +245,7 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 .cap-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .cap-tools input{flex:1;min-width:160px}
 .cap-bulk{display:none;align-items:center;gap:6px;flex-wrap:wrap;background:var(--ink);color:#fff;border-radius:8px;padding:6px 8px 6px 14px;margin-bottom:8px;font-size:13px}
-.cap-bulk.on{display:flex;animation:entra .2s both}
+.cap-bulk.on{display:flex;animation:entra var(--d) both}
 .cap-bulk .mini{background:var(--ink);color:#fff;border-color:var(--muted)}
 .cap-bulk .warn-mini{background:var(--ob);border-color:var(--ob)}
 /* Lo que rechaza o borra va aparte, a la derecha, lejos de lo que se toca seguido (versión 29) */
@@ -291,7 +291,7 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 .ord{display:flex;gap:4px}
 .ord button{border:1px solid var(--line);background:var(--surface);border-radius:8px;width:34px;height:34px;font-weight:700;color:var(--muted)}
 .addrow{display:grid;gap:8px;grid-template-columns:1fr auto;margin-top:10px}
-.savebar{position:sticky;bottom:calc(var(--nav-h) + 12px + env(safe-area-inset-bottom,0px));z-index:15;display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--ink);color:#fff;border-radius:8px;padding:8px 8px 8px 20px;margin:12px 0;box-shadow:var(--flota);animation:entra .3s both}
+.savebar{position:sticky;bottom:calc(var(--nav-h) + 12px + env(safe-area-inset-bottom,0px));z-index:15;display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--ink);color:#fff;border-radius:8px;padding:8px 8px 8px 20px;margin:12px 0;box-shadow:var(--flota);animation:entra var(--d) both}
 .savebar .btn{min-height:44px;padding:10px 20px;font-size:15px}
 @media (min-width:860px){.savebar{bottom:20px}}
 @media (max-width:560px){
@@ -436,12 +436,52 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 @media (max-width:560px){.frow{grid-template-columns:1fr auto}.fpills{grid-column:1/-1}}
 .legend i.nolib{background:var(--nolib-a);border:1px solid var(--nolib-b)}
 /* Ventanas emergentes (DESIGN.md · Diálogos) */
-.dlg{position:fixed;inset:0;z-index:75;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .18s}
+.dlg{position:fixed;inset:0;z-index:75;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity var(--d)}
 .dlg.on{opacity:1}
-.dlg-box{position:relative;width:min(480px,100%);max-height:80vh;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--flota);transform:translateY(8px);transition:transform .18s ease-out}
+.dlg-box{position:relative;width:min(480px,100%);max-height:80vh;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--flota);transform:translateY(8px);transition:transform var(--d) ease-out}
 .dlg.on .dlg-box{transform:none}
 .dlg-box.corto{width:min(360px,100%)}
 .dlg-box.ancho{width:min(640px,100%)}
+/* ---------- Movimiento (versión 1.44.0) ----------
+   Un solo ritmo para toda la app: --d (0,2 s) para lo que se mueve y --d-e (0,12 s) para cambios de estado (pestañas, chips, menú).
+   Lo enciende MOV (JavaScript) con <html class="anim">: sin esa clase (reducir movimiento, pruebas automáticas) todo dura 0.
+   Solo se animan transform y opacity (y el alto de UNA tarjeta al salir); el resaltado de lo nuevo es un color que se apaga.
+   Las reglas de antes que ya tenían su transición (diálogos, menús, ficha, aviso…) se retocaron donde están para usar --d. */
+:root{--d:200ms;--d-e:120ms;--mov:cubic-bezier(.2,.8,.2,1)}
+html:not(.anim){--d:0ms;--d-e:0ms}
+/* Fila que sale de la Bandeja: no recibe toques mientras se va; al terminar (o mientras Firebase lo confirma) no se ve aunque la lista se redibuje */
+.mov-sale{pointer-events:none}
+.mov-fuera{display:none!important}
+#blist.mov-recorta{overflow-x:clip}
+.mov-cod{display:inline-block;font-weight:600;color:var(--accent-strong)}
+/* Lo que la propia persona acaba de guardar o aceptar se resalta una vez (un color que se apaga; no bloquea nada) */
+.mov-nuevo{animation:movNuevo 1.6s ease-out}
+@keyframes movNuevo{0%,35%{background-color:var(--accent-soft)}}
+/* Botón que confirma: gira mientras espera la respuesta y pasa a verde con el visto al terminar */
+.giro{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:gira .7s linear infinite;flex:none;opacity:.85}
+.btn.hecho,.btn.hecho:disabled{background:var(--ec);border-color:var(--ec);color:#fff;opacity:1}
+.visto{flex:none}
+.visto path{stroke-dasharray:22;stroke-dashoffset:22;animation:movTrazo var(--d) ease-out forwards}
+@keyframes movTrazo{to{stroke-dashoffset:0}}
+/* Filas de esqueleto mientras se carga (late con opacidad; quieto sin animaciones) */
+.esq{display:block;height:64px;border-radius:var(--r);margin:0 0 8px;border:1px solid var(--line);background:var(--surface-2);animation:movLatir 1.1s ease-in-out infinite}
+.esq:nth-child(2){animation-delay:-.35s}.esq:nth-child(3){animation-delay:-.7s}
+.esqs{margin-top:10px}
+@keyframes movLatir{50%{opacity:.5}}
+html:not(.anim) .esq{animation:none}
+/* Contadores que dan un salto: tienen que ser bloque en línea para poder escalarse */
+html.anim .tabs .cnt,html.anim .chips .c,html.anim .nav .badge,html.anim .me-aj .badge{display:inline-block}
+/* Marca del menú que se desliza de un botón al otro (por debajo de los botones; la del botón nuevo se oculta mientras tanto) */
+.mov-ind{position:absolute;pointer-events:none;z-index:-1;transform-origin:0 0}
+.nav.mov-nav button[aria-current="page"]{box-shadow:none!important;background-color:transparent!important}
+/* Barra de acciones en grupo: entra y sale (se queda en el sitio sin verse ni recibir toques) */
+html.anim .cap-bulk.flota{display:flex;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(10px);animation:none;transition:opacity var(--d),transform var(--d) var(--mov),visibility 0s linear var(--d)}
+html.anim .cap-bulk.flota.on{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:opacity var(--d),transform var(--d) var(--mov),visibility 0s}
+/* Pestañas y chips: al tocar uno, el que queda marcado toma su color con transición (también tras redibujarse) */
+@starting-style{
+  html.anim.mov-clic .tabs button[aria-pressed="true"]{background-color:transparent;box-shadow:none;color:var(--muted)}
+  html.anim.mov-clic .chip[aria-pressed="true"]{background-color:var(--surface);border-color:var(--line);color:var(--ink)}
+}
 .dlg-grip{display:none}
 .dlg-h{display:flex;align-items:flex-start;gap:4px;padding:10px 8px 0 20px}
 .dlg-h h3{flex:1;min-width:0;margin:12px 0 10px;font-size:17px;font-weight:700;line-height:1.3}
@@ -452,7 +492,7 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 .dlg-a .btn{min-width:112px}
 @media (max-width:759px){
   .dlg{align-items:flex-end;padding:0}
-  .dlg-box,.dlg-box.corto,.dlg-box.ancho{width:100%;max-height:85vh;border-radius:12px 12px 0 0;border-bottom:0;transform:translateY(100%);transition:transform .22s ease-out;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .dlg-box,.dlg-box.corto,.dlg-box.ancho{width:100%;max-height:85vh;border-radius:12px 12px 0 0;border-bottom:0;transform:translateY(100%);transition:transform var(--d) var(--mov);padding-bottom:env(safe-area-inset-bottom,0px)}
   .dlg-grip{display:block;width:36px;height:4px;border-radius:4px;background:var(--line-strong);margin:8px auto 0}
   .dlg-h{padding:0 6px 0 16px}
   .dlg-c{padding:0 16px}
@@ -538,8 +578,8 @@ button{touch-action:manipulation}
 .sheet,.dlg,#pCapChips,.ctab,.lb{overscroll-behavior:contain}
 h1,h2,h3{text-wrap:balance}
 .item{content-visibility:auto;contain-intrinsic-size:auto 120px}
-.pill,.chip,.cchip{transition:background-color .18s,border-color .18s,color .18s,box-shadow .18s}
-.tabs button{transition:background-color .2s,color .2s,box-shadow .2s}
+.pill,.chip,.cchip{transition:background-color var(--d-e),border-color var(--d-e),color var(--d-e),box-shadow var(--d-e)}
+.tabs button{transition:background-color var(--d-e),color var(--d-e),box-shadow var(--d-e)}
 .fnum{font-size:15px;font-weight:500}
 .sig{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;width:100%;text-align:left;border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent-strong);border-radius:8px;padding:10px 14px;margin:0 0 12px;font-size:13.5px;font-weight:600;min-height:48px}
 .sig b{font-size:15px;color:var(--ink)}
@@ -588,7 +628,7 @@ h1,h2,h3{text-wrap:balance}
 .chip .c{color:var(--muted);font-weight:600;margin-left:4px}
 .chip[aria-pressed="true"] .c{color:var(--accent-strong)}
 .list{display:flex;flex-direction:column;gap:8px}
-.item{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;transition:background .15s,border-color .15s;animation:entra .2s ease-out both}
+.item{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;transition:background .15s,border-color .15s}
 .item:hover{border-color:var(--line-strong)}
 .item:active{background:var(--surface-2)}
 .item-w{position:relative}.item-w .item .r1{padding-right:44px}
@@ -692,8 +732,8 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
   .nav .badge{margin-left:auto}
   .nbuscar{display:flex!important;border:1px solid var(--line)!important;background:var(--surface)!important;margin-bottom:10px;color:var(--muted)}
   .nbuscar kbd{margin-left:auto}
-  #view{margin-left:var(--side);margin-right:0;max-width:calc(1280px + var(--side));padding-left:24px;padding-right:24px;transition:margin-right .3s cubic-bezier(.2,.8,.2,1)}
-  body.poder .sheet{left:auto;right:0;top:0;bottom:0;width:var(--ficha);max-height:none;height:100vh;border-radius:0;transform:translateX(105%);opacity:1;transition:transform .3s cubic-bezier(.2,.8,.2,1);box-shadow:var(--flota);padding-top:18px}
+  #view{margin-left:var(--side);margin-right:0;max-width:calc(1280px + var(--side));padding-left:24px;padding-right:24px;transition:margin-right var(--d) var(--mov)}
+  body.poder .sheet{left:auto;right:0;top:0;bottom:0;width:var(--ficha);max-height:none;height:100vh;border-radius:0;transform:translateX(105%);opacity:1;transition:transform var(--d) var(--mov);box-shadow:var(--flota);padding-top:18px}
   body.poder .sheet.on{transform:none}
   body.poder .sheet .actions .btn.block{flex:1 1 100%}
   body.poder .sheet .actions .btn{padding:0 16px}
@@ -705,9 +745,9 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
   body.poder.ficha-on.v-panel #view{margin-right:0;padding-right:24px}
 }
 .ctxbd{position:fixed;inset:0;z-index:80}
-.ctx{position:fixed;z-index:81;min-width:250px;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--flota);padding:6px;opacity:0;transform:scale(.97);transform-origin:top left;transition:opacity .14s,transform .14s}
+.ctx{position:fixed;z-index:81;min-width:250px;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--flota);padding:6px;opacity:0;transform:scale(.97);transform-origin:top left;transition:opacity var(--d),transform var(--d) var(--mov)}
 .ctx.on{opacity:1;transform:none}
-.ctx.hoja{left:0;right:0;bottom:0;top:auto;max-width:none;border-radius:8px 12px 0 0;padding:8px 10px calc(14px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1);opacity:1}
+.ctx.hoja{left:0;right:0;bottom:0;top:auto;max-width:none;border-radius:8px 12px 0 0;padding:8px 10px calc(14px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform var(--d) var(--mov);opacity:1}
 .ctx.hoja.on{transform:none}
 .ctx-grip{display:block;width:42px;height:5px;border-radius:8px;background:var(--line);margin:2px auto 8px}
 .ctx-head{padding:8px 10px 8px;display:flex;flex-direction:column;gap:3px;border-bottom:1px solid var(--line);margin-bottom:4px}
@@ -726,9 +766,9 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
 .ctx-body .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .ctx .ctx-items .ctx-i.pri{background:var(--accent-soft)}
 .rtab tr.ctx-on,.item.ctx-on,.brow.ctx-on .item,.pfila.ctx-on{box-shadow:0 0 0 2px var(--accent)}
-.cmdk{position:fixed;inset:0;z-index:85;background:var(--scrim);display:flex;justify-content:center;align-items:flex-start;padding:12vh 16px 16px;opacity:0;transition:opacity .15s}
+.cmdk{position:fixed;inset:0;z-index:85;background:var(--scrim);display:flex;justify-content:center;align-items:flex-start;padding:12vh 16px 16px;opacity:0;transition:opacity var(--d)}
 .cmdk.on{opacity:1}
-.cmdk-box{width:min(680px,100%);overflow:hidden;display:flex;flex-direction:column;max-height:70vh;animation:entra .2s both}
+.cmdk-box{width:min(680px,100%);overflow:hidden;display:flex;flex-direction:column;max-height:70vh;animation:entra var(--d) both}
 .cmdk-in{display:flex;align-items:center;gap:10px;padding:6px 6px 6px 16px;border-bottom:1px solid var(--line)}
 .cmdk-in svg{width:20px;height:20px;color:var(--muted);flex:none}
 .cmdk-in input{flex:1;border:0;outline:0;font-size:17px;background:transparent;min-width:0}
@@ -854,7 +894,7 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
 .fop .c{font:600 12px var(--f-mono);color:var(--muted)}
 .fop.cero,.fop.cero span:nth-child(2),.fop.cero .c{color:var(--muted)}
 .fmas{font-size:12.5px;margin:2px 4px 4px}
-.hpop{position:fixed;z-index:84;width:290px;max-height:min(460px,calc(100vh - 24px));overflow:auto;padding:8px;box-shadow:var(--flota);animation:entra .15s both}
+.hpop{position:fixed;z-index:84;width:290px;max-height:min(460px,calc(100vh - 24px));overflow:auto;padding:8px;box-shadow:var(--flota);animation:entra var(--d) both}
 .hpop h4{margin:8px 4px 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
 .hp-ord{display:flex;flex-direction:column;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:2px}
 .hp-ord button{border:0;background:transparent;text-align:left;padding:7px 8px;border-radius:6px;font-weight:600;font-size:13px;min-height:34px}
@@ -1113,13 +1153,13 @@ body.poder #chart rect.nolib{cursor:pointer}
 }
 
 /* Hoja (ficha) */
-.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40;opacity:0;transition:opacity .25s}
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40;opacity:0;transition:opacity var(--d)}
 .scrim.on{opacity:1}
-.sheet{position:fixed;z-index:41;left:0;right:0;bottom:0;max-height:92vh;overflow:auto;background:var(--surface);border-radius:8px 12px 0 0;box-shadow:var(--flota);transform:translateY(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);padding:10px 0 calc(20px + env(safe-area-inset-bottom,0px))}
+.sheet{position:fixed;z-index:41;left:0;right:0;bottom:0;max-height:92vh;overflow:auto;background:var(--surface);border-radius:8px 12px 0 0;box-shadow:var(--flota);transform:translateY(100%);transition:transform var(--d) var(--mov);padding:10px 0 calc(20px + env(safe-area-inset-bottom,0px))}
 .sheet.on{transform:none}
 .sheet-x{position:absolute;top:8px;right:8px;z-index:2}
 .sheet .grab{width:42px;height:5px;border-radius:8px;background:var(--line);margin:0 auto 10px}
-@media (min-width:860px){.sheet{left:50%;right:auto;bottom:auto;top:50%;width:min(680px,94vw);border-radius:8px;transform:translate(-50%,-46%) scale(.97);opacity:0;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .22s}.sheet.on{transform:translate(-50%,-50%);opacity:1}.sheet .grab{display:none}}
+@media (min-width:860px){.sheet{left:50%;right:auto;bottom:auto;top:50%;width:min(680px,94vw);border-radius:8px;transform:translate(-50%,-46%) scale(.97);opacity:0;transition:transform var(--d) var(--mov),opacity var(--d)}.sheet.on{transform:translate(-50%,-50%);opacity:1}.sheet .grab{display:none}}
 .sheet .wrap{max-width:none;padding-inline:22px}
 .sheet h3{font-size:20px;font-weight:700;margin:6px 0 4px;line-height:1.25}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:16px 0;font-size:14px;align-items:baseline}
@@ -1162,7 +1202,7 @@ body.poder #chart rect.nolib{cursor:pointer}
 .me .me-aj[hidden]{display:none}.me .me-aj svg{width:22px;height:22px}.me .me-aj[aria-current="page"]{color:var(--accent-strong);background:var(--accent-soft)}
 .me .me-aj .badge{position:absolute;top:2px;right:0;margin:0;min-width:17px;text-align:center;padding:0 5px}
 /* Aviso de versión nueva (la app instalada suele quedar abierta varios días) */
-.vernueva{position:fixed;z-index:70;left:0;right:0;margin:0 auto;width:max-content;max-width:calc(100vw - 24px);top:calc(10px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;border-radius:8px;padding:6px 6px 6px 14px;font-weight:600;font-size:14px;box-shadow:var(--flota);animation:entra .2s both;white-space:nowrap}
+.vernueva{position:fixed;z-index:70;left:0;right:0;margin:0 auto;width:max-content;max-width:calc(100vw - 24px);top:calc(10px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;border-radius:8px;padding:6px 6px 6px 14px;font-weight:600;font-size:14px;box-shadow:var(--flota);animation:entra var(--d) both;white-space:nowrap}
 .vernueva button{border:0;border-radius:6px;background:var(--accent);color:#fff;font:inherit;padding:0 12px;min-height:34px;cursor:pointer}
 .mudanza{background:var(--accent-strong);top:auto;bottom:calc(var(--nav-h) + 16px + env(safe-area-inset-bottom,0px))}
 .mudanza button{background:#fff;color:var(--accent-strong)}
@@ -1178,7 +1218,7 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 @keyframes gira{to{transform:rotate(360deg)}}
 
 /* Aviso */
-.toast{pointer-events:none;position:fixed;left:50%;bottom:calc(var(--nav-h) + 16px + env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);opacity:0;z-index:60;background:var(--ink);color:#fff;border-radius:8px;padding:10px 16px;font-weight:600;font-size:14px;box-shadow:var(--flota);transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px);text-align:center}
+.toast{pointer-events:none;position:fixed;left:50%;bottom:calc(var(--nav-h) + 16px + env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);opacity:0;z-index:60;background:var(--ink);color:#fff;border-radius:8px;padding:10px 16px;font-weight:600;font-size:14px;box-shadow:var(--flota);transition:opacity var(--d),transform var(--d) var(--mov);max-width:calc(100vw - 32px);text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .toast.bad{background:var(--ob)}
 .toast.pend{background:var(--ep)}
@@ -1211,7 +1251,7 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 .acc-h .chev{flex:none;color:var(--muted);transition:transform .18s}
 .acc-h[aria-expanded="true"] .chev{transform:rotate(90deg)}
 @media (hover:hover){.acc-h:hover .acc-n{color:var(--accent-strong)}}
-.acc-c{padding:2px 0 14px;display:flex;flex-direction:column;gap:12px;animation:entra .18s ease-out both}
+.acc-c{padding:2px 0 14px;display:flex;flex-direction:column;gap:12px;animation:entra var(--d) ease-out both}
 .acc-c .f{margin:0}
 .acc-c .chips{flex-wrap:wrap;overflow:visible;margin:0}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -1420,7 +1460,7 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 .cap-bulk.flota .ck{display:inline-flex;align-items:center;justify-content:center}
 #view:has(.cap-bulk.flota.on){padding-bottom:calc(var(--nav-h) + 36px + var(--bulk-h) + env(safe-area-inset-bottom,0px))}
 body:has(.cap-bulk.flota.on) .toast{bottom:calc(var(--nav-h) + 24px + var(--bulk-h) + env(safe-area-inset-bottom,0px))}
-.bsel-todo{padding:0 0 8px}
+.bsel-todo{padding:0 0 8px;position:relative;z-index:1}
 @media (min-width:860px){
   .cap-bulk.flota{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
   #view:has(.cap-bulk.flota.on){padding-bottom:calc(56px + var(--bulk-h))}
@@ -1743,6 +1783,202 @@ function resaltar(nombre, ok) {
 }
 const capital = t => { const x = String(t || "").trim().replace(/\s+/g, " "); return x ? x[0].toUpperCase() + x.slice(1) : x; };
 
+/* ---------- Movimiento (versión 1.44.0) ----------
+   Una sola pieza para todo lo que se mueve: las pantallas no animan por su cuenta, le piden a MOV. El problema que resuelve es que
+   la app redibuja la vista entera (innerHTML) cada vez que llegan datos, y eso cortaría o repetiría cualquier animación.
+   · Encendido (MOV.on): apagado con «reducir movimiento» y en las pruebas automáticas (navigator.webdriver), salvo que
+     localStorage «lib.anim» sea "1" ("0" lo apaga siempre). Pone <html class="anim">; sin ella el CSS dura 0 (--d).
+   · Salida de filas de la Bandeja (MOV.salir → ctl.fin(ok)): la escritura sale al momento; mientras la fila se va (0,2 s de lado
+     y 0,2 s para que suban las de abajo) o mientras un diálogo la tapa, los redibujos de la Bandeja esperan (MOV.aplaza) y se
+     hacen al terminar. Luego, los ids que salieron quedan ocultos en cada redibujo (MOV.trasPintar) hasta que Firebase confirma;
+     si la escritura falla, salen de la cuenta y la fila vuelve a su sitio entrando por el mismo lado. Varias a la vez: se anima el grupo.
+   · Resaltado (MOV.nuevo): solo lo que esta persona guardó o aceptó; se pinta la primera vez que se ve y, si un redibujo llega a
+     mitad, sigue donde iba (animation-delay negativo); después se olvida. Nada de lo que llega de otros se resalta.
+   · Entradas (MOV.entrar, MOV.pantalla): solo desde acciones de la persona (cambiar de pantalla o de pestaña, abrir), nunca desde
+     render(): un redibujo por datos o al escribir en un buscador no repite nada. Contadores (MOV.vigilarCifras): los que cambian
+     de número tras una acción dan un salto, aunque se hayan redibujado.
+   Solo transform y opacity (y el alto de una tarjeta que sale); nada de will-change; nada impide tocar mientras se anima. */
+const MOV = (() => {
+  const mq = matchMedia("(prefers-reduced-motion: reduce)");
+  const pref = () => { try { return localStorage.getItem("lib.anim"); } catch (_) { return null; } };
+  let on = false;
+  const ver = () => { const p = pref(); on = !mq.matches && p !== "0" && (p === "1" || !navigator.webdriver); document.documentElement.classList.toggle("anim", on); };
+  ver(); mq.addEventListener?.("change", ver);
+  const D = () => on ? 200 : 0, pausa = ms => new Promise(r => setTimeout(r, ms));
+  // el.animate con el ritmo común; null si está apagado. Sin fill (salvo que se pida) para no dejar estilos pegados
+  const mover = (el, kf, op = {}) => !on || !el?.animate ? null : el.animate(kf, { duration: D(), easing: "ease-out", ...op });
+  const entrar = (el, dy = 6, dur = D() * .7) => mover(el, [{ opacity: 0, transform: `translateY(${dy}px)` }, { opacity: 1, transform: "none" }], { duration: dur });
+  const saltar = (el, k = 1.3) => mover(el, [{ transform: "none" }, { transform: `scale(${k})`, offset: .4 }, { transform: "none" }]);
+  const GIRO = '<span class="giro" aria-hidden="true"></span>';
+  const VISTO = '<svg class="visto" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+  // Contadores: tras una acción se anotan; los que cambien de número en los 2,5 s siguientes dan un salto (una vez)
+  const CIFRAS = ".tabs .cnt, .chips .c, #nav .badge, #btnAjustes .badge";
+  const clave = el => { const b = el.closest("button"); return b ? [...b.attributes].filter(a => a.name.startsWith("data-")).map(a => a.name + "=" + a.value).join("&") || b.id : ""; };
+  const leer = () => { const m = new Map(); document.querySelectorAll(CIFRAS).forEach(el => { const k = clave(el); if (k) m.set(k, el.textContent); }); return m; };
+  let cifras = null;
+  const vigilarCifras = () => { if (!on) return; if (cifras && Date.now() < cifras.hasta) cifras.hasta = Date.now() + 2500; else cifras = { hasta: Date.now() + 2500, antes: leer() }; };
+  const revisarCifras = () => {
+    if (!cifras) return; if (Date.now() > cifras.hasta) { cifras = null; return; }
+    if (document.querySelector(".dlg.on")) return; // tapado por un diálogo: salta al cerrarse, cuando se ve
+    document.querySelectorAll(CIFRAS).forEach(el => { const k = clave(el), a = cifras.antes.get(k); if (k && a !== undefined && a !== el.textContent) { cifras.antes.set(k, el.textContent); saltar(el); } });
+  };
+
+  // Salidas: id → { dir, fase: "espera" (un diálogo la tapa) | "sale" | "fuera" (ya no se ve; falta la confirmación), ok, el, ctl }
+  const SAL = new Map(), VUELVE = new Map();
+  let aplazado = null;
+  const filaDe = id => document.querySelector(`#blist [data-rid="${CSS.escape(id)}"]`);
+  // Pestaña (y chip) de donde salió: solo ahí se oculta (en la pestaña de destino se tiene que ver)
+  const lugar = () => { const B = S.bandeja || {}; return [S.view, B.tab, B.aspVer, B.levVer].join("|"); };
+  const ocupado = () => [...SAL.values()].some(e => e.fase === "espera" || e.fase === "sale");
+  // La Bandeja pregunta antes de redibujarse: si hay una fila saliendo, el redibujo queda para cuando termine
+  const aplaza = fn => { if (!ocupado()) return false; aplazado = fn; return true; };
+  const soltar = () => { if (ocupado() || !aplazado) return; const f = aplazado; aplazado = null; f(); };
+  // Ya confirmado y fuera de la vista: se deja de ocultar un momento después (si el dato sigue ahí, la fila es verdad y vuelve)
+  const limpiar = id => setTimeout(() => { const e = SAL.get(id); if (!e || e.fase !== "fuera") return; SAL.delete(id); document.querySelectorAll(`#blist [data-rid="${CSS.escape(id)}"].mov-fuera`).forEach(el => el.classList.remove("mov-fuera")); }, 1500);
+  const regresar = (el, dir) => {
+    el.getAnimations().forEach(a => a.cancel()); el.style.overflow = ""; el.classList.remove("mov-fuera", "mov-sale");
+    mover(el, [{ opacity: 0, transform: `translateX(${dir * 56}px)` }, { opacity: 1, transform: "none" }]);
+  };
+  // La escritura falló o se rechazó: la fila vuelve a su sitio (si el redibujo ya la quitó, entra cuando reaparezca)
+  function volver(ids) {
+    ids.forEach(id => {
+      const e = SAL.get(id); if (!e) return; SAL.delete(id);
+      const antes = e.fase; e.fase = "vuelta"; // la salida en curso se detiene en su próximo paso
+      if (antes === "espera") return; // aún no se había movido
+      const els = document.querySelectorAll(`#blist [data-rid="${CSS.escape(id)}"]`);
+      if (els.length) els.forEach(el => regresar(el, e.dir)); else VUELVE.set(id, { dir: e.dir, hasta: Date.now() + 5000 });
+    });
+    soltar();
+  }
+  // Las de abajo suben: una tarjeta encoge su alto; en una tabla (una fila no encoge) suben las filas que se ven
+  function cerrarHueco(el) {
+    const h = el.offsetHeight; if (!h) return Promise.resolve();
+    if (el.tagName === "TR") {
+      el.classList.add("mov-fuera"); const sig = [];
+      for (let s = el.nextElementSibling; s && sig.length < 40; s = s.nextElementSibling) { if (s.getBoundingClientRect().top > innerHeight) break; sig.push(s); }
+      return Promise.all(sig.map(s => mover(s, [{ transform: `translateY(${h}px)` }, { transform: "none" }])?.finished.catch(() => {})));
+    }
+    const gap = parseFloat(getComputedStyle(el.parentElement).rowGap) || 0; el.style.overflow = "hidden";
+    const a = mover(el, [{ height: h + "px", marginBottom: "0px" }, { height: "0px", marginBottom: -gap + "px" }], { fill: "forwards" });
+    return (a ? a.finished.catch(() => {}) : Promise.resolve()).then(() => { el.style.overflow = ""; });
+  }
+  async function salirUna(id, e) {
+    e.fase = "sale";
+    const el = e.el?.isConnected ? e.el : filaDe(id);
+    if (!el) { e.fase = "fuera"; if (e.ok) limpiar(id); return; }
+    e.el = el; el.classList.add("mov-sale"); el.parentElement?.classList.add("mov-recorta");
+    if (e.ctl.codigo) { // Aceptar: la fila muestra su código un instante y luego se va
+      const b = el.querySelector(".bact"), n = el.querySelector(".num");
+      if (n) { n.textContent = e.ctl.codigo; n.classList.remove("sin"); }
+      if (b) { b.innerHTML = `<span class="mono mov-cod">${esc(e.ctl.codigo)}</span>`; saltar(b.firstChild, 1.12); }
+      await pausa(D() * 2);
+      if (e.fase !== "sale") return;
+    }
+    const a = mover(el, [{ transform: "none", opacity: 1 }, { transform: `translateX(${e.dir * 56}px)`, opacity: 0 }], { easing: "ease-in", fill: "forwards" });
+    if (a) await a.finished.catch(() => {});
+    if (e.fase !== "sale") return; // falló o se cortó mientras tanto
+    await cerrarHueco(el);
+    if (e.fase !== "sale") return;
+    el.getAnimations().forEach(x => x.cancel()); el.classList.remove("mov-sale"); el.classList.add("mov-fuera"); el.parentElement?.classList.remove("mov-recorta");
+    e.fase = "fuera"; if (e.ok) limpiar(id);
+    soltar();
+  }
+  // Arranca lo que espera, salvo que un diálogo lo tape (el diálogo llama aquí al cerrarse)
+  function correr() {
+    if (document.querySelector(".dlg.on")) return;
+    const lst = [...SAL].filter(([, e]) => e.fase === "espera"); if (!lst.length) return;
+    vigilarCifras();
+    if (S.view !== "bandeja") { lst.forEach(([id, e]) => { e.fase = "fuera"; if (e.ok) limpiar(id); }); soltar(); return; }
+    const grupo = lst.filter(([, e]) => e.grupo);
+    if (grupo.length) {
+      // Varias a la vez: se van juntas y la lista se acomoda con un solo fundido (no fila por fila)
+      grupo.forEach(([id, e]) => { e.fase = "fuera"; filaDe(id)?.classList.add("mov-fuera"); if (e.ok) limpiar(id); });
+      soltar(); const l = $("#blist"); if (l) mover(l, [{ opacity: .35, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }]);
+    }
+    lst.filter(([, e]) => !e.grupo).forEach(([id, e]) => salirUna(id, e));
+  }
+  // ids que dejan la vista por una acción de esta persona. dir: 1 avanza (derecha), -1 vuelve a campo o se rechaza (izquierda).
+  // Devuelve ctl: ctl.codigo = "SKT-…" (Aceptar: la fila lo muestra antes de irse) y ctl.fin(ok, idsQueFallaron)
+  function salir(ids0, dir = 1) {
+    const nada = { codigo: "", fin() {} };
+    if (!on || S.view !== "bandeja") return nada;
+    const ids = [...new Set([].concat(ids0))].filter(id => !SAL.has(id) && filaDe(id)); if (!ids.length) return nada;
+    const ctl = {
+      codigo: "",
+      fin(ok, mal = []) {
+        if (!ok) { volver(ids); return; }
+        if (mal.length) volver(mal);
+        ids.forEach(id => { const e = SAL.get(id); if (!e || e.ctl !== ctl || e.ok) return; e.ok = true; if (e.fase === "fuera") limpiar(id); });
+        correr();
+      }
+    };
+    const donde = lugar(); vigilarCifras(); // se anotan antes de escribir (en un diálogo, la escritura llega antes de cerrarse)
+    ids.forEach(id => SAL.set(id, { dir, fase: "espera", ok: null, el: filaDe(id), grupo: ids.length > 1, ctl, donde }));
+    // Seguridad: si nadie avisa en 15 s (un diálogo que se quedó colgado), se suelta sin animar
+    setTimeout(() => { ids.forEach(id => { const e = SAL.get(id); if (e?.ctl === ctl && e.fase === "espera") SAL.delete(id); }); soltar(); }, 15000);
+    correr();
+    return ctl;
+  }
+  // La persona cambió de pantalla o de pestaña: lo que estaba saliendo termina ya, sin esperar
+  function cortar() {
+    SAL.forEach((e, id) => { if (e.fase !== "sale") return; e.fase = "fuera"; if (e.el) { e.el.getAnimations().forEach(a => a.cancel()); e.el.classList.add("mov-fuera"); } if (e.ok) limpiar(id); });
+    aplazado = null;
+  }
+
+  // Resaltado de lo propio: id → { t: cuándo se empezó a ver (0 = aún no), hasta: se olvida si no se ve en 10 min }
+  const NUEVOS = new Map();
+  const nuevo = id => { if (on && id) NUEVOS.set(id, { t: 0, hasta: Date.now() + 600000 }); };
+  function pintarNuevos() {
+    const ahora = Date.now();
+    NUEVOS.forEach((n, id) => {
+      if (n.t ? ahora - n.t > 1600 : ahora > n.hasta) { NUEVOS.delete(id); return; }
+      const q = CSS.escape(id), el = document.querySelector(`#view .item[data-id="${q}"], #view tr[data-id="${q}"], #view tr[data-rid="${q}"]`);
+      if (!el || el.closest(".mov-fuera")) return;
+      if (!n.t) n.t = ahora;
+      el.classList.add("mov-nuevo"); el.style.animationDelay = -(ahora - n.t) + "ms";
+    });
+  }
+  // Al final de cada redibujo de una lista (Bandeja, Registros, Mis registros)
+  function trasPintar() {
+    const aqui = lugar();
+    if (SAL.size || VUELVE.size) document.querySelectorAll("#blist [data-rid]").forEach(el => {
+      const id = el.dataset.rid, e = SAL.get(id), v = VUELVE.get(id);
+      if (e && e.fase !== "espera" && e.donde === aqui) el.classList.add("mov-fuera");
+      if (v) { VUELVE.delete(id); if (Date.now() < v.hasta) regresar(el, v.dir); }
+    });
+    if (NUEVOS.size) pintarNuevos();
+    revisarCifras();
+  }
+
+  // Cambio de pantalla: el contenido entra con un fundido corto y la marca del menú se desliza al botón nuevo
+  const navActual = () => document.querySelector('#nav [aria-current="page"]');
+  const marcaNav = () => { const b = on && navActual(); return b ? b.getBoundingClientRect() : null; };
+  function pantalla(r0) {
+    // Solo opacidad: una transformación en #view movería las barras fijas que lleva dentro (acciones en grupo)
+    mover($("#view"), [{ opacity: 0 }, { opacity: 1 }], { duration: D() * .7 });
+    const b = navActual(), nav = b?.closest(".nav"); if (!r0 || !b || !nav) return;
+    const r1 = b.getBoundingClientRect(), rn = nav.getBoundingClientRect();
+    if (!r1.width || !r1.height || (Math.abs(r0.left - r1.left) < 1 && Math.abs(r0.top - r1.top) < 1)) return;
+    const cs = getComputedStyle(b), g = document.createElement("span"); g.className = "mov-ind";
+    Object.assign(g.style, { left: r1.left - rn.left + "px", top: r1.top - rn.top + "px", width: r1.width + "px", height: r1.height + "px", boxShadow: cs.boxShadow, backgroundColor: cs.backgroundColor, borderRadius: cs.borderRadius });
+    nav.appendChild(g); nav.classList.add("mov-nav");
+    const a = mover(g, [{ transform: `translate(${r0.left - r1.left}px,${r0.top - r1.top}px) scale(${r0.width / r1.width},${r0.height / r1.height})` }, { transform: "none" }], { easing: "cubic-bezier(.2,.8,.2,1)" });
+    const fin = () => { g.remove(); if (!nav.querySelector(".mov-ind")) nav.classList.remove("mov-nav"); };
+    a ? a.finished.then(fin, fin) : fin();
+  }
+  // Ficha que pasa a otro registro (flechas o tras una acción): un fundido corto en lugar de cerrar y abrir
+  const fundir = el => mover(el, [{ opacity: .35 }, { opacity: 1 }], { duration: D() * .75 });
+  // Filas de esqueleto para las cargas (solo con animaciones; sin ellas queda el texto de siempre)
+  const esqueleto = (n = 3) => on ? `<div class="esqs" aria-hidden="true">${'<span class="esq"></span>'.repeat(n)}</div>` : "";
+  // Tocar una pestaña o un chip: el que queda marcado toma su color con transición (@starting-style), también si se redibuja
+  addEventListener("pointerdown", e => {
+    if (!on || !e.target.closest?.(".tabs button, .chip")) return;
+    const h = document.documentElement; h.classList.add("mov-clic"); clearTimeout(h._movT); h._movT = setTimeout(() => h.classList.remove("mov-clic"), 600);
+  }, true);
+  return { get on() { return on; }, get d() { return D(); }, GIRO, VISTO, mover, entrar, saltar, salir, correr, cortar, aplaza, trasPintar, nuevo, vigilarCifras, revisarCifras, marcaNav, pantalla, fundir, esqueleto };
+})();
+
 /* ---------- Avisos ---------- */
 let tTimer;
 // Pasa el aviso arriba si abajo taparía el campo enfocado, un campo en error o los botones del pie de la ficha (y arriba no)
@@ -1787,7 +2023,7 @@ addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false);
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
 // Versión: grande.mediano.mínimo (1.43.0 es la antigua «versión 43»). Mínimo: arreglo chico; mediano: función nueva o cambio que se nota; grande: rediseño o cambio de reglas
-const VERSION_APP = "1.43.2";
+const VERSION_APP = "1.44.0";
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2135,6 +2371,7 @@ function pintarNav() {
   if (bA) { bA.hidden = !ajArriba; bA.innerHTML = ICON.ajustes + (sol + nNuevos ? `<span class="badge">${sol + nNuevos}</span>` : ""); if (S.view === "ajustes") bA.setAttribute("aria-current", "page"); else bA.removeAttribute("aria-current"); }
   $("#nav").innerHTML = (poder() && enPC() ? `<button type="button" class="nbuscar" data-buscar aria-label="Buscar en todo (Ctrl+K)">${ICON.buscar}<span>Buscar</span><kbd>Ctrl K</kbd></button>` : "") + vistasMenu.map(v => `<button type="button" data-v="${v.id}" ${S.view === v.id ? 'aria-current="page"' : ""}>${ICON[v.id]}<span>${v.c ? `<span class="lg">${v.t}</span><span class="sm">${v.c}</span>` : v.t}${v.id === "mis" && obs ? `<span class="badge">${obs}</span>` : ""}${v.id === "bandeja" && pt ? `<span class="badge" style="background:var(--ep)">${pt}</span>` : ""}${v.id === "ajustes" && sol + nNuevos ? `<span class="badge">${sol + nNuevos}</span>` : ""}</span></button>`).join("");
   insigniaApp(obs + pt + (puedeAjustes() ? sol : 0));
+  MOV.revisarCifras();
 }
 $("#btnAjustes").addEventListener("click", () => ir("ajustes"));
 $("#nav").addEventListener("click", e => {
@@ -2198,7 +2435,8 @@ function ir(v, desdeHistorial) {
   }
   // Salir del formulario mientras se edita descarta la edición (también su borrador); el de «Nueva» se guarda
   if (S.view === "nueva" && v !== "nueva") { if (S.editando) { borrarEdicion(); S.form = null; } else guardarBorrador(); }
-  const conFicha = !$("#sheet").hidden && history.state && history.state.ficha;
+  const conFicha = !$("#sheet").hidden && history.state && history.state.ficha, navAntes = v !== S.view ? MOV.marcaNav() : null;
+  MOV.cortar();
   S.view = v; ls.set("lib.vista", v); document.body.className = document.body.className.replace(/\bv-\S+/g, "").trim() + " v-" + v;
   if (!desdeHistorial && conFicha) history.replaceState(null, "", "#" + v);
   else if (!desdeHistorial && location.hash.slice(1) !== v) trasPop(() => history.pushState(null, "", "#" + v));
@@ -2206,6 +2444,7 @@ function ir(v, desdeHistorial) {
   if (!$("#sheet").hidden) cerrarFicha(true);
   cerrarMenu();
   pintarNav(); render(); scrollTo({ top: 0 });
+  if (navAntes) MOV.pantalla(navAntes);
 }
 function render() {
   if (!S.dentro) return;
@@ -2954,7 +3193,7 @@ function guardar() {
     return;
   }
   const motivoEC = S._motivoEC; S._motivoEC = null; S._solapeOk = false; S._choqueOk = false;
-  const bg = $("#bGuardar"); if (bg) { bg.disabled = true; bg.textContent = "Guardando…"; }
+  const bg = $("#bGuardar"); if (bg) { bg.disabled = true; bg.textContent = "Guardando…"; if (MOV.on) bg.insertAdjacentHTML("afterbegin", MOV.GIRO); }
   const datos = {
     actividad: f.actividad, fechaCampo: Timestamp.fromDate(new Date(f.fechaCampo)), topografoId: f.topografoId, equipo: f.actividad === "DRN" ? "DRN" : f.equipo || "",
     estructuraId: f.estructuraId, subestructuraId: f.subestructuraId, elementoId: f.elementoId || "", tipoId: f.tipoId || "",
@@ -3011,7 +3250,7 @@ function guardar() {
     // La siguiente liberación toma la hora actual (no la de la anterior)
     S.form = formVacio(); if (S.view === "nueva") { pintarForm(); scrollTo({ top: 0, behavior: "smooth" }); }
     // Un segundo toque rápido no debe caer sobre el formulario nuevo
-    const nb = $("#bGuardar"); if (nb) { nb.disabled = true; nb.textContent = "Guardado ✓"; setTimeout(() => { if (nb.isConnected) { nb.disabled = false; nb.textContent = btnGuardar(S.form?.actividad || f.actividad); } }, 700); }
+    const nb = $("#bGuardar"); if (nb) { nb.disabled = true; if (MOV.on) { nb.classList.add("hecho"); nb.innerHTML = MOV.VISTO + "Guardado"; } else nb.textContent = "Guardado ✓"; setTimeout(() => { if (nb.isConnected) { nb.disabled = false; nb.classList.remove("hecho"); nb.textContent = btnGuardar(S.form?.actividad || f.actividad); } }, 700); }
   };
   const fallo = async e => {
     console.error(e);
@@ -3028,6 +3267,7 @@ function guardar() {
   };
   // Con señal se espera la respuesta un momento antes de decir «guardada»; sin señal queda en el teléfono y se sube sola
   const pc = b.commit(); let hecho = false;
+  MOV.nuevo(ref.id); // en «Mis registros» (o Registros) aparece resaltado la primera vez que se vea
   pc.catch(e => { if (hecho) fallo(e); });
   if (!navigator.onLine) { hecho = true; listo(); }
   else Promise.race([pc, new Promise(ok => setTimeout(ok, 2500))]).then(() => { hecho = true; listo(); }, e => fallo(e));
@@ -3260,7 +3500,7 @@ function ordenarCol(rs, ord, cols) {
   const k = new Map(rs.map(r => [r, def.k(r)])), f = d === "asc" ? 1 : -1;
   return rs.slice().sort((a, b) => { const x = k.get(a), y = k.get(b); return f * (typeof x === "number" && typeof y === "number" ? x - y : natural(x, y)); });
 }
-function cerrarPop() { const d = $("#hPop"); if (!d) return; d._fin?.(); d.remove(); }
+function cerrarPop() { const d = $("#hPop"); if (!d) return; d._fin?.(); d.id = ""; d.style.pointerEvents = "none"; const a = MOV.mover(d, [{ opacity: 1 }, { opacity: 0, transform: "translateY(4px)" }], { duration: MOV.d * .7, fill: "forwards" }); if (a) a.finished.then(() => d.remove(), () => d.remove()); else d.remove(); }
 function popColumna(btn, fl, col, def, C, estados, repintar) {
   cerrarPop();
   const [c, d] = (fl.ord || "").split(":"), act = c === col;
@@ -3390,9 +3630,9 @@ function pintarLista(cual) {
   const hayFiltro = activos.length || qs.length || (tablaPC() && innerWidth >= 1200 && fl.st);
   // Con texto: mientras llega el historial no se dice «nada coincide»; si hay filtros puestos, se avisa y se ofrece quitarlos
   const conFil = !pap && qs.length && (activos.length || fl.st);
-  const vacio = cargHist ? `<div class="empty card"><b>Buscando en todo el historial…</b>En los últimos registros no hay coincidencias; falta revisar los más antiguos.</div>`
+  const vacio = cargHist ? `<div class="empty card"><b>Buscando en todo el historial…</b>En los últimos registros no hay coincidencias; falta revisar los más antiguos.</div>${MOV.esqueleto()}`
     : conFil ? `<div class="empty card"><b>Nada coincide con «${esc(fl.q.trim())}» con los filtros puestos</b>Los filtros (${esc(activos.map(a => a[1]).join(" · "))}) también se aplican a la búsqueda.<div style="margin-top:10px"><button type="button" class="btn sec" id="rSinFil">Buscar sin filtros</button></div></div>`
-    : `<div class="empty card"><b>${pap ? (S.papelera ? "La papelera está vacía" : "Cargando papelera…") : datos.length ? "Nada coincide con el filtro" : cargandoFecha ? "Buscando…" : activos.length ? "No hay registros con esos filtros" : "Aún no hay registros"}</b>${pap ? (S.papelera ? "Lo que se borre aparecerá aquí y se podrá restaurar." : "") : datos.length ? "Prueba con otra búsqueda." : cual === "mis" ? "Lo que guardes en «Nueva» aparecerá aquí." : "Los registros de campo aparecerán aquí al instante."}</div>`;
+    : `<div class="empty card"><b>${pap ? (S.papelera ? "La papelera está vacía" : "Cargando papelera…") : datos.length ? "Nada coincide con el filtro" : cargandoFecha ? "Buscando…" : activos.length ? "No hay registros con esos filtros" : "Aún no hay registros"}</b>${pap ? (S.papelera ? "Lo que se borre aparecerá aquí y se podrá restaurar." : "") : datos.length ? "Prueba con otra búsqueda." : cual === "mis" ? "Lo que guardes en «Nueva» aparecerá aquí." : "Los registros de campo aparecerán aquí al instante."}</div>${(pap && !S.papelera) || (!pap && !datos.length && cargandoFecha) ? MOV.esqueleto() : ""}`;
   // La barra de acciones en grupo se arma aparte para actualizarla al marcar sin redibujar toda la lista
   const bulkHtml = () => { const ns = sel.size, selRegs = vis.filter(r => sel.has(r.id)); return !tabla ? "" : `<div class="cap-bulk flota ${ns ? "on" : ""}" id="rBulk"><span><b>${ns}</b> ${ns === 1 ? "seleccionado" : "seleccionados"}</span>${pap
     ? `${selRegs.some(puedeRestaurar) ? '<button type="button" class="mini ok-btn" data-rk="restaurar">Restaurar</button>' : ""}`
@@ -3447,7 +3687,7 @@ function pintarLista(cual) {
     else fl.st = k;
     pintarLista(cual);
   });
-  $("#view .tabs")?.addEventListener("click", e => { const b = e.target.closest("[data-pap]"); if (b) { fl.pap = b.dataset.pap === "1"; sel.clear(); pintarLista(cual); } });
+  $("#view .tabs")?.addEventListener("click", e => { const b = e.target.closest("[data-pap]"); if (b) { const otra = (b.dataset.pap === "1") !== !!fl.pap; fl.pap = b.dataset.pap === "1"; sel.clear(); pintarLista(cual); if (otra) MOV.entrar($("#lista") || $("#view .empty"), 4); } });
   $("#rVaciar")?.addEventListener("click", () => borrarSiempre(datos, "Vaciar papelera"));
   // Filtros: en computadora se aplican al cambiar; en el celular, desde la hoja con «Aplicar»
   $("#rFil")?.addEventListener("change", e => { const k = e.target.dataset.rf; if (!k) return; fl[k] = e.target.value; if (k === "fecha") { if (fl.fecha === "dia" || fl.fecha === "rango") fl.f1 ||= hoyISO(); else { fl.f1 = ""; fl.f2 = ""; } } pintarLista(cual); });
@@ -3494,6 +3734,7 @@ function pintarLista(cual) {
   if (S._ficha && !$("#sheet").hidden) marcarFilaAbierta(S._ficha.id);
   $("#bMas")?.addEventListener("click", () => { if (cual === "todos") S.verTodos += 100; else S.verMis += 400; pintarLista(cual); });
   $("#bMasSrv")?.addEventListener("click", () => { S.limiteTodos += 100; S.verTodos += 100; suscribirTodos(); });
+  MOV.trasPintar();
 }
 function resumenArch(r) {
   const a = r.archivos || [], c = a.filter(x => x.tipo === "csv").length, f = a.length - c;
@@ -3598,7 +3839,7 @@ let unsubHist = null;
 function abrirFicha(r) {
   if (!r) return;
   if (!S._fichaNav) S._fichaOrden = ordenVista(); S._fichaNav = false;
-  const sh = $("#sheet"), sc = $("#scrim");
+  const sh = $("#sheet"), sc = $("#scrim"), idAntes = !sh.hidden && sh.classList.contains("on") ? S._ficha?.id : null;
   const sub = L.sub(r.subestructuraId), est = L.est(r.estructuraId);
   const fila = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : "";
   // Solo enlaces http(s): un «javascript:» o «data:» guardado en el registro se muestra como texto, no como enlace
@@ -3665,6 +3906,8 @@ function abrirFicha(r) {
   $("#fDuplicar")?.addEventListener("click", () => duplicarComoNuevo(r));
   if (!yaAbierta) trasPop(() => history.pushState({ ficha: 1 }, "", location.href));
   requestAnimationFrame(() => { sh.classList.add("on"); sc.classList.add("on"); });
+  // Pasar a otro registro con la ficha abierta (flechas, j/k o tras una acción): un fundido corto, no cerrar y abrir
+  if (idAntes && idAntes !== r.id) MOV.fundir(sh);
   $("#fCerrar").addEventListener("click", () => cerrarFicha());
   $("#fX").addEventListener("click", () => cerrarFicha());
   $("#fCopiar")?.addEventListener("click", () => { const t = r.numero; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast(`${t} copiado`)).catch(() => toast(t)); });
@@ -3735,7 +3978,8 @@ function cerrarFicha(desdeHistorial) {
   sh.classList.remove("on"); sc.classList.remove("on");
   if (unsubHist) { unsubHist(); unsubHist = null; }
   if (unsubArch) { unsubArch(); unsubArch = null; }
-  setTimeout(() => { sh.hidden = true; sc.hidden = true; }, 300);
+  // Se oculta al terminar de salir (si entretanto se abrió otra ficha, no)
+  setTimeout(() => { if (S._ficha) return; sh.hidden = true; sc.hidden = true; }, 300);
 }
 $("#scrim").addEventListener("click", () => cerrarFicha());
 // «Atrás» del celular: primero cierra la ficha; si no hay ficha, vuelve a la pantalla anterior
@@ -3755,7 +3999,7 @@ addEventListener("keydown", e => {
   else if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !e.altKey && !e.ctrlKey && !e.metaKey && !e.target.matches?.("input,textarea,select,[contenteditable]")) { e.preventDefault(); moverFicha(e.key === "ArrowRight" ? 1 : -1); }
 });
 /* ---------- Menú de acciones (clic derecho en computadora, mantener presionado en el celular) ---------- */
-function cerrarMenu() { const m = $("#ctx"), bd = $("#ctxbd"); document.querySelectorAll(".ctx-on").forEach(x => x.classList.remove("ctx-on")); if (m) { m.id = ""; m.classList.remove("on"); setTimeout(() => m.remove(), 160); } bd?.remove(); }
+function cerrarMenu() { const m = $("#ctx"), bd = $("#ctxbd"); document.querySelectorAll(".ctx-on").forEach(x => x.classList.remove("ctx-on")); if (m) { m.id = ""; m.classList.remove("on"); setTimeout(() => m.remove(), 200); } bd?.remove(); }
 // items: [{ t, fn, peligro, sep }]; cuerpo: html opcional (por ejemplo campos) antes de los botones
 function abrirMenu({ titulo, sub, items, x, y, cuerpo, alAbrir, fila }) {
   cerrarMenu();
@@ -3866,7 +4110,7 @@ function abrirBuscador() {
   const inp = d.querySelector("input"), box = d.querySelector(".cmdk-res");
   let res = [], k = 0;
   let hecho = false;
-  const cerrar = desde => { if (hecho) return; hecho = true; soltarCapa(capa, desde); d.id = ""; inp.blur(); d.style.pointerEvents = "none"; d.classList.remove("on"); setTimeout(() => d.remove(), 160); };
+  const cerrar = desde => { if (hecho) return; hecho = true; soltarCapa(capa, desde); d.id = ""; inp.blur(); d.style.pointerEvents = "none"; d.classList.remove("on"); setTimeout(() => d.remove(), 200); };
   const capa = abrirCapa(desde => cerrar(desde));
   const pintar = () => {
     const qs = terminos(inp.value);
@@ -6292,15 +6536,20 @@ function soltarCapa(id, desdeHistorial) {
 }
 const esCapaTope = id => CAPAS.length && CAPAS[CAPAS.length - 1].id === id;
 const ICON_X = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
-// op: { peligro, ancho: "corto" | "medio" | "ancho" (true = "ancho"), onCancel, sinFoco, cancelar }
+// op: { peligro, ancho: "corto" | "medio" | "ancho" (true = "ancho"), onCancel, sinFoco, cancelar, cargando }
+// op.cargando: texto del botón mientras espera la respuesta («Generando código…»); d.hecho(texto) desde onOk: al salir bien,
+// el botón pasa a verde con el visto y ese texto un instante antes de cerrar (solo con animaciones; sin ellas cierra como siempre)
 function dialogo(titulo, html, onOk, okTxt = "Aceptar", op = {}) {
   const d = document.createElement("div"); d.className = "dlg";
   const tam = op.ancho === true ? "ancho" : op.ancho || "medio", tid = "dT" + Math.random().toString(36).slice(2, 8);
   d.innerHTML = `<form class="dlg-box ${tam}" role="dialog" aria-modal="true" aria-labelledby="${tid}" novalidate><span class="dlg-grip" aria-hidden="true"></span><div class="dlg-h"><h3 id="${tid}">${esc(titulo)}</h3><button type="button" class="dlg-x" data-x aria-label="Cerrar">${ICON_X}</button></div><div class="dlg-c">${html}</div><div class="dlg-a">${op.soloCerrar ? "" : `<button type="button" class="btn sec" data-x>${esc(op.cancelar || "Cancelar")}</button>`}<button type="submit" class="btn ${op.peligro ? "warn lleno" : "pri"}">${esc(okTxt)}</button></div></form>`;
   document.body.appendChild(d); requestAnimationFrame(() => d.classList.add("on"));
-  let hecho = false, ocupado = false;
+  let hecho = false, ocupado = false, txtHecho = "", cierraOk = false;
   const tecla = e => { if (e.key === "Escape" && esCapaTope(capa)) { e.preventDefault(); e.stopPropagation(); cerrar(false); } };
-  const cerrar = (ok, desdeHistorial) => { if (hecho || (ocupado && !ok)) return; hecho = true; document.removeEventListener("keydown", tecla, true); soltarCapa(capa, desdeHistorial); d.classList.remove("on"); setTimeout(() => d.remove(), 200); if (!ok) op.onCancel?.(); };
+  // Mientras muestra «hecho», cualquier forma de cerrarlo (Escape, ✕, tocar fuera) cuenta como hecho: ya se guardó
+  const cerrar = (ok, desdeHistorial) => { if (cierraOk) ok = true; if (hecho || (ocupado && !ok)) return; hecho = true; document.removeEventListener("keydown", tecla, true); soltarCapa(capa, desdeHistorial); d.classList.remove("on"); setTimeout(() => d.remove(), 200); if (!ok) op.onCancel?.();
+    setTimeout(MOV.correr, MOV.d * .7); }; // lo que esperaba a que se cerrara (una fila que sale) arranca ya
+  d.hecho = t => { txtHecho = t || ""; };
   const capa = abrirCapa(desde => cerrar(false, desde));
   document.activeElement?.blur?.(); // el botón que abrió el diálogo no debe recibir un Enter pulsado antes del foco (60 ms)
   d.cerrar = ok => cerrar(ok);
@@ -6313,10 +6562,16 @@ function dialogo(titulo, html, onOk, okTxt = "Aceptar", op = {}) {
     const o = {}; new FormData(e.target).forEach((v, k) => { o[k] = String(v).trim(); });
     const res = onOk(o);
     if (res && typeof res.then === "function") {
-      const btn = d.querySelector("[type=submit]"); ocupado = true; btn.disabled = true; d.classList.add("ocupado");
+      const btn = d.querySelector("[type=submit]"), txt0 = btn.innerHTML; ocupado = true; btn.disabled = true; d.classList.add("ocupado");
+      if (op.cargando && MOV.on) btn.innerHTML = MOV.GIRO + esc(op.cargando);
       // Si tarda mucho se puede cerrar igual (Cancelar, ✕ o Escape); lo que se esté guardando sigue su curso
       const tLibre = setTimeout(() => { ocupado = false; }, 10000);
-      const listo = v => { clearTimeout(tLibre); ocupado = false; btn.disabled = false; d.classList.remove("ocupado"); if (v !== false) cerrar(true); };
+      const listo = v => {
+        clearTimeout(tLibre); ocupado = false; btn.disabled = false; d.classList.remove("ocupado");
+        if (v === false) { if (op.cargando && MOV.on) btn.innerHTML = txt0; return; }
+        if (txtHecho && MOV.on && !hecho) { cierraOk = true; ocupado = true; btn.disabled = true; btn.classList.add("hecho"); btn.innerHTML = MOV.VISTO + esc(txtHecho); MOV.saltar(btn, 1.04); setTimeout(() => cerrar(true), 500); return; }
+        cerrar(true);
+      };
       res.then(listo, err => { console.error(err); listo(false); });
     } else if (res !== false) cerrar(true);
   });
@@ -6368,6 +6623,8 @@ async function cambiarEstado(ids, datos, a, nota, okTxt) {
   const todos = c.regs;
   const regs = todos.filter(r => !DESDE[a] || DESDE[a].includes(r.estado)), salt = todos.length - regs.length;
   if (!regs.length) { toast(salt ? (salt === 1 ? "Ese registro ya cambió de estado; no se tocó." : "Esos registros ya cambiaron de estado; no se tocaron.") : "No se encontró el registro.", "bad"); return 0; }
+  // La fila sale de la Bandeja mientras se escribe (derecha si avanza; izquierda si vuelve a campo o se rechaza)
+  const sal = MOV.salir(regs.map(r => r.id), ["OB", "RE"].includes(a) ? -1 : 1);
   // «datos» puede ser una función: cada registro lleva lo suyo (por ejemplo, el XML de su superficie al entregar)
   const p = lotes(regs, (b, r) => {
     const dat = typeof datos === "function" ? datos(r) : datos;
@@ -6376,6 +6633,7 @@ async function cambiarEstado(ids, datos, a, nota, okTxt) {
     b.set(doc(collection(db, "historial")), { liberacionId: r.id, accion: "estado", de: r.estado, a, usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: nota || "" });
   });
   const ok = await escribir(p, (okTxt ? okTxt(regs.length) : "Guardado") + (salt ? ` · ${salt} ${salt === 1 ? "se saltó" : "se saltaron"} (ya cambiaron de estado)` : ""), "No se pudo guardar: ");
+  sal.fin(ok);
   return ok ? regs.length : 0;
 }
 // Cierra la ficha solo si es la de alguno de esos registros (la acción pudo hacerse desde otra fila)
@@ -6427,10 +6685,13 @@ function aceptarUno(r) {
     <div class="f"><label for="dNom">Nombre de la liberación</label><textarea id="dNom" name="nombre" style="min-height:70px">${esc(r.nombreLiberacion || r.descripcion || "")}</textarea></div>
     ${campoCapa([r], capaDe(r), false)}`,
     async o => {
+      // La fila espera tapada por el diálogo; al cerrarse muestra su código y sale (la transacción sale ya)
+      const sal = MOV.salir([r.id], 1);
       const capa = normCapa(o.capa, r.subestructuraId, r.tipoId); const n = await generarCodigo(r, o.nombre, capa);
-      if (!n) return false; // el diálogo queda abierto con lo escrito
+      if (!n) { sal.fin(false); return false; } // el diálogo queda abierto con lo escrito
+      sal.codigo = n; sal.fin(true); MOV.nuevo(r.id); d.hecho(r._reaceptado ? `${n} · conserva su código` : `${n} generado`);
       toast(r._reaceptado ? `Re-aceptado: conserva su código ${n}` : `Código ${n} generado`); delete r._reaceptado; cerrarFichaDe(r.id);
-    }, "Generar código", { sinFoco: true }); // Enter acepta; el nombre se edita solo si se toca
+    }, "Generar código", { sinFoco: true, cargando: "Generando código…" }); // Enter acepta; el nombre se edita solo si se toca
   vigilarCruces(d, [r], false, "Generar código");
 }
 // Acepta varios: sigue aunque uno falle, avisa cuántos salieron y deja marcados (en «sel») los que fallaron.
@@ -6446,7 +6707,7 @@ async function aceptarVarios(ids, sel = S.bandeja.sel) {
     const d = dialogo(`Aceptar ${regs.length}`, `<p class="dlg-p">Se ${regs.length === 1 ? "genera 1 código" : `generan ${regs.length} códigos`} ${esc(c0)}… nuevos, uno por liberación, y pasan a «En proceso». Los códigos no se pueden reutilizar.</p>
       ${campoCapa(regs, "", regs.length > 1)}`,
       async o => {
-        let n = 0, re = 0; const mal = [];
+        let n = 0, re = 0; const mal = [], sal = MOV.salir(regs.map(r => r.id), 1);
         for (const r of regs) {
           if (!navigator.onLine) { mal.push(r.id); continue; }
           const capa = o.capa ? normCapa(o.capa, r.subestructuraId, r.tipoId) : undefined;
@@ -6455,12 +6716,14 @@ async function aceptarVarios(ids, sel = S.bandeja.sel) {
         }
         const extra = re ? ` (${re} ${re === 1 ? "conserva su código" : "conservan su código"})` : "";
         sel.clear(); mal.forEach(id => sel.add(id));
+        sal.fin(n > 0, mal); regs.forEach(r => { if (!mal.includes(r.id)) MOV.nuevo(r.id); });
+        if (n) d.hecho(n === 1 ? "1 código generado" : `${n} códigos generados`);
         if (mal.length) toast(`${n} de ${regs.length} aceptados${extra} · ${mal.length} ${mal.length === 1 ? "falló y queda marcado" : "fallaron y quedan marcados"}`, "bad");
         else toast(`${n} ${n === 1 ? "código generado" : "códigos generados"}${extra}`);
         cerrarFichaDe(regs.filter(r => !mal.includes(r.id)).map(r => r.id));
         if (S.view === "bandeja") pintarBandeja();
         fin(mal);
-      }, txt, { sinFoco: true, onCancel: () => fin(null) });
+      }, txt, { sinFoco: true, onCancel: () => fin(null), cargando: regs.length === 1 ? "Generando código…" : "Generando códigos…" });
     vigilarCruces(d, regs, true, txt);
   });
 }
@@ -6500,12 +6763,14 @@ async function aceptarDron(r) {
       const elegidos = todos.filter(p => o["p_" + p.id] === "on").map(p => ({ id: p.id, nombre: p.nombre }));
       if (o.otro) elegidos.push({ id: "otro-" + Date.now().toString(36), nombre: capital(o.otro) });
       if (!elegidos.length) { toast("Marca al menos un protocolo.", "bad"); return false; }
+      const sal = MOV.salir([r.id], 1);
       return generarProtocolos(r, elegidos, o.nombre).then(cods => {
-        if (!cods) return false;
+        if (!cods) { sal.fin(false); return false; }
+        sal.codigo = cods[0]; sal.fin(true); MOV.nuevo(r.id); d.hecho(cods.length === 1 ? `${cods[0]} generado` : `${cods.length} códigos generados`);
         toast(r._reaceptado ? `Re-aceptado: conserva ${cods.length === 1 ? "su código " + cods[0] : "sus códigos"}` : cods.length === 1 ? `Código ${cods[0]} generado` : `${cods.length} códigos generados: ${cods[0]} a ${cods.at(-1)}`);
         delete r._reaceptado; cerrarFichaDe(r.id);
       });
-    }, "Generar", { ancho: "medio" });
+    }, "Generar", { ancho: "medio", cargando: "Generando códigos…" });
   const sub = d.querySelector("[type=submit]"), nTxt = d.querySelector("#dProtN");
   const cuenta = () => {
     const n = d.querySelectorAll('input[type=checkbox][name^="p_"]:checked').length + (d.querySelector("#dProtOtro").value.trim() ? 1 : 0);
@@ -6653,8 +6918,8 @@ async function entregar(ids0) {
       // Sin carpeta no se escribe: una entrega en grupo no borra la que ya tenía cada registro
       return guardarSupEntrega(regs, xmls).then(ok => !ok ? false : cambiarEstado(ids, r => ({ fechaEntrega: Timestamp.fromDate(new Date(o.fecha + "T12:00:00")), numeroCargo: o.cargo, ...(carpeta ? { carpeta } : {}),
         xmlEntrega: (xmls.get(r.id) || []).map(x => ({ archivo: x.archivo, superficie: x.nombre, codigo: x.codigo, supId: x.supId || "", subId: r.subestructuraId || "", grupo: x.grupo || "" })) }),
-        "EC", (nota ? nota + " · " : "") + "XML: " +regs.map(r => (xmls.get(r.id) || []).map(x => x.archivo).join(", ")).filter(Boolean).join(" · "), k => `${k} ${k === 1 ? "entregada" : "entregadas"} a Calidad`).then(k => { if (!k) return false; S.bandeja.sel.clear(); S.bandeja.epHist = S.bandeja.epHist.filter(r => !ids.includes(r.id)); if (S.view === "bandeja") pintarBandeja(); cerrarFichaDe(ids); }));
-    }, "Entregar");
+        "EC", (nota ? nota + " · " : "") + "XML: " +regs.map(r => (xmls.get(r.id) || []).map(x => x.archivo).join(", ")).filter(Boolean).join(" · "), k => `${k} ${k === 1 ? "entregada" : "entregadas"} a Calidad`).then(k => { if (!k) return false; d.hecho(k === 1 ? "Entregada a Calidad" : `${k} entregadas a Calidad`); S.bandeja.sel.clear(); S.bandeja.epHist = S.bandeja.epHist.filter(r => !ids.includes(r.id)); if (S.view === "bandeja") pintarBandeja(); cerrarFichaDe(ids); }));
+    }, "Entregar", { cargando: "Entregando…" });
   const ul = d.querySelector("#dXmlL"), er = d.querySelector("#dXmlE");
   const pintarX = () => {
     ul.innerHTML = regs.map(r => { const l = xmls.get(r.id) || []; return `<li><span class="mono">${esc(codigosDe(r).join(", ") || "Sin código")}</span>${l.length ? `<span class="xml-ok">✓ ${l.map(x => esc(x.nombre)).join(", ")}</span><small>${esc([...new Set(l.map(x => x.archivo))].join(", "))}</small>` : '<span class="xml-falta">Falta XML</span>'}</li>`; }).join("");
@@ -6765,6 +7030,7 @@ async function aPapelera(regs0) {
   const n = regs.length, gestion = esGab() || puedeAjustes();
   const que = n === 1 ? `<b>${esc(regs[0].numero || regs[0].descripcion || "El registro")}</b> sale` : `<b>${n} registros</b> salen`;
   if (!await confirmar(n === 1 ? "Mandar a la papelera" : `Mandar ${n} a la papelera`, `${que} de las listas y del panel. ${gestion ? "Se puede restaurar desde Registros → Papelera" : "Si fue un error, gabinete lo puede restaurar"}${regs.some(r => r.numero) ? "; los códigos SKT-TOP no se reutilizan." : "."}`, "Mandar a la papelera", true)) return 0;
+  const sal = MOV.salir(regs.map(r => r.id), -1);
   const p = lotes(regs, (b, r) => {
     b.update(doc(db, "liberaciones", r.id), { borrado: true, borradoPor: S.email, borradoNombre: S.perfil?.nombre || "", borradoEn: serverTimestamp() });
     if (r.subestructuraId) quitarResumen(b, r.id, r.subestructuraId);
@@ -6773,7 +7039,8 @@ async function aPapelera(regs0) {
   const ids = new Set(regs.map(r => r.id));
   S.bandeja.sel.clear(); S.selReg?.clear?.();
   if (S._ficha && ids.has(S._ficha.id)) cerrarFicha();
-  return await escribir(p, n === 1 ? "Enviado a la papelera" : `${n} enviados a la papelera`, "No se pudo borrar: ") ? n : 0;
+  const ok = await escribir(p, n === 1 ? "Enviado a la papelera" : `${n} enviados a la papelera`, "No se pudo borrar: ");
+  sal.fin(ok); return ok ? n : 0;
 }
 async function restaurar(regs0) {
   const regs = regs0.filter(puedeRestaurar); if (!regs.length) return 0;
@@ -6835,6 +7102,7 @@ async function marcarVisto(regs0, si = true) {
   const regs = regs0.filter(r => r.estado === "NA" && r.actividad !== "ASP" && !!r.visto !== si); if (!regs.length) return 0;
   const n = regs.length;
   if (!si && !await confirmar("Quitar «Enterado»", `${n === 1 ? "El levantamiento vuelve" : `Los ${n} levantamientos vuelven`} a «Por ver».`, "Quitar")) return 0;
+  const sal = MOV.salir(regs.map(r => r.id), si ? 1 : -1);
   const p = lotes(regs, (b, r) => {
     b.update(doc(db, "liberaciones", r.id), si ? { visto: true, vistoPor: S.email, vistoNombre: S.perfil?.nombre || "", vistoEn: serverTimestamp() } : { visto: false, vistoPor: "", vistoNombre: "", vistoEn: null });
     if (!r._res) resumenEn(b, r.id, { ...r, visto: si });
@@ -6842,12 +7110,14 @@ async function marcarVisto(regs0, si = true) {
   });
   S.bandeja.sel.clear();
   if (S._ficha && regs.some(r => r.id === S._ficha.id)) cerrarFicha();
-  return await escribir(p, si ? (n === 1 ? "Marcado como enterado" : `${n} marcados como enterados`) : (n === 1 ? "Vuelve a por ver" : `${n} vuelven a por ver`), "No se pudo guardar: ") ? n : 0;
+  const ok = await escribir(p, si ? (n === 1 ? "Marcado como enterado" : `${n} marcados como enterados`) : (n === 1 ? "Vuelve a por ver" : `${n} vuelven a por ver`), "No se pudo guardar: ");
+  sal.fin(ok); return ok ? n : 0;
 }
 async function marcarProcesado(regs0, si = true) {
   const regs = regs0.filter(r => r.actividad === "ASP" && !!r.procesado !== si); if (!regs.length) return 0;
   const n = regs.length;
   if (!si && !await confirmar("Devolver a «Por procesar»", `${n === 1 ? "El levantamiento vuelve" : `Los ${n} levantamientos vuelven`} a la lista de aspas por procesar.`, "Devolver")) return 0;
+  const sal = MOV.salir(regs.map(r => r.id), si ? 1 : -1);
   const p = lotes(regs, (b, r) => {
     b.update(doc(db, "liberaciones", r.id), si ? { procesado: true, procesadoPor: S.email, procesadoNombre: S.perfil?.nombre || "", procesadoEn: serverTimestamp() } : { procesado: false, procesadoPor: "", procesadoNombre: "", procesadoEn: null });
     if (!r._res) resumenEn(b, r.id, { ...r, procesado: si });
@@ -6855,7 +7125,8 @@ async function marcarProcesado(regs0, si = true) {
   });
   S.bandeja.sel.clear();
   if (S._ficha && regs.some(r => r.id === S._ficha.id)) cerrarFicha();
-  return await escribir(p, si ? (n === 1 ? "Marcado como procesado" : `${n} marcados como procesados`) : (n === 1 ? "Devuelto a por procesar" : `${n} devueltos a por procesar`), "No se pudo guardar: ") ? n : 0;
+  const ok = await escribir(p, si ? (n === 1 ? "Marcado como procesado" : `${n} marcados como procesados`) : (n === 1 ? "Devuelto a por procesar" : `${n} devueltos a por procesar`), "No se pudo guardar: ");
+  sal.fin(ok); return ok ? n : 0;
 }
 // Listas de seguimiento de la bandeja: aspas (se procesan) y levantamientos (gabinete y jefe se dan por enterados)
 const SEG = {
@@ -6924,12 +7195,14 @@ addEventListener("keydown", e => {
   else if (k === "e" && r.estado === "EP") { e.preventDefault(); entregar([r.id]); }
 });
 function pintarBandeja() {
+  // Si una fila está saliendo (o un diálogo la tapa), el redibujo espera a que termine: así no se corta ni rebota
+  if (MOV.aplaza(() => { if (S.view === "bandeja") render(); })) return;
   const B = S.bandeja;
   // El jefe de área solo ve la pestaña Aspas; gabinete no la ve
   // Jefe de área: aspas y levantamientos; gabinete no ve aspas
   if (!esGab() && !["ASP", "LEV"].includes(B.tab)) B.tab = "ASP"; else if (B.tab === "ASP" && !puedeAjustes()) B.tab = "PT";
   const t = B.tab;
-  if (t === "ASP" || t === "LEV") return pintarBandejaSeg(t);
+  if (t === "ASP" || t === "LEV") { pintarBandejaSeg(t); MOV.trasPintar(); return; }
   const fuente = t === "EP" ? [...B.ep, ...B.epHist] : B.pend.filter(r => r.estado === t);
   const q = terminos(B.q), F = B.f ||= {}, KB = ["sub", "tipo", "capa", "topo"], fB = r => t === "EP" ? r.fechaLiberacion || r.fechaCampo : r.fechaCampo;
   // Filtros de la Bandeja (se recuerdan): frente (o toda la estructura), tipo, capa y topógrafo
@@ -6970,7 +7243,7 @@ function pintarBandeja() {
   $("#bHist")?.addEventListener("click", async e => { e.target.disabled = true; e.target.textContent = "Cargando…";
     try { const sn = await getDocs(query(collection(db, "liberaciones"), where("estado", "==", "EP"), where("origen", "==", "excel"))); B.epHist = sn.docs.map(fila).filter(vivo); B.epHistOk = true; pintarBandeja(); toast(`${B.epHist.length.toLocaleString("es-PE")} del histórico cargadas`); }
     catch (er) { toast("No se pudo cargar: " + er.message, "bad"); e.target.disabled = false; } });
-  $(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-bt]"); if (b) { B.tab = b.dataset.bt; B.sel.clear(); B.ver = 60; B.cur = ""; guardarBandeja(); pintarBandeja(); } });
+  $(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-bt]"); if (b) { const otra = b.dataset.bt !== B.tab; MOV.cortar(); B.tab = b.dataset.bt; B.sel.clear(); B.ver = 60; B.cur = ""; guardarBandeja(); pintarBandeja(); if (otra) MOV.entrar($("#blist"), 4); } });
   buscadorDiferido($("#bq"), v => { B.q = v; }, pintarBandeja, () => S.view === "bandeja");
   $("#bFr")?.addEventListener("change", e => { F.sub = e.target.value; guardarBandeja(); pintarBandeja(); });
   $("#bFacT")?.addEventListener("click", () => { ls.set("lib.facOff", !ls.get("lib.facOff", false)); pintarBandeja(); });
@@ -7014,6 +7287,7 @@ function pintarBandeja() {
     if (a) { ({ aceptar: () => aceptarUno(r), observar: () => observar(r), rechazar: () => rechazar(r), entregar: () => entregar([r.id]), reabrir: () => reabrir(r), capa: () => ponerCapa(r), editar: () => { editarRegistro(r); } })[a.dataset.a]?.(); return; }
     if (e.target.closest(".item") || (row.tagName === "TR" && !e.target.closest("button,input,label,.ck"))) abrirFicha(r);
   });
+  MOV.trasPintar();
 }
 
 function pintarBandejaSeg(k) {
@@ -7023,8 +7297,8 @@ function pintarBandejaSeg(k) {
   <p class="lead">${C.lead}</p>
   ${tabsBandeja(k)}
   ${html}`;
-  $(".tabs")?.addEventListener("click", e => { const b = e.target.closest("[data-bt]"); if (b) { B.tab = b.dataset.bt; B.sel.clear(); B.ver = 60; pintarBandeja(); } });
-  $("#view .chips").addEventListener("click", e => { const c = e.target.closest(`[data-${C.chip}]`); if (c) { B[k === "ASP" ? "aspVer" : "levVer"] = c.dataset[C.chip]; B.sel.clear(); B.ver = 60; pintarBandeja(); } });
+  $(".tabs")?.addEventListener("click", e => { const b = e.target.closest("[data-bt]"); if (b) { const otra = b.dataset.bt !== B.tab; MOV.cortar(); B.tab = b.dataset.bt; B.sel.clear(); B.ver = 60; pintarBandeja(); if (otra) MOV.entrar($("#blist"), 4); } });
+  $("#view .chips").addEventListener("click", e => { const c = e.target.closest(`[data-${C.chip}]`), ver = k === "ASP" ? "aspVer" : "levVer"; if (c) { const otro = (B[ver] === "hechas") !== (c.dataset[C.chip] === "hechas"); MOV.cortar(); B[ver] = c.dataset[C.chip]; B.sel.clear(); B.ver = 60; pintarBandeja(); if (otro) MOV.entrar($("#blist"), 4); } });
   const bq = $("#bq"); bq.addEventListener("input", () => { B.q = bq.value; clearTimeout(S._qt); S._qt = setTimeout(() => { if (S.view !== "bandeja" || !$("#bq")) return; const v = $("#bq"), pos = v.selectionStart, foco = document.activeElement === v; pintarBandeja(); const n = $("#bq"); if (foco) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) {} } }, 150); });
   const todo = on => { vis.slice(0, lim).forEach(r => on ? B.sel.add(r.id) : B.sel.delete(r.id)); pintarBandeja(); };
   $("#bAll")?.addEventListener("change", e => todo(e.target.checked)); $("#bAll2")?.addEventListener("change", e => todo(e.target.checked));
