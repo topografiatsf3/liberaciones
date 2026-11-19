@@ -2086,6 +2086,13 @@ const VERSION_APP = "1.44.2";
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
   if ($(".dlg.on")) return true;
+  // También frena la recarga: una importación u operación de varios pasos en curso, un campo a medio escribir en cualquier
+  // pantalla (Ajustes), la Bandeja con registros marcados o su menú abierto, y lo cargado del Excel por importar
+  if (S._ocupado > 0) return true;
+  const a = document.activeElement;
+  if (a?.matches?.("input:not([type=checkbox]):not([type=radio]):not([type=search]),textarea") && a.closest?.("#view") && a.value !== a.defaultValue) return true;
+  if (S.view === "bandeja" && (S.bandeja?.sel?.size || $("#hPop"))) return true;
+  if (S.view === "ajustes" && S.aj?.imp?.clas) return true;
   if (S.view !== "nueva" || !S.form) return false;
   try { leerCampos(); } catch (_) {}
   const f = S.form; return ["pkInicio", "pkFin", "cota", "capa", "area", "descripcion", "observaciones"].some(k => String(f[k] || "").trim()) || (f.archivos || []).length > 0;
@@ -2355,11 +2362,13 @@ function entrarApp() {
     S.subs.push(onSnapshot(collection(db, "usuarios"), snap => { S.usuarios = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.nombre || a.id).localeCompare(b.nombre || b.id)); if (S.view === "ajustes" && S.aj.tab === "usuarios") repintarAjSuave(); }, errLeer("usuarios", "los usuarios")));
   }
   // Configuración en vivo (versión 1.45; antes se leía una vez): una pestaña abierta días toma el prefijo y las opciones nuevas, y la versión mínima
+  // ¿Hay que rehacer el resumen del Panel? Se decide con la primera copia que llega del servidor, no con la de la caché (podría ser
+  // vieja y releer toda la colección sin necesidad); includeMetadataChanges para que avise aunque la caché ya coincidiera
   let cfg1 = true;
-  S.subs.push(onSnapshot(doc(db, "config", "general"), d => {
+  S.subs.push(onSnapshot(doc(db, "config", "general"), { includeMetadataChanges: true }, d => {
     S.config = d.exists() ? d.data() : {};
     revisarVersionMin();
-    if (!cfg1) return; cfg1 = false;
+    if (!cfg1 || d.metadata?.fromCache) return; cfg1 = false;
     if (puedeAjustes() && navigator.onLine && !resRepartido()) reconstruirResumen().then(n => { S.config.resumenV = 2; if (n && S.view === "panel") toast(`Panel preparado con ${n.toLocaleString("es-PE")} registros`); }).catch(e => console.warn("resumen", e));
   }, errLeer("config", "la configuración")));
   pintarCabecera(); cargarFiltros(); cargarBandeja();
@@ -2734,7 +2743,10 @@ function revisarSinConfirmar() {
   const ids = Object.keys(m).filter(id => { if (S.mis.some(r => r.id === id && !r._pend)) { quitarSinConf(id, q); return false; } return !CONF_VIVO.has(id) && !CONF_VISTO.has(id) && !S.mis.some(r => r.id === id); });
   if (!ids.length) return;
   revConf = true;
-  waitForPendingWrites(db).then(() => Promise.all(ids.map(id => getDocFromServer(doc(db, "liberaciones", id)).then(s => s.exists(), () => null)))).then(hay => {
+  // Si no está, se mira si llegó a subirse y luego lo borraron para siempre: el historial de su creación sube en el mismo lote y
+  // nunca se borra (así no se ofrece «recuperar» algo que gabinete rechazó y se vació de la papelera)
+  const subio = id => getDocsFromServer(query(collection(db, "historial"), where("liberacionId", "==", id), limit(1))).then(h => h.size > 0, () => null);
+  waitForPendingWrites(db).then(() => Promise.all(ids.map(id => getDocFromServer(doc(db, "liberaciones", id)).then(s => s.exists() || subio(id), () => null)))).then(hay => {
     revConf = false; if (S.email !== q) return;
     const perdidos = ids.filter((id, i) => { if (hay[i]) quitarSinConf(id, q); return hay[i] === false && !CONF_VIVO.has(id) && !CONF_VISTO.has(id); });
     if (perdidos.length) ofrecerSinConf(perdidos[0], q);
@@ -2746,7 +2758,7 @@ function ofrecerSinConf(id, q) {
   CONF_VISTO.add(id);
   const f = c.form || {}, nA = (f.adjuntos || []).length;
   const lis = [[nom(L.act(f.actividad), f.actividad || ""), nom(L.tipo(f.tipoId), "")].filter(Boolean).join(" · "), f.pkInicio ? "PK " + f.pkInicio + (f.pkFin && f.pkFin !== f.pkInicio ? " – " + f.pkFin : "") : "", f.fechaCampo ? fmtFecha(f.fechaCampo) : "", String(f.descripcion || "").trim().slice(0, 80), nA ? (nA === 1 ? "1 archivo adjunto" : nA + " archivos adjuntos") : ""].filter(Boolean);
-  const d = dialogo("Un registro no llegó a subirse", `<p class="dlg-p">Un registro que guardaste sin señal no llegó a subirse: Firebase no lo aceptó y no está en tus registros.</p>${lis.length ? `<ul class="solist">${lis.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}<p class="muted small" style="margin:8px 0">Puedes recuperarlo como borrador de «Nueva», revisarlo y volver a guardarlo.</p>
+  const d = dialogo("Un registro no llegó a subirse", `<p class="dlg-p">Un registro que guardaste sin señal no llegó a subirse: no está en el servidor (Firebase no lo aceptó).</p>${lis.length ? `<ul class="solist">${lis.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}<p class="muted small" style="margin:8px 0">Puedes recuperarlo como borrador de «Nueva», revisarlo y volver a guardarlo.</p>
     <button type="button" class="btn warn" style="width:100%;margin-top:4px" data-descartar>Descartarlo</button>`, () => { recuperarSinConf(id, q); }, "Recuperar en «Nueva»", { ancho: "corto", sinFoco: true });
   d.querySelector("[data-descartar]").addEventListener("click", async () => {
     d.cerrar(true);
@@ -3405,7 +3417,9 @@ function guardar() {
   } else {
     ref = doc(collection(db, "liberaciones"));
     a = conCodigo(f.actividad) ? "PT" : "NA";
-    b.set(ref, { ...datos, numero: "", nombreLiberacion: "", generadoPor: "", estado: a, notaObservacion: "",
+    // Nace con su seguimiento en false (versión 1.45): así lo encuentra la escucha de lo pendiente de la Bandeja sin migrarlo después
+    const seg = f.actividad === "ASP" ? { procesado: false } : a === "NA" ? { visto: false } : {};
+    b.set(ref, { ...datos, ...seg, numero: "", nombreLiberacion: "", generadoPor: "", estado: a, notaObservacion: "",
       fechaLiberacion: null, fechaEntrega: null, numeroCargo: "", creadoEn: serverTimestamp(), creadoPor: S.email, creadoNombre: S.perfil?.nombre || "", origen: "app" });
     resumenEn(b, ref.id, { ...datos, numero: "", estado: a });
   }
@@ -4403,6 +4417,10 @@ function desempacar(sid, estId, m) {
   return Object.entries(m || {}).map(([id, a]) => ({ id, tipoId: a[0], capa: a[1], pkInicio: a[2], pkFin: a[3], estado: a[4], fechaCampo: a[5] || null, numero: a[6], actividad: a[7], topografoId: a[8], _seg: a[9] ?? null, subestructuraId: sid, estructuraId: estId, _res: true }));
 }
 async function reconstruirResumen() {
+  S._ocupado = (S._ocupado || 0) + 1;
+  try { return await reconstruirResumen0(); } finally { S._ocupado--; }
+}
+async function reconstruirResumen0() {
   // Lo cambiado mientras corre se repasa al final (con margen por si el reloj del teléfono no cuadra con el del servidor)
   const desde = Timestamp.fromDate(new Date(Date.now() - 10 * 60e3));
   const snap = await getDocs(collection(db, "liberaciones"));
@@ -7284,8 +7302,13 @@ function aplicarHist() {
 }
 // Sin señal la escritura queda en el teléfono y se sube sola; con señal se espera la confirmación
 // Con señal muy lenta (el teléfono cree que hay señal pero no responde) no se espera más de 8 s: queda guardado en el teléfono
-async function escribir(p, ok, mal) {
+async function escribir(p, ok, mal, o = {}) {
   const err = e => { BUS.en = 0; toast(mal + (e.parcial ? e.message + "." : e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); };
+  // Una transacción no queda en cola (sin señal falla): si tarda se dice que sigue guardando y se espera su respuesta de verdad
+  if (o.tx) {
+    const lento = setTimeout(() => toast(`Guardando… la señal está lenta. No cierres la app hasta que diga «${ok}».`, "pend"), 8000);
+    try { await p; clearTimeout(lento); toast(ok); return true; } catch (e) { clearTimeout(lento); err(e); return false; }
+  }
   if (!navigator.onLine) { p.catch(err); toast(ok + " · se subirá cuando haya señal", "pend"); return true; }
   try {
     const r = await Promise.race([p.then(() => "ok"), new Promise(res => setTimeout(() => res("lento"), 8000))]);
@@ -7411,7 +7434,9 @@ function suscribirSeg(k) {
   const s = SEGV[k] = segNuevo(), Q = SEGQ[k];
   s.n = ls.get(`lib.segN.${k}.${S.email}`, null); S.bandeja[Q.lista] = [];
   S.subs.push(onSnapshot(query(collection(db, "liberaciones"), ...Q.w(), where(Q.campo, "==", false)), { includeMetadataChanges: true }, snap => {
-    s.por = snap.docs.map(fila); segUnir(k); if (!cambioReal(Q.clave, snap)) return; contarSeg(k); pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto);
+    s.por = snap.docs.map(fila); segUnir(k); if (!cambioReal(Q.clave, snap)) return;
+    // Lo hecho solo se vuelve a contar si cambió qué está pendiente (no por cambios de metadatos o de otros campos)
+    const firma = s.por.map(r => r.id).sort().join(); if (firma !== s.firma) { s.firma = firma; contarSeg(k); } pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto);
   }, errLeer(...Q.que)));
   S.subs.push(() => { s.hU?.(); s.hU = null; clearTimeout(s.nT); if (SEGV[k] === s) delete SEGV[k]; });
 }
@@ -7464,53 +7489,103 @@ async function masHechas(k) {
 // Al salir de la Bandeja se suelta la escucha de lo hecho (lo ya mostrado queda hasta que vuelva a llegar)
 // (desde ahí el número de lo hecho vuelve a ser el conteo del servidor)
 function soltarHechas() { for (const k in SEGV) { const s = SEGV[k]; if (!s.hU) continue; s.hU(); s.hU = null; s.mas = []; s.caidas.clear(); s.hOk = false; s.hLleno = false; s.hUlt = null; segUnir(k); contarSeg(k); } }
-// Registros sin procesado/visto: los editados desde la última vez en este equipo (en vivo) se miran y se les pone false.
-// La primera vez en el equipo (o con otro rol) se revisan todos una sola vez: lo mismo que antes se leía en cada apertura
+// Registros sin procesado/visto: los de antes de la versión 1.45 y los que cree una versión vieja aún abierta (desde la 1.45
+// nacen con false al guardarlos y al importarlos). Se ven al instante en «Por ver» / «Por procesar» (s.sin) y se les pone false:
+// - solo con lo que dice el servidor (nunca con la copia de la caché, que puede ser vieja: pisaría un «Enterado» de otro),
+// - en una transacción que relee cada registro y escribe solo si el campo sigue faltando, de a SIN_TANDA,
+// - y solo con señal (una transacción no queda en cola: sin señal se espera y se intenta al volver).
+// La marca del equipo es hora del servidor (el editadoEn más alto que llegó del servidor) y no pasa de un registro sin campo
+// hasta que su false quedó confirmado. Una sola escucha por sesión desde la marca; se rehace como mucho cada 30 min y solo si
+// así se sueltan más de 600 registros viejos (una pestaña abierta días): nunca en cadena tras un cambio masivo.
+const SIN_TANDA = 25, SIN_REHACER_MS = 30 * 60000;
 let sinCampoU = null;
 function suscribirSinCampo() {
   if (sinCampoU || !S.email) return;
   const ks = Object.keys(SEGQ).filter(k => SEGQ[k].ve()); if (!ks.length) return;
-  const clave = `lib.segMarca.${ks.join("")}.${S.email}`, M = 10 * 60000;
-  let marca = ls.get(clave, 0), completo = marca > 0, maxVisto = 0, t0 = marca ? marca - M : Date.now() - 864e5, vivo_ = true;
-  const falta = new Map(), escribiendo = new Set();
-  const guardarMarca = () => { if (!completo || !maxVisto) return; let m = maxVisto; falta.forEach(t => { m = Math.min(m, t - 1); }); if (m > marca) { marca = m; ls.set(clave, m); } };
-  const revisar = (docs, deLaEscucha) => {
-    const nuevos = [], toca = new Set();
+  // Se marca al momento (la escucha se abre después de leer la hora del servidor): aspas y levantamientos llaman los dos aquí
+  sinCampoU = () => {};
+  const clave = `lib.segMarca.${ks.join("")}.${S.email}`, M = 10 * 60000, col = collection(db, "liberaciones");
+  let marca = ls.get(clave, 0), completo = marca > 0, maxVisto = 0, vivo_ = true, rehecha = 0, barriendo = false, trabajando = false, espera = 0, reT = 0, escucha = null;
+  const falta = new Map(), cola = new Map(), fallos = new Map(); // "id|k" → editadoEn del servidor · [k, id] por escribir · intentos fallidos
+  // Lo del repaso de la 1.ª vez no retiene la marca (son registros viejos): la marca no se guarda hasta terminarlo, así que si la app
+  // se cierra a medias la vez siguiente se repasa de nuevo (en vez de guardar una marca de hace meses y releer todo lo editado desde entonces)
+  const delBarrido = new Set();
+  const guardarMarca = () => { if (!completo || !maxVisto || delBarrido.size) return; let m = maxVisto; falta.forEach(t => { m = Math.min(m, t - 1); }); if (m > marca) { marca = m; ls.set(clave, m); } };
+  const tms = r => toDate(r.editadoEn)?.getTime() || 0;
+  const revisar = (docs, delServidor, barrido) => {
+    const toca = new Set();
     for (const d of docs) {
-      const r = fila(d), t = toDate(r.editadoEn)?.getTime() || 0;
-      if (deLaEscucha && !r._pend && t > maxVisto) maxVisto = t;
+      const r = fila(d), t = tms(r), firme = delServidor && !r._pend;
+      if (firme && t > maxVisto) maxVisto = t;
       for (const k of ks) {
-        const Q = SEGQ[k], s = SEGV[k]; if (!s) continue;
-        if (Q.es(r) && r[Q.campo] === undefined) { s.sin.set(r.id, r); toca.add(k); falta.set(r.id + "|" + k, t); if (!escribiendo.has(r.id + "|" + k)) nuevos.push([k, r]); }
-        else if (s.sin.delete(r.id)) { toca.add(k); falta.delete(r.id + "|" + k); }
+        const Q = SEGQ[k], s = SEGV[k], id = r.id + "|" + k; if (!s) continue;
+        if (Q.es(r) && r[Q.campo] === undefined) {
+          s.sin.set(r.id, r); toca.add(k);
+          if (firme && (fallos.get(id) || 0) < 3) { if (barrido) delBarrido.add(id); else falta.set(id, t); if (!cola.has(id)) cola.set(id, [k, r.id]); }
+        } else {
+          if (s.sin.delete(r.id)) toca.add(k);
+          if (firme) { falta.delete(id); cola.delete(id); delBarrido.delete(id); }
+        }
       }
     }
     toca.forEach(segAviso);
-    if (nuevos.length) ponerFalse(nuevos);
+    if (cola.size) trabajar();
   };
-  const ponerFalse = async lista => {
-    lista.forEach(([k, r]) => escribiendo.add(r.id + "|" + k));
-    for (let i = 0; i < lista.length; i += 400) {
-      const parte = lista.slice(i, i + 400), b = writeBatch(db);
-      parte.forEach(([k, r]) => b.update(doc(db, "liberaciones", r.id), { [SEGQ[k].campo]: false }));
-      try {
-        await b.commit(); if (!vivo_) return;
-        const toca = new Set(); parte.forEach(([k, r]) => { falta.delete(r.id + "|" + k); SEGV[k]?.sin.delete(r.id); toca.add(k); }); toca.forEach(segAviso); guardarMarca();
-      } catch (e) { console.warn("seguimiento sin campo", e); parte.forEach(([k, r]) => escribiendo.delete(r.id + "|" + k)); }
-    }
+  const programar = () => { clearTimeout(reT); if (vivo_ && cola.size) reT = setTimeout(trabajar, Math.max(5000, espera - Date.now())); };
+  const trabajar = async () => {
+    if (trabajando || !vivo_ || !cola.size) return;
+    if (!navigator.onLine || Date.now() < espera) { programar(); return; }
+    trabajando = true;
+    try {
+      while (vivo_ && cola.size && navigator.onLine) {
+        const tanda = [...cola.entries()].slice(0, SIN_TANDA);
+        try {
+          await runTransaction(db, async t => {
+            const ds = await Promise.all(tanda.map(([, [, id]]) => t.get(doc(col, id))));
+            ds.forEach((sn, j) => { const [k, id] = tanda[j][1], Q = SEGQ[k]; if (!sn.exists()) return; const r = sn.data(); if (Q.es(r) && r[Q.campo] === undefined) t.update(doc(col, id), { [Q.campo]: false }); });
+          });
+          if (!vivo_) return;
+          const toca = new Set();
+          tanda.forEach(([id, [k, rid_]]) => { cola.delete(id); falta.delete(id); delBarrido.delete(id); fallos.delete(id); if (SEGV[k]?.sin.delete(rid_)) toca.add(k); });
+          toca.forEach(segAviso); guardarMarca();
+        } catch (e) {
+          console.warn("seguimiento sin campo", e);
+          // Tras 3 intentos se deja (sigue a la vista en esta sesión); mientras, se espera un minuto: nunca en bucle
+          tanda.forEach(([id]) => { const n = (fallos.get(id) || 0) + 1; fallos.set(id, n); if (n >= 3) { cola.delete(id); falta.delete(id); delBarrido.delete(id); } });
+          espera = Date.now() + 60000; break;
+        }
+      }
+    } finally { trabajando = false; }
+    programar();
   };
-  const escuchar = () => {
-    sinCampoU?.();
-    sinCampoU = onSnapshot(query(collection(db, "liberaciones"), where("editadoEn", ">=", Timestamp.fromDate(new Date(t0)))), snap => {
-      revisar(snap.docs, true); guardarMarca();
-      // Una pestaña abierta días: la escucha se rehace desde la marca para no cargar con todo lo editado desde que se abrió
-      if (snap.docs.length > 600 && completo && marca - M > t0) { t0 = marca - M; setTimeout(() => { if (vivo_) escuchar(); }, 0); }
+  const escuchar = desde => {
+    rehecha = Date.now(); escucha?.();
+    // Con includeMetadataChanges: si lo de la caché coincide con el servidor, el paso a «del servidor» también avisa (si no, no llegaría)
+    escucha = sinCampoU = onSnapshot(query(col, where("editadoEn", ">=", Timestamp.fromDate(new Date(desde)))), { includeMetadataChanges: true }, snap => {
+      const srv = !snap.metadata.fromCache;
+      revisar(snap.docs, srv); if (srv) guardarMarca();
+      if (!srv || !completo || snap.docs.length <= 600 || Date.now() - rehecha < SIN_REHACER_MS) return;
+      const nuevo = marca - M; let viejos = 0; for (const d of snap.docs) if (tms(fila(d)) < nuevo) viejos++;
+      if (viejos > 600) setTimeout(() => { if (vivo_ && sinCampoU) escuchar(nuevo); }, 0);
     }, e => console.warn("seguimiento sin campo", e));
   };
-  escuchar();
-  if (!completo) Promise.all(ks.map(k => getDocs(query(collection(db, "liberaciones"), ...SEGQ[k].w())).then(sn => revisar(sn.docs, false))))
-    .then(() => { if (!vivo_) return; completo = true; if (!maxVisto) maxVisto = Date.now() - 864e5; guardarMarca(); }).catch(e => console.warn("seguimiento sin campo", e));
-  S.subs.push(() => { vivo_ = false; sinCampoU?.(); sinCampoU = null; });
+  // Primera vez en el equipo (o con otro rol): la hora del servidor (el último editado) y un repaso de todos, una sola vez, del servidor
+  const barrer = async () => {
+    if (completo || barriendo || !vivo_ || !navigator.onLine) return; barriendo = true;
+    try {
+      const ult = await getDocsFromServer(query(col, orderBy("editadoEn", "desc"), limit(1)));
+      const T = ult.docs.length ? tms(fila(ult.docs[0])) : 0; if (!vivo_) return;
+      if (!escucha) escuchar((T || Date.now()) - M);
+      const sns = await Promise.all(ks.map(k => getDocsFromServer(query(col, ...SEGQ[k].w())))); if (!vivo_) return;
+      if (T > maxVisto) maxVisto = T;
+      completo = true; sns.forEach(sn => revisar(sn.docs, true, true)); guardarMarca();
+    } catch (e) { console.warn("seguimiento sin campo", e); setTimeout(() => { if (vivo_) barrer(); }, 60000); } // señal que no sale: otra vez en un minuto
+    finally { barriendo = false; }
+  };
+  const enLinea = () => { barrer(); trabajar(); };
+  addEventListener("online", enLinea);
+  if (completo) escuchar(marca - M); else barrer();
+  S.subs.push(() => { vivo_ = false; clearTimeout(reT); removeEventListener("online", enLinea); escucha?.(); escucha = null; sinCampoU = null; });
 }
 // Una fila resumida del historial (_res) no trae el seguimiento: se busca completa antes de actuar (si no, el resumen quedaba sin actualizar)
 async function completosSeg(regs0) {
@@ -8018,7 +8093,7 @@ function guardarLista(lista, items, msg = "Guardado", base) {
     t.set(ref, { items: conAjenos(lista, clon(limpio), d.exists() ? d.data().items || [] : [], vistos), editadoEn: serverTimestamp(), editadoPor: S.email });
   });
   revertirSiNiega(p, puesto, antes, () => S.listas[lista], v => { S.listas[lista] = v || []; });
-  return escribir(p, msg, "No se guardó: ");
+  return escribir(p, msg, "No se guardó: ", { tx: true });
 }
 function pintarAjustes() {
   if (!puedeAjustes()) { ir(vistas()[0].id); return; }
@@ -8895,6 +8970,10 @@ function ajHistorico() {
 const huellaImp = r => JSON.stringify([r.estado || "", msDe(r.editadoEn), msDe(r.fechaEntrega), msDe(r.fechaLiberacion), r.carpeta || "", (r.xmlEntrega || []).length, (r.archivos || []).length, !!r.borrado,
   r.capa || "", r.tipoId || "", r.subestructuraId || "", r.topografoId || "", r.numero || "", r.pkInicio ?? null, r.pkFin ?? null, r.lote || ""]);
 async function importarHist() {
+  S._ocupado = (S._ocupado || 0) + 1;
+  try { return await importarHist0(); } finally { S._ocupado--; }
+}
+async function importarHist0() {
   const A = S.aj, I = A.imp; if (!I || !I.clas) return;
   if (!navigator.onLine) { toast("Se necesita señal para importar.", "bad"); return; }
   const nombre = ($("#hNombre")?.value || "").trim() || I.nombre; I.nombre = nombre;
@@ -8935,7 +9014,8 @@ async function importarHist() {
           const { id, fechaCampo, fechaLiberacion, fechaEntrega, _fila, ...resto } = r;
           if (ahora?.subestructuraId && (ahora.subestructuraId !== r.subestructuraId || r.estado === "X")) res.quitar(id, ahora.subestructuraId);
           if (r.subestructuraId && r.estado !== "X") res.poner(id, { ...r, fechaCampo: fechaCampo || 0 });
-          t.set(doc(db, "liberaciones", id), { ...resto, fechaCampo: ts(fechaCampo), fechaLiberacion: ts(fechaLiberacion), fechaEntrega: ts(fechaEntrega),
+          // Las aspas del Excel nacen «por procesar» con el campo puesto (lo procesado ya se protege arriba: no se reimporta)
+          t.set(doc(db, "liberaciones", id), { ...(r.actividad === "ASP" ? { procesado: false } : {}), ...resto, fechaCampo: ts(fechaCampo), fechaLiberacion: ts(fechaLiberacion), fechaEntrega: ts(fechaEntrega),
             nombreLiberacion: "", notaObservacion: "", linksCsv: [], linksFotos: [], archivos: [],
             creadoEn: ts(fechaCampo) || serverTimestamp(), creadoPor: "importado", editadoEn: serverTimestamp(), editadoPor: S.email, origen: "excel", lote, importadoEn: serverTimestamp() });
           ok_.push(x);
@@ -9116,22 +9196,35 @@ function cambiarClaveTopo(B, i) {
     return pasarClaveTopo(B, i, vieja, nueva);
   }, "Cambiar clave");
 }
+// Primero la lista: la clave nueva, con la vieja en «antes» (los registros que aún la tengan se siguen viendo con su nombre y
+// nadie puede volver a usarla). Después los registros y las cuentas: si eso se corta, la lista ya está bien y se dice cuántos
+// faltan, con «Reintentar» para pasar solo los que siguen con la vieja (antes, una lista sin guardar dejaba registros con una clave que no existía)
 async function pasarClaveTopo(B, i, vieja, nueva) {
+  const t = B[i], antes0 = t.antes;
+  t.antes = [...new Set([...(t.antes || []).filter(x => x !== nueva), vieja])]; t.id = nueva;
+  if (!await Promise.resolve(guardarLista("topografos", B, `Clave cambiada a ${nueva} en la lista; pasando sus registros…`, [vieja]))) { t.id = vieja; t.antes = antes0; return false; }
+  return pasarRegsTopo(vieja, nueva);
+}
+async function pasarRegsTopo(vieja, nueva) {
+  S._ocupado = (S._ocupado || 0) + 1;
   try {
-    // Primero los registros y las cuentas; la lista al final (si algo falla, se vuelve a intentar con la misma clave)
-    const regs = (await getDocs(query(collection(db, "liberaciones"), where("topografoId", "==", vieja)))).docs.map(fila);
+    const regs = (await getDocsFromServer(query(collection(db, "liberaciones"), where("topografoId", "==", vieja)))).docs.map(fila);
     await lotes(regs, (b, r) => { const dat = { topografoId: nueva, editadoEn: serverTimestamp(), editadoPor: S.email }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Clave del topógrafo: ${vieja} → ${nueva}`); }, 120);
+    if (BUS.todos) BUS.todos.forEach(r => { if (r.topografoId === vieja) r.topografoId = nueva; });
     const cuentas = (await getDocs(query(collection(db, "usuarios"), where("topografoId", "==", vieja)))).docs;
     let fallan = 0;
     for (const u of cuentas) { try { await updateDoc(doc(db, "usuarios", u.id), { topografoId: nueva }); } catch (e) { console.warn("cuenta", u.id, e); fallan++; } }
-    const t = B[i]; t.antes = [...new Set([...(t.antes || []).filter(x => x !== nueva), vieja])]; t.id = nueva;
-    if (!guardarLista("topografos", B, `Clave cambiada a ${nueva} · ${regs.length} ${regs.length === 1 ? "registro" : "registros"}`, [vieja])) return false;
-    if (BUS.todos) BUS.todos.forEach(r => { if (r.topografoId === vieja) r.topografoId = nueva; });
-    if (fallan) toast(`${fallan === 1 ? "Una cuenta no se pudo" : fallan + " cuentas no se pudieron"} actualizar (la tuya o la de un administrador): cámbiale la clave en Ajustes → Usuarios.`, "bad");
+    if (fallan) toast(`Clave cambiada a ${nueva} · ${nRegs(regs.length)}. Pero ${fallan === 1 ? "una cuenta no se pudo" : fallan + " cuentas no se pudieron"} actualizar (la tuya o la de un administrador): cámbiale la clave en Ajustes → Usuarios.`, "bad");
+    else toast(`Clave cambiada a ${nueva} · ${nRegs(regs.length)}`);
     if (S.view === "ajustes" && S.aj.tab === "topografos") ajTopografos();
-  } catch (e) { console.error(e); toast("No se pudo cambiar la clave: " + (e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); return false; }
+    return true;
+  } catch (e) {
+    console.error(e);
+    toast(`La clave ${nueva} ya quedó en la lista, pero no se pasó a todos sus registros (${e.parcial ? e.message : sinPermiso(e)}). Los que siguen con ${vieja} se ven igual con su nombre.`, "bad", { t: "Reintentar", fn: () => pasarRegsTopo(vieja, nueva) });
+    if (S.view === "ajustes" && S.aj.tab === "topografos") ajTopografos();
+    return false;
+  } finally { S._ocupado--; }
 }
-
 const nRegs = n => `${n} ${n === 1 ? "registro" : "registros"}`;
 const sinPermiso = e => e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message;
 // Identifica una superficie o base del modelo para poder devolverla a su tipo si se deshace una unión
@@ -9159,7 +9252,7 @@ async function unirTipo(viejoId, destinoId, yaConfirmado) {
     if (BUS.todos) BUS.todos.forEach(r => { if (r.tipoId === viejo.id) r.tipoId = dest.id; });
     T_FRENTE_PEDIDO.clear(); Object.keys(T_FRENTE).forEach(k => delete T_FRENTE[k]); Object.keys(RES_UNA).forEach(k => delete RES_UNA[k]);
     const ok = await Promise.resolve(guardarLista("tipos", tiposFrescos().filter(t => t.id !== viejo.id), `Unido con «${dest.nombre}» · ${nRegs(n)}`));
-    if (!ok) return;
+    if (!ok) { toast(`Los registros ya pasaron a «${dest.nombre}», pero «${viejo.nombre}» no se quitó de la lista: vuelve a unirlo para terminar (ya no tiene registros).`, "bad"); return; }
     toast(`«${viejo.nombre}» unido con «${dest.nombre}» · ${nRegs(n)}.${capasMal}`, capasMal ? "bad" : "", { t: "Deshacer", fn: () => deshacerUnionTipo({ item, pos, dest, regs, capasAntes, movidos }) });
   } catch (e) { console.error(e); toast("No se pudo unir: " + sinPermiso(e), "bad"); }
 }
@@ -9189,9 +9282,9 @@ async function unirElemento(viejoId, destinoId, yaConfirmado) {
     await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: dest.id, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Elemento unido: «${viejo.nombre}» → «${dest.nombre}»`); }, 150);
     const movT = S.listas.tipos.filter(t => t.elementoId === viejo.id).map(t => t.id);
     const tipos = clon(S.listas.tipos); tipos.forEach(t => { if (t.elementoId === viejo.id) t.elementoId = dest.id; });
-    guardarLista("tipos", tipos, "Tipos actualizados");
-    const ok = await Promise.resolve(guardarLista("elementos", S.listas.elementos.filter(e => e.id !== viejo.id), `Unido con «${dest.nombre}» · ${nRegs(regs.length)}`));
-    if (!ok) return;
+    const okT = await Promise.resolve(guardarLista("tipos", tipos, "Tipos actualizados"));
+    const ok = okT && await Promise.resolve(guardarLista("elementos", S.listas.elementos.filter(e => e.id !== viejo.id), `Unido con «${dest.nombre}» · ${nRegs(regs.length)}`));
+    if (!ok) { toast(`Los registros ya pasaron a «${dest.nombre}», pero ${okT ? `«${viejo.nombre}» no se quitó de la lista de elementos` : "sus tipos no se movieron"}: vuelve a unirlo para terminar.`, "bad"); return; }
     toast(`«${viejo.nombre}» unido con «${dest.nombre}» · ${nRegs(regs.length)}.`, "", { t: "Deshacer", fn: async () => {
       if (!navigator.onLine) { toast("Se necesita señal para deshacer.", "bad"); return; }
       try {

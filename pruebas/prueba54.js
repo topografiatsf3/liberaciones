@@ -193,8 +193,9 @@ const marcar = async (p, ids) => { for (const id of ids) await p.evaluate(id => 
     const c2 = await b.newContext({ viewport: { width: 1366, height: 800 } }); await rutas(c2); const q = await c2.newPage();
     q.on('pageerror', e => { errores.push(e.message); });
     await q.goto(URL); await q.evaluate(([d, u]) => { localStorage.clear(); localStorage.setItem('__fakeDB', JSON.stringify(d)); localStorage.setItem('__fakeUser', JSON.stringify(u)); }, [DB(), ADMIN]);
-    await q.addInitScript(() => { window.__fakeLeerMal = p => p === 'config/general'; });
     await q.goto(URL + '#ajustes'); await q.reload(); await q.waitForSelector('#nav button'); await q.waitForTimeout(900);
+    // Desde la versión 1.45.0 la configuración se escucha en vivo: el fallo se simula en la escucha
+    await q.evaluate(() => window.__fakeEscuchaFalla('config/general', 'permission-denied')); await q.waitForTimeout(400);
     ok(/No se pudo leer la configuración: sin permiso/.test(await toastTxt(q)), 'D17: si falla la lectura de config/general avisa: «' + await toastTxt(q) + '»');
     await c2.close();
   }
