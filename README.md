@@ -21,6 +21,15 @@ Desde el 18/11/2026 la versión lleva tres números, **grande.mediano.mínimo** 
 
 `VERSION_APP` en `index.html` y `CACHE` en `sw.js` (`liberaciones-v1.43.1`) suben juntos; `pruebas/prueba12.js` espera el nombre de la caché.
 
+## Versión 1.45.2: una sola forma de hacer cada cosa (limpieza, parte 1)
+
+Cambio mínimo. No cambia las reglas de Firebase. La salida de la app se comparó antes y después con los mismos datos (141 pantallas y 110 escrituras, en computadora y celular): solo cambia lo que dicen los dos primeros puntos.
+
+- **Avisos de error al guardar, en español y según quién eres**: a quien no es administrador le dice «sin permiso. Avisa al administrador.»; al administrador, «sin permiso. Revisa que las reglas de Firebase estén publicadas.». Sin señal, tardó demasiado, ya no existe, alguien lo cambió mientras tanto, límite del día y demasiado grande tienen su texto; ya no sale el mensaje de Firebase en inglés. Un diálogo cuyo guardado falla avisa y queda abierto.
+- **Mayús + clic** marca un rango también en las pestañas Aspas y Levantamientos de la Bandeja.
+- Los buscadores de la Bandeja de seguimiento, de Ajustes → Capas y de las capas del Modelo 2D conservan el foco y el cursor como los demás.
+- Por dentro: `errGuardar`, `sello()` e `hist()` para todos los guardados (67 avisos, 35 sellos y 6 historiales que se armaban a mano), `marcarRango`, `revisarPks` (la misma validación en vivo y al guardar), `diaDe` como base de las fechas ISO y `opcionesSubs` para los selectores de frente.
+
 ## Versión 1.45.1: cabos sueltos de consistencia y primer paso del resumen protegido
 
 Cambio mínimo. **Reglas de Firebase (fase 1b), publicadas el 20/11/2026 antes que esta versión**: el resumen del Panel admite la clave `u` cuando escribe campo (no la exige). Sin esa regla, esta versión no podría guardar desde campo.

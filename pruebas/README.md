@@ -77,6 +77,7 @@ En Windows sin bash: `powershell -ExecutionPolicy Bypass -File pruebas\correr.ps
 | prueba57 | Cobertura: `guardarModelo`, `supDesdeSecciones`, mover y quitar lugares, mover, activar, unir y cambiar elementos y tipos, separar detalle, `menuNoLibera` y avisos con guardado rechazado. `HTML=ruta` prueba otro index |
 | prueba58 | Versión 1.45.0, revisión: un cambio masivo de 2.000 registros no relee de más (tope de documentos) y la migración de `visto` no pisa el «Enterado» de otra persona aunque la primera entrega venga de la caché |
 | prueba59 | Versión 1.45.1, lote H: capas y frentes de segundo nivel con dos sesiones, unir elementos con un tipo agregado a mitad, edición sin señal rechazada y recuperada, aviso de versión nueva temprano, aviso de tamaño del resumen y la clave `u` del resumen (campo sí, gabinete no) |
+| prueba60 | Versión 1.45.2, lote F2: textos de `errGuardar` por código y por rol, un diálogo cuyo guardado falla avisa, rango con Mayús en Aspas y Levantamientos, y foco y cursor que se conservan en los buscadores de seguimiento, Capas y capas del Modelo cuando llegan datos |
 | prueba10 | Ficha en pantallas medianas, «atrás», búsqueda por capa, aceptar sin señal, gabinete sin «Editar» (solo cambiar capa), superposición, depuración de fotos, jefe en Modelo 2D |
 
 `capturas.js` toma fotos de las pantallas principales en celular y computadora (`node pruebas/capturas.js <carpeta>`), útil para comparar antes y después de un cambio de diseño. `filtros.js` reúne las ayudas que usan las pruebas para manejar los filtros del panel.

@@ -3,7 +3,7 @@
 //  · Ajustes → Lugares: moverLugar (estructura y frente) y quitarEstructura (con su eje y sus capas)
 //  · Ajustes → Tipos: unirElemento (+ «Deshacer»), cambiarEleTipo, separarDetTipo, moverElemento, activarElemento
 //  · Panel: menuNoLibera (quitar un tramo «no se libera»; cancelar no cambia nada)
-//  · Avisos de error de guardado con window.__fakeNegar en cuatro sitios: se anota el TEXTO EXACTO que sale hoy (un lote posterior los va a unificar)
+//  · Avisos de error de guardado con window.__fakeNegar en cinco sitios: el texto unificado del lote F2 (errGuardar), el del administrador
 // Las comprobaciones que dependan de una función rota se dejan como PENDIENTE (comentario + línea «pendiente»), no se arreglan aquí.
 const { chromium } = require('playwright'); const path = require('path');
 const URL = 'http://127.0.0.1:' + (process.env.PUERTO || 8765) + '/';
@@ -12,6 +12,8 @@ const ADMIN = { uid: 'a1', email: 'brandonkluivertvillegasfranco@gmail.com', dis
 const errores = []; // (el error «Missing or insufficient permissions» de la consola es el que provoca a propósito __fakeNegar)
 const ok = (c, m) => { if (!c) { console.log('FALLA:', m); process.exitCode = 1; } else console.log('ok  -', m); };
 const pendiente = m => console.log('pendiente -', m);
+// Causa de un guardado rechazado por permisos, tal como la lee el administrador (lote F2: errGuardar)
+const PERM = /: sin permiso\. Revisa que las reglas de Firebase estén publicadas\.$/;
 const store = p => p.evaluate(() => window.__fakeStore());
 const esperar = (p, fn, arg, ms = 12000) => p.waitForFunction(fn, arg, { timeout: ms }).then(() => true).catch(() => false);
 // Avisos (toast) que han salido, desde antes de entrar
@@ -96,7 +98,7 @@ const DB = {
   // Aviso de error de guardado nº 1: guardarModelo con el servidor rechazando
   await p.setInputFiles('#mFile', D('eje-prueba.xml')); await p.waitForSelector('.dlg.on .mprev-r');
   await limpiarAvisos(p); await p.evaluate(() => { window.__fakeNegar = true; }); await p.click('.dlg.on [type=submit]');
-  ok(await esperarAviso(p, /No se guardó el modelo/), `aviso nº 1 (Panel → guardar el modelo sin permiso): «${await textoAviso(p, /No se guardó el modelo/)}»`);
+  ok(await esperarAviso(p, /No se guardó el modelo/) && PERM.test(await textoAviso(p, /No se guardó el modelo/)), `aviso nº 1 (Panel → guardar el modelo sin permiso): «${await textoAviso(p, /No se guardó el modelo/)}»`);
   const a1 = await textoAviso(p, /No se guardó el modelo/);
   ok(/permiso|reglas/i.test(a1) && /[a-záéíóú]{4}/i.test(a1) && !/permission-denied|insufficient/i.test(a1) && (await p.$eval('#toast', t => t.classList.contains('bad'))), 'el aviso está en español, dice qué hacer (publicar las reglas) y sale como error (rojo)');
   await p.evaluate(() => { window.__fakeNegar = false; });
@@ -129,7 +131,7 @@ const DB = {
   await p.evaluate(() => { window.__fakeNegar = true; }); await p.click('.dlg.on [type=submit]');
   ok(await esperarAviso(p, /No se guardó/), `aviso nº 2 (Panel → quitar «no se libera» sin permiso): «${await textoAviso(p, /No se guardó/)}»`);
   await p.evaluate(() => { window.__fakeNegar = false; });
-  ok(/sin permiso|reglas/i.test(await textoAviso(p, /No se guardó/)) && (await store(p))['capas/pp-oeste'].tipos.filtro1.noAplica.length === 1, 'el aviso está en español y los datos no cambian');
+  ok(PERM.test(await textoAviso(p, /No se guardó/)) && (await store(p))['capas/pp-oeste'].tipos.filtro1.noAplica.length === 1, 'el aviso está en español y los datos no cambian');
 
   // ===== 3. Ajustes → Lugares: moverLugar y quitarEstructura =====
   await p.click('#nav [data-v="ajustes"]'); await p.waitForSelector('[data-tab="lugares"]'); await p.click('[data-tab="lugares"]'); await p.waitForSelector('.est[data-e="pp"]');
@@ -155,7 +157,7 @@ const DB = {
   await menu(p, '.est[data-e="tb"] [data-k="emas"]', 'Mover abajo');
   ok(await esperarAviso(p, /No se guardó/), `aviso nº 3 (Ajustes → Lugares → mover sin permiso): «${await textoAviso(p, /No se guardó/)}»`);
   await p.evaluate(() => { window.__fakeNegar = false; }); await p.waitForTimeout(300);
-  ok(ordenEst(await store(p)) === 'pp,ta,tb,tc' && /sin permiso|reglas/i.test(await textoAviso(p, /No se guardó/)), 'el aviso está en español y el orden guardado no cambia');
+  ok(ordenEst(await store(p)) === 'pp,ta,tb,tc' && PERM.test(await textoAviso(p, /No se guardó/)), 'el aviso está en español y el orden guardado no cambia');
   // quitarEstructura: Talud A (sin registros, con eje y capas de sus frentes) → se quita con sus datos; la que tiene registros no ofrece «Quitar estructura»
   await ver(p, '.est[data-e="pp"] [data-k="emas"]'); await p.click('.est[data-e="pp"] [data-k="emas"]'); await p.waitForSelector('#ctx .ctx-i');
   ok(!(await p.$('#ctx .ctx-i:has-text("Quitar estructura")')), 'una estructura con registros no ofrece «Quitar estructura…»');
@@ -179,7 +181,7 @@ const DB = {
   // Con el servidor rechazando, no se quita ni se borran sus datos
   await p.evaluate(() => { window.__fakeNegar = true; }); await limpiarAvisos(p);
   await menu(p, '.est[data-e="tc"] [data-k="emas"]', 'Quitar estructura'); await p.waitForSelector('.dlg.on [type=submit]'); await p.click('.dlg.on [type=submit]');
-  ok(await esperarAviso(p, /No se guardó/), `quitarEstructura sin permiso: «${await textoAviso(p, /No se guardó/)}»`);
+  ok(await esperarAviso(p, /No se guardó/) && PERM.test(await textoAviso(p, /No se guardó/)), `quitarEstructura sin permiso: «${await textoAviso(p, /No se guardó/)}»`);
   await p.evaluate(() => { window.__fakeNegar = false; }); await p.waitForTimeout(300);
   st = await store(p);
   ok(ordenEst(st) === 'pp,tb,tc' && !!st['ejes/tc1'], 'y no se borra nada (Talud C y su eje siguen)');
@@ -207,7 +209,7 @@ const DB = {
   await menu(p, '#tyList .elgrp[data-e="vac"] [data-k="emas"]', 'Desactivar');
   ok(await esperarAviso(p, /No se guardó/), `aviso nº 4 (Ajustes → Tipos → desactivar elemento sin permiso): «${await textoAviso(p, /No se guardó/)}»`);
   await p.evaluate(() => { window.__fakeNegar = false; }); await p.waitForTimeout(300);
-  ok(/sin permiso|reglas/i.test(await textoAviso(p, /No se guardó/)) && (await store(p))['listas/elementos'].items.find(e => e.id === 'vac').activo !== false && !(await avisos(p)).some(t => /desactivado: ya no aparece/.test(t)), 'el aviso está en español, el elemento sigue activo y no sale el falso «desactivado»');
+  ok(PERM.test(await textoAviso(p, /No se guardó/)) && (await store(p))['listas/elementos'].items.find(e => e.id === 'vac').activo !== false && !(await avisos(p)).some(t => /desactivado: ya no aparece/.test(t)), 'el aviso está en español, el elemento sigue activo y no sale el falso «desactivado»');
 
   // 4b. cambiarEleTipo: «Relleno de filtro 2» pasa a «Geosintéticos» con sus 2 registros
   await limpiarAvisos(p);
@@ -266,7 +268,7 @@ const DB = {
   ok(await esperarAviso(p, /No se pudo unir|No se guardó/), `aviso nº 5 (Ajustes → Tipos → unir elementos sin permiso): «${await textoAviso(p, /No se pudo unir|No se guardó/)}»`);
   await p.evaluate(() => { window.__fakeNegar = false; }); await p.waitForTimeout(400);
   st = await store(p);
-  ok(/sin permiso|reglas/i.test(await textoAviso(p, /No se pudo unir|No se guardó/)) && lista(st, 'elementos').some(e => e.id === 'geo') && ['r4', 'r5'].every(k => st['liberaciones/' + k].elementoId === 'geo'), 'el aviso está en español y «Geosintéticos» y sus registros siguen donde estaban');
+  ok(PERM.test(await textoAviso(p, /No se pudo unir|No se guardó/)) && lista(st, 'elementos').some(e => e.id === 'geo') && ['r4', 'r5'].every(k => st['liberaciones/' + k].elementoId === 'geo'), 'el aviso está en español y «Geosintéticos» y sus registros siguen donde estaban');
 
   ok(errores.length === 0, 'sin errores de la página ni de la consola' + (errores.length ? ': ' + errores.join(' | ') : ''));
   await b.close();

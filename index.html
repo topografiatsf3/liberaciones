@@ -2054,6 +2054,22 @@ function toast(msg, tipo = "", accion) {
   t.onmouseenter = t.onfocusin = accion ? () => clearTimeout(tTimer) : null;
   t.onmouseleave = t.onfocusout = accion ? ir : null;
 }
+// Por qué no se guardó (o no se leyó), en español llano, para poner tras «No se guardó: », «No se pudo unir: »…
+// Sin permiso: al administrador se le dice que revise las reglas; a los demás, que le avisen (ellos no pueden publicarlas).
+// Los errores propios de la app (Error sin código, ya en español) se dejan tal cual; nunca sale el mensaje de Firebase en inglés.
+const CAUSA_ERR = {
+  "unavailable": "sin señal o el servicio no está disponible. Inténtalo de nuevo.", "network-request-failed": "sin señal o el servicio no está disponible. Inténtalo de nuevo.",
+  "deadline-exceeded": "tardó demasiado. Inténtalo de nuevo.", "not-found": "ya no existe (alguien lo borró).", "aborted": "alguien lo cambió mientras tanto. Inténtalo de nuevo.",
+  "resource-exhausted": "se alcanzó el límite de lecturas o escrituras de hoy. Inténtalo mañana.", "unauthenticated": "la sesión se cerró. Vuelve a entrar.", "cancelled": "se interrumpió. Inténtalo de nuevo."
+};
+function errGuardar(e) {
+  const c = e?.code || "";
+  if (c === "permission-denied") return esAdmin() || S.email === ADMIN ? "sin permiso. Revisa que las reglas de Firebase estén publicadas." : "sin permiso. Avisa al administrador.";
+  if (CAUSA_ERR[c]) return CAUSA_ERR[c];
+  if (c === "invalid-argument" && /too large|maximum allowed size|exceeds/i.test(e?.message || "")) return "es demasiado grande para guardarlo.";
+  if (!c && e instanceof Error && e.constructor === Error && e.message) return e.message;
+  return `error inesperado (${c || e?.name || "sin código"}).`;
+}
 // Escuchas y lecturas que fallan: queda la huella en la consola y, si no es un corte pasajero de red, se avisa una sola vez por clave
 const AVISOS_LEER = new Set();
 function errLeer(clave, que) {
@@ -2061,7 +2077,7 @@ function errLeer(clave, que) {
     console.warn(clave, e);
     const c = e?.code || ""; if (["unavailable", "deadline-exceeded", "cancelled", "aborted", "network-request-failed"].includes(c) || AVISOS_LEER.has(clave) || !S.dentro) return;
     AVISOS_LEER.add(clave);
-    toast(`No se pudo leer ${que}: ` + (c === "permission-denied" ? "sin permiso (revisa que las reglas de Firebase estén publicadas)." : e?.message || "error"), "bad");
+    toast(`No se pudo leer ${que}: ` + errGuardar(e), "bad");
   };
 }
 
@@ -2085,7 +2101,7 @@ addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false);
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
 // Versión: grande.mediano.mínimo (1.43.0 es la antigua «versión 43»). Mínimo: arreglo chico; mediano: función nueva o cambio que se nota; grande: rediseño o cambio de reglas
-const VERSION_APP = "1.45.1";
+const VERSION_APP = "1.45.2";
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2266,7 +2282,7 @@ onAuthStateChanged(auth, async u => {
   S.user = u; S.email = (u.email || "").toLowerCase();
   gate("cargando");
   // Ya no se espera esta preparación para entrar: con poca señal y un teléfono sin nada guardado tardaba mucho
-  if (S.email === ADMIN) prepararAdmin(u).catch(e => { console.warn("prepararAdmin", e); if (e.code === "permission-denied") setTimeout(() => toast("No se pudieron preparar las listas: revisa que las reglas de Firestore estén publicadas.", "bad"), 800); });
+  if (S.email === ADMIN) prepararAdmin(u).catch(e => { console.warn("prepararAdmin", e); if (e.code === "permission-denied") setTimeout(() => toast("No se pudieron preparar las listas: " + errGuardar(e), "bad"), 800); });
   S.subs.push(onSnapshot(doc(db, "usuarios", S.email), snap => {
     if (snap.exists() && snap.data().activo !== false) {
       const d = snap.data();
@@ -2287,7 +2303,7 @@ onAuthStateChanged(auth, async u => {
       setDoc(doc(db, "solicitudes", u.uid), { email: S.email, nombre: u.displayName || "", fecha: serverTimestamp() }, { merge: true }).catch(e => console.warn("solicitud", e));
       gate("espera");
     }
-  }, e => { console.warn("perfil", e); gate("error", { msg: "No se pudo leer tu perfil. Si es la primera vez, revisa que las reglas de Firestore estén publicadas." }); }));
+  }, e => { console.warn("perfil", e); gate("error", { msg: "No se pudo leer tu perfil: " + errGuardar(e) }); }));
 });
 
 async function prepararAdmin(u) {
@@ -2415,7 +2431,7 @@ async function masTodos(btn) {
     const ya = new Set(T.mas.map(r => r.id)); T.mas = [...T.mas, ...sn.docs.map(fila).filter(r => !ya.has(r.id))];
     if (sn.docs.length) T.ult = sn.docs[sn.docs.length - 1]; T.masLleno = sn.docs.length >= 100;
     S.verTodos += 100; unirTodos(); S.todosLleno = T.masLleno;
-  } catch (e) { toast("No se pudieron cargar: " + e.message, "bad"); }
+  } catch (e) { toast("No se pudieron cargar: " + errGuardar(e), "bad"); }
   T.leyendo = false; if (S.view === "todos") renderSuave();
 }
 function suscribirTodos() {
@@ -3232,11 +3248,11 @@ function agregarTipo(nombre0) {
         if (st.eleNuevo) {
           const els = (sE.exists() && sE.data().items) || [], ex = els.find(e => similitud(e.nombre, eleNom) === 1);
           if (ex) eleId = ex.id;
-          else { eleId = nuevoId(eleNom, new Set(els.map(e => e.id))); tx.set(rE, { items: [...els, { id: eleId, nombre: eleNom, ...meta }], editadoEn: serverTimestamp(), editadoPor: S.email }); }
+          else { eleId = nuevoId(eleNom, new Set(els.map(e => e.id))); tx.set(rE, { items: [...els, { id: eleId, nombre: eleNom, ...meta }], ...sello() }); }
         }
         const id = nuevoId(nombre, new Set(tipos.map(t => t.id)));
         const item = { id, nombre, elementoId: eleId, orden: Math.max(0, ...tipos.map(t => t.orden || 0)) + 1, enGrafico: f.actividad === "LIB", ...meta };
-        tx.set(rT, { items: [...tipos, item], editadoEn: serverTimestamp(), editadoPor: S.email });
+        tx.set(rT, { items: [...tipos, item], ...sello() });
         return { item, eleId, ele: st.eleNuevo ? { id: eleId, nombre: eleNom, ...meta } : null };
       });
       if (res.ya) { d.cerrar(true); elegirTipo(f, res.ya.id, st.det); toast(`«${res.ya.nombre}» ya existía; se eligió ese.`); return; }
@@ -3247,7 +3263,7 @@ function agregarTipo(nombre0) {
       toast(`«${res.item.nombre}» agregado para todos`);
     } catch (e) {
       console.error(e); sub.disabled = false; pintar();
-      toast("No se pudo agregar: " + (e.code === "permission-denied" ? "sin permiso (hay que publicar las reglas nuevas)." : e.message), "bad");
+      toast("No se pudo agregar: " + errGuardar(e), "bad");
     }
   }
 }
@@ -3289,12 +3305,8 @@ function conectarForm() {
   $("#bVar").addEventListener("click", () => { $("#iCota").value = "Variable"; });
   // Al salir del PK se avisa si no se entiende o si el final queda antes que el inicio (sin bloquear lo que se escribe)
   const revisarPk = () => {
-    const t1 = $("#iPk1").value, t2 = $("#iPk2").value, a1 = pkAmbiguo(t1), a2 = pkAmbiguo(t2), p1 = leerPk(t1), p2 = leerPk(t2);
-    if (a1) errCampo("pkInicio", msgAmbPk(t1, a1)); else if (Number.isNaN(p1)) errCampo("pkInicio", "Escríbelo como 2+140 o 2140."); else limpiarErr("pkInicio");
-    if (a2) errCampo("pkFin", msgAmbPk(t2, a2));
-    else if (Number.isNaN(p2)) errCampo("pkFin", "Escríbelo como 2+180 o 2180.");
-    else if (!a1 && p1 != null && p2 != null && !isNaN(p1) && p2 < p1) errCampo("pkFin", "El PK final no puede ser menor que el inicio.");
-    else limpiarErr("pkFin");
+    const { err } = revisarPks($("#iPk1").value, $("#iPk2").value);
+    for (const k of ["pkInicio", "pkFin"]) err[k] ? errCampo(k, err[k]) : limpiarErr(k);
     pintarAmbPk();
   };
   for (const id of ["iPk1", "iPk2"]) {
@@ -3334,6 +3346,19 @@ function pkAmbiguo(t) {
   return m ? [fmtPk(parseInt(m[1], 10) * 1000 + parseInt(m[2], 10)), fmtPk(leerPk(s))] : null;
 }
 const msgAmbPk = (t, a) => `Elige cómo se lee «${String(t).trim()}»: ${a[0]} o ${a[1]}.`;
+// PK inicio y final del formulario: sus valores y los errores, los mismos al salir del campo y al guardar.
+// op.guardar: al guardar, una liberación necesita PK inicio (pide) y «final menor» se mira aunque el inicio sea ambiguo
+function revisarPks(t1, t2, op = {}) {
+  const p1 = leerPk(t1), p2 = leerPk(t2), a1 = pkAmbiguo(t1), a2 = pkAmbiguo(t2), err = {};
+  const menor = (op.guardar || !a1) && p1 != null && p2 != null && !isNaN(p1) && !isNaN(p2) && p2 < p1;
+  const ini = a1 ? msgAmbPk(t1, a1) : Number.isNaN(p1) ? "Escríbelo como 2+140 o 2140." : op.pide && p1 == null ? "Indica el PK inicio o marca «No aplica»." : "";
+  const fin = a2 ? msgAmbPk(t2, a2) : Number.isNaN(p2) ? "Escríbelo como 2+180 o 2180." : menor ? "El PK final no puede ser menor que el inicio." : "";
+  // El primer campo con error recibe el foco al guardar: el mismo orden de siempre (el final va primero si ya fallaba antes de mirar si el inicio es ambiguo o falta)
+  if (fin && (Number.isNaN(p2) || menor) && !Number.isNaN(p1)) err.pkFin = fin;
+  if (ini) err.pkInicio = ini;
+  if (fin) err.pkFin = fin;
+  return { p1, p2, err };
+}
 function pintarAmbPk() {
   const sin = $("#iSinPk")?.checked;
   for (const id of ["iPk1", "iPk2"]) {
@@ -3358,14 +3383,7 @@ function validar(f) {
   if (esLib && !f.tipoId) err.tipoId = "Elige qué se liberó (busca el tipo o agrégalo).";
   let p1 = null, p2 = null;
   if (!f.sinPk) {
-    p1 = leerPk(f.pkInicio); p2 = leerPk(f.pkFin);
-    if (Number.isNaN(p1)) err.pkInicio = "Escríbelo como 2+140 o 2140.";
-    if (Number.isNaN(p2)) err.pkFin = "Escríbelo como 2+180 o 2180.";
-    if (esLib && p1 == null) err.pkInicio = "Indica el PK inicio o marca «No aplica».";
-    if (p1 != null && p2 != null && !isNaN(p1) && !isNaN(p2) && p2 < p1) err.pkFin = "El PK final no puede ser menor que el inicio.";
-    const a1 = pkAmbiguo(f.pkInicio), a2 = pkAmbiguo(f.pkFin);
-    if (a1) err.pkInicio = msgAmbPk(f.pkInicio, a1);
-    if (a2) err.pkFin = msgAmbPk(f.pkFin, a2);
+    const r = revisarPks(f.pkInicio, f.pkFin, { guardar: true, pide: esLib }); p1 = r.p1; p2 = r.p2; Object.assign(err, r.err);
   }
   const area = String(f.area).trim() === "" ? null : Number(String(f.area).replace(",", "."));
   if (area !== null && (isNaN(area) || area < 0)) err.area = "Solo números (m²).";
@@ -3455,7 +3473,7 @@ function guardar() {
     linksCsv: f.linksCsv, linksFotos: f.linksFotos,
     archivos: f.archivos.map(a => ({ id: a.id, tipo: a.tipo, nombre: a.nombre, tam: a.tam || 0, ...(a.lineas ? { lineas: a.lineas } : {}), ...(a.purgado ? { purgado: true, purgadoEn: a.purgadoEn || "" } : {}) })),
     solapaCon: solapes.map(r => r.id),
-    editadoEn: serverTimestamp(), editadoPor: S.email
+    ...sello()
   };
   if (motivoEC) datos.motivoEdicion = motivoEC;
   const b = writeBatch(db);
@@ -3486,8 +3504,7 @@ function guardar() {
   const notaH = [motivoEC && "Edición de entregado: " + motivoEC, de === "OB" && a === "PT" && "Corregido", cambios.length && cambios.join("; "),
     solapes.length && "Guardado aunque se superpone con " + solapes.map(r => r.numero || "un registro sin número").join(", ")].filter(Boolean).join(" · ");
   const hRef = doc(collection(db, "historial")); // su id sirve para saber después si la edición llegó (lote H)
-  b.set(hRef, { liberacionId: ref.id, accion: E ? "editado" : "creado", de, a,
-    usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: notaH });
+  hist(b, ref, E ? "editado" : "creado", notaH, { de, a }, hRef);
   // Copia de lo escrito: si Firebase rechaza la grabación, el formulario vuelve tal cual
   const respaldo = { ...f, archivos: f.archivos.map(x => ({ ...x })), borrarArchivos: f.borrarArchivos.slice(), linksCsv: f.linksCsv.slice(), linksFotos: f.linksFotos.slice() };
   const listo = () => {
@@ -3511,7 +3528,7 @@ function guardar() {
   };
   const fallo = async e => {
     console.error(e);
-    const msg = "No se pudo guardar: " + (e.code === "permission-denied" ? "sin permiso para este cambio." : e.message);
+    const msg = "No se pudo guardar: " + errGuardar(e);
     const bgx = $("#bGuardar"); if (bgx && bgx.textContent === "Guardando…") { bgx.disabled = false; bgx.textContent = E ? "Guardar cambios" : btnGuardar(f.actividad); }
     // Si ya se empezó a escribir otra cosa, se pregunta antes de reemplazarla
     const actual = S.view === "nueva" && S.form && !S.editando ? (leerCampos(), S.form) : null;
@@ -3567,6 +3584,7 @@ async function irSuperficies(r) {
   P.vista = "modelo"; ls.set("lib.panelVista", "modelo");
   ir("panel");
 }
+// Día «AAAA-MM-DD» en hora local: la base de hoyISO y fISO (los nombres de archivo y respaldos usan toISOString, en UTC, a propósito)
 const diaDe = v => { const d = toDate(v); return d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}` : ""; };
 const diaCorto = iso => { const [y, m, d] = iso.split("-").map(Number); const t = new Date(y, m - 1, d).toLocaleDateString("es-PE", { weekday: "short" }).replace(".", ""); return `${t.charAt(0).toUpperCase() + t.slice(1)} ${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}`; };
 function textoResumen(regs) {
@@ -3640,6 +3658,14 @@ function buscadorDiferido(inp, guardar, repintar, sigue = () => true) {
     guardar(inp.value); clearTimeout(S._qt);
     S._qt = setTimeout(() => { if (sigue() && document.getElementById(inp.id)) conFoco(inp.id, repintar); }, 150);
   });
+}
+// Casillas de una lista: con Mayús, marca (o desmarca) todo el tramo desde la última casilla tocada; sin Mayús, solo esa.
+// lista: los visibles, en orden; ult: posición de la última tocada. Devuelve la nueva posición (guárdala para el siguiente clic).
+function marcarRango(sel, lista, id, on, mayus, ult) {
+  const i = lista.findIndex(r => r.id === id);
+  if (mayus && ult != null && ult !== i && i >= 0) { const [a, b] = [Math.min(ult, i), Math.max(ult, i)]; lista.slice(a, b + 1).forEach(r => on ? sel.add(r.id) : sel.delete(r.id)); }
+  else on ? sel.add(id) : sel.delete(id);
+  return i;
 }
 // Redibuja y, si el campo tenía el foco, se lo devuelve con el cursor (y la selección) donde estaba
 function conFoco(id, repintar) {
@@ -3819,7 +3845,10 @@ function suscribirFechaTodos(fl) {
 function soltarFechaTodos() { if (!S._fqUnsub) return; S._fqUnsub(); S._fqUnsub = null; S._fqPrev = S._fqKey; S._fqKey = ""; }
 // «+2» junto al código cuando un levantamiento con dron tiene varios códigos (uno por protocolo)
 const masCodigos = r => { const n = new Set((r.protocolos || []).map(x => x.numero).filter(Boolean)).size; return n > 1 ? `<span class="num-mas">+${n - 1}</span>` : ""; };
-const opcionesFrente = (sel, todos = "Todos") => `<option value="">${todos}</option>` + S.listas.estructuras.filter(e => e.activo !== false).map(e => `<optgroup label="${esc(e.nombre)}"><option value="${esc(e.id)}" ${sel === e.id ? "selected" : ""}>Toda ${esc(e.nombre)}</option>${(e.subs || []).filter(x => x.activo !== false).map(x => `<option value="${esc(x.id)}" ${sel === x.id ? "selected" : ""}>${esc(x.nombre)}</option>`).join("")}</optgroup>`).join("");
+// Frentes activos agrupados por estructura (<optgroup>), con sel elegido. op.toda: cada grupo empieza con «Toda <estructura>»
+const opcionesSubs = (sel, op = {}) => S.listas.estructuras.filter(e => e.activo !== false).map(e => `<optgroup label="${esc(e.nombre)}">${op.toda ? `<option value="${esc(e.id)}" ${sel === e.id ? "selected" : ""}>Toda ${esc(e.nombre)}</option>` : ""}${(e.subs || []).filter(x => x.activo !== false).map(x => `<option value="${esc(x.id)}" ${sel === x.id ? "selected" : ""}>${esc(x.nombre)}</option>`).join("")}</optgroup>`).join("");
+// Filtros por frente: la opción vacía («Todos», «3 frentes»…) y cada estructura entera o uno de sus frentes
+const opcionesFrente = (sel, todos = "Todos") => `<option value="">${todos}</option>` + opcionesSubs(sel, { toda: true });
 const opcionesTipo = sel => `<option value="">Todos</option>` + S.listas.elementos.map(e => { const ts = S.listas.tipos.filter(t => t.elementoId === e.id && t.activo !== false).sort((a, b) => a.nombre.localeCompare(b.nombre)); return ts.length ? `<optgroup label="${esc(e.nombre)}">${ts.map(t => `<option value="${esc(t.id)}" ${sel === t.id ? "selected" : ""}>${esc(t.nombre)}</option>`).join("")}</optgroup>` : ""; }).join("")
   + (s => s.length ? `<optgroup label="Sin elemento">${s.map(t => `<option value="${esc(t.id)}" ${sel === t.id ? "selected" : ""}>${esc(t.nombre)}</option>`).join("")}</optgroup>` : "")(S.listas.tipos.filter(t => t.activo !== false && !L.ele(t.elementoId)));
 // Controles de filtro; «hoja» = versión grande para el celular (dentro de la hoja con «Aplicar»)
@@ -3862,7 +3891,7 @@ function pintarLista(cual) {
   const loteF = cual === "todos" && !pap && fl.lote ? fl.lote : "";
   if (loteF && S._loteId !== loteF) { S._loteId = loteF; S.loteRegs = null; CAMPOS_RF.forEach(k => { fl[k] = ""; }); fl.ord = ""; guardarFiltros();
     cargarLote(loteF).then(rs => { if (S._loteId !== loteF) return; S.loteRegs = rs.filter(vivo).sort((a, b) => numDe(b.numero) - numDe(a.numero)); if (S.view === "todos") pintarLista("todos"); })
-      .catch(e => { toast("No se pudo cargar la importación: " + e.message, "bad"); S.loteRegs = []; if (S.view === "todos") pintarLista("todos"); }); }
+      .catch(e => { toast("No se pudo cargar la importación: " + errGuardar(e), "bad"); S.loteRegs = []; if (S.view === "todos") pintarLista("todos"); }); }
   const porFecha = cual === "todos" && !pap && !loteF && !!rangoFecha(fl);
   if (cual === "todos") suscribirFechaTodos(pap || loteF ? {} : fl);
   const cargandoFecha = (porFecha && !S.todosFecha) || (loteF && !S.loteRegs);
@@ -3983,10 +4012,7 @@ function pintarLista(cual) {
     if (e.target.closest("[data-ck]") || e.target.closest("td.ck")) {
       const tr = e.target.closest("[data-id]"), id = tr.dataset.id, c = tr.querySelector("[data-ck]");
       if (!e.target.matches("[data-ck]")) c.checked = !c.checked;
-      const on = c.checked, i = visLim.findIndex(r => r.id === id);
-      if (e.shiftKey && S._ultCk != null && S._ultCk !== i && i >= 0) { const [a, b] = [Math.min(S._ultCk, i), Math.max(S._ultCk, i)]; visLim.slice(a, b + 1).forEach(r => on ? sel.add(r.id) : sel.delete(r.id)); }
-      else on ? sel.add(id) : sel.delete(id);
-      S._ultCk = i; actSel(); return;
+      S._ultCk = marcarRango(sel, visLim, id, c.checked, e.shiftKey, S._ultCk); actSel(); return;
     }
     const it = e.target.closest("[data-id]"); if (!it) return;
     const r0 = datos.find(r => r.id === it.dataset.id); r0?._res ? abrirFichaId(r0.id) : abrirFicha(r0);
@@ -4813,7 +4839,7 @@ function pintarPanel() {
   const movilP = innerWidth < 760;
   // Leyenda: completa en computadora; en celular plegada en una línea con solo las muestras de color
   const leyenda = `<div class="legend"><span><i class="falta-i"></i>Falta liberar</span><span><i class="nolib"></i>No se libera</span>${["PT", "EP", "EC", "OB"].map(k => `<span><i style="background:${fondoLey(k)}"></i>${ESTADOS[k]}</span>`).join("")}</div>`;
-  const grupos = S.listas.estructuras.filter(e => e.activo !== false).map(e => `<optgroup label="${esc(e.nombre)}">${(e.subs || []).filter(s => s.activo !== false).map(s => `<option value="${esc(s.id)}" ${s.id === P.subId ? "selected" : ""}>${esc(s.nombre)}</option>`).join("")}</optgroup>`).join("");
+  const grupos = opcionesSubs(P.subId);
   const pc = enPC();
   // Frente siempre a la vista; el resto de filtros en acordeón (computadora) o en una hoja que se abre (celular y tableta)
   const frente = `<div class="card filters fil-frente">
@@ -5688,7 +5714,7 @@ async function cargarModelo(subId) {
       for (let k = 1; k < (m.partes || 1); k++) { const p = await getDoc(doc(db, "secciones", subId + "~p" + k)); cs = cs.concat(p.exists() ? p.data().cs || [] : []); }
       MOD.secc[subId] = decModelo({ ...m, cs });
     }
-  } catch (e) { console.warn("modelo", e); toast("No se pudo leer el modelo: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"); MOD.secc[subId] = null; }
+  } catch (e) { console.warn("modelo", e); toast("No se pudo leer el modelo: " + errGuardar(e), "bad"); MOD.secc[subId] = null; }
   MOD.cargando[subId] = false;
   if (S.view === "panel" && S.panel.vista === "modelo") dibujarModelo();
 }
@@ -5934,7 +5960,7 @@ async function guardarModelo(file, al, eje, secs, lista, subId) {
   const iDe = new Map(dis.map((n, i) => [n, i]));
   const est = secs.map(s => r2(s.sta));
   const cs = secs.map(s => s.sups.filter(x => iDe.has(x.nombre)).map(x => iDe.get(x.nombre) + ":" + codLinea(dp(x.pts, 0.005))).join(";"));
-  const meta = { nombre: file.name, eje: al.getAttribute("name") || "", pk0: r2(eje[0][0]), pk1: r2(eje[eje.length - 1][0]), sups: dis, est, n: secs.length, editadoEn: serverTimestamp(), editadoPor: S.email };
+  const meta = { nombre: file.name, eje: al.getAttribute("name") || "", pk0: r2(eje[0][0]), pk1: r2(eje[eje.length - 1][0]), sups: dis, est, n: secs.length, ...sello() };
   // Partes de hasta ~700 KB para no pasar el límite de 1 MB por documento
   const partes = [[]]; let tam = 0;
   cs.forEach(t => { if (tam + t.length > 700000 && partes[partes.length - 1].length) { partes.push([]); tam = 0; } partes[partes.length - 1].push(t); tam += t.length + 4; });
@@ -5950,10 +5976,10 @@ async function guardarModelo(file, al, eje, secs, lista, subId) {
     const b = writeBatch(db);
     b.set(doc(db, "secciones", subId), { ...meta, cs: partes[0], partes: partes.length });
     partes.slice(1).forEach((p, k) => b.set(doc(db, "secciones", subId + "~p" + (k + 1)), { cs: p }));
-    b.set(doc(db, "ejes", subId), { puntos: flat, nombre: file.name, editadoEn: serverTimestamp(), editadoPor: S.email });
+    b.set(doc(db, "ejes", subId), { puntos: flat, nombre: file.name, ...sello() });
     await b.commit();
     toast(`Modelo guardado: ${est.length} secciones, ${dis.length} superficies de diseño`);
-  } catch (e) { toast("No se guardó el modelo: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"); return; }
+  } catch (e) { toast("No se guardó el modelo: " + errGuardar(e), "bad"); return; }
   if (nuevas.length) await guardarSuperficies(nuevas.map(x => { const r = registroDe(x.codigo); return { ...x, tipoId: r?.tipoId || tipoSugerido(x.nombre), capa: r?.capa || "" }; }), subId, `Modelo guardado con ${nuevas.length} ${nuevas.length === 1 ? "liberación" : "liberaciones"} que venían en las secciones`);
   dibujarModelo();
 }
@@ -5984,7 +6010,7 @@ async function guardarSuperficies(lst, subId, msg) {
     for (let i = 0; i < lst.length; i += 200) {
       const b = writeBatch(db), r = {};
       lst.slice(i, i + 200).forEach(x => {
-        const { id: _id, ...resto } = x, v = (res[x.id]?.[12] || 0) + 1, d = { ...resto, grupo: grupoDe(x.tipoId, x.capa), v, fecha: Date.now(), editadoEn: serverTimestamp(), editadoPor: S.email };
+        const { id: _id, ...resto } = x, v = (res[x.id]?.[12] || 0) + 1, d = { ...resto, grupo: grupoDe(x.tipoId, x.capa), v, fecha: Date.now(), ...sello() };
         b.set(doc(db, "superficies", x.id), d); r[x.id] = supCompacto(d); res[x.id] = r[x.id]; mapa.set(x.id, decSup(x.id, d));
       });
       b.set(doc(db, "superficiesRes", subId), { r }, { merge: true });
@@ -5992,7 +6018,7 @@ async function guardarSuperficies(lst, subId, msg) {
     }
     if (msg !== false) toast(msg || (lst.length === 1 ? "Superficie guardada" : `${lst.length} superficies guardadas`));
     return true;
-  } catch (e) { toast("No se guardó: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"); return false; }
+  } catch (e) { toast("No se guardó: " + errGuardar(e), "bad"); return false; }
 }
 // Cambia el tipo o la capa de las superficies (y, si se pide, de las bases) que cumplen `cambio(d)`.
 // Se usa al renombrar una capa, al unir tipos y al cambiar la capa o el tipo de un registro con XML,
@@ -6016,7 +6042,7 @@ async function moverSups(campo, valor, cambio) {
   });
   for (const [subId, lst] of porSub) for (let i = 0; i < lst.length; i += 200) {
     const b = writeBatch(db), r = {}, parte = lst.slice(i, i + 200);
-    parte.forEach(([id, nd]) => { b.update(doc(db, "superficies", id), { tipoId: nd.tipoId, capa: nd.capa, grupo: nd.grupo, v: nd.v, editadoEn: serverTimestamp(), editadoPor: S.email }); r[id] = supCompacto(nd); });
+    parte.forEach(([id, nd]) => { b.update(doc(db, "superficies", id), { tipoId: nd.tipoId, capa: nd.capa, grupo: nd.grupo, v: nd.v, ...sello() }); r[id] = supCompacto(nd); });
     b.set(doc(db, "superficiesRes", subId), { r }, { merge: true });
     await b.commit();
     // El modelo de este teléfono cambia solo cuando Firebase lo confirmó
@@ -6035,7 +6061,7 @@ async function moverBases(campo, valor, cambio) {
       const d = bs.data(), c = cambio(d);
       const tipoId = c.tipoId ?? d.tipoId ?? "", capa = (c.capa ?? d.capa ?? "").trim(), g = grupoDe(tipoId, capa);
       if (g === d.grupo) continue;
-      const id = idSup(d.subId, "base-" + g), dat = { tipoId, capa, grupo: g, editadoEn: serverTimestamp(), editadoPor: S.email };
+      const id = idSup(d.subId, "base-" + g), dat = { tipoId, capa, grupo: g, ...sello() };
       // Mismo id (solo cambian mayúsculas o signos): se actualiza en su lugar
       if (id === bs.id) { await updateDoc(doc(db, "bases", bs.id), dat); continue; }
       const ya = ocupado.get(d.subId);
@@ -6060,7 +6086,7 @@ function recordarGrupos(cambio) {
 function supDelRegistro(r, nuevo) {
   if (!(r.xmlEntrega || []).some(x => x.supId)) return;
   moverGrupos("liberacionId", r.id, d => d.liberacionId === r.id ? { tipoId: nuevo.tipoId ?? d.tipoId, capa: normCapa(nuevo.capa ?? d.capa, d.subId, nuevo.tipoId ?? d.tipoId) } : null, false)
-    .catch(e => { console.warn("superficie del registro", e); toast("El registro se guardó, pero su superficie XML no se pudo actualizar en el modelo: " + e.message, "bad"); });
+    .catch(e => { console.warn("superficie del registro", e); toast("El registro se guardó, pero su superficie XML no se pudo actualizar en el modelo: " + errGuardar(e), "bad"); });
 }
 // Renombrar una capa en Ajustes → Capas: sus registros, superficies XML y base pasan al nombre nuevo.
 // Los renombrados van en fila (A→B y enseguida B→C terminan bien).
@@ -6071,21 +6097,21 @@ async function renombrarCapaYa(subId, tipoId, viejo, nuevo) {
   try {
     const regs = (await getDocsFromServer(query(collection(db, "liberaciones"), where("subestructuraId", "==", subId), where("tipoId", "==", tipoId)))).docs.map(fila)
       .filter(r => r.tipoId === tipoId && capaDe(r) === viejo);
-    await lotes(regs, (b, r) => { const dat = { capa: nuevo, editadoEn: serverTimestamp(), editadoPor: S.email }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Capa renombrada: ${viejo} → ${nuevo}`); }, 120);
+    await lotes(regs, (b, r) => { const dat = { capa: nuevo, ...sello() }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Capa renombrada: ${viejo} → ${nuevo}`); }, 120);
     if (BUS.todos) BUS.todos.forEach(r => { if (r.subestructuraId === subId && r.tipoId === tipoId && capaDe(r) === viejo) r.capa = nuevo; });
     // Solo las superficies de esa capa (no se baja todo el modelo del frente)
     const cambio = d => es(d) ? { capa: nuevo } : null;
     const n = await moverSups("grupo", grupoDe(tipoId, viejo), cambio);
     await moverBases("subId", subId, cambio); recordarGrupos(cambio);
     if (regs.length || n) toast(`Capa renombrada a «${nuevo}» · ${[regs.length ? `${regs.length} ${regs.length === 1 ? "registro" : "registros"}` : "", n ? `${n} ${n === 1 ? "superficie" : "superficies"}` : ""].filter(Boolean).join(" y ")}`);
-  } catch (e) { console.error(e); toast("La capa se renombró, pero no se pudieron pasar sus registros o superficies: " + (e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); }
+  } catch (e) { console.error(e); toast("La capa se renombró, pero no se pudieron pasar sus registros o superficies: " + errGuardar(e), "bad"); }
 }
 async function quitarSuperficie(x) {
   if (!await confirmar("Quitar superficie", `Se quita <b>${esc(x.nombre)}</b> del modelo. El registro de la liberación no cambia.`, "Quitar", true)) return false;
   try {
     const b = writeBatch(db); b.delete(doc(db, "superficies", x.id)); b.set(doc(db, "superficiesRes", x.subId), { r: { [x.id]: deleteField() } }, { merge: true }); await b.commit();
     delete MOD.res[x.subId]?.[x.id]; MOD.sup[x.subId]?.delete(x.id); if (S.panel.mSel === x.id) S.panel.mSel = ""; toast("Superficie quitada"); dibujarModelo(); return true;
-  } catch (e) { toast("No se pudo quitar: " + e.message, "bad"); return false; }
+  } catch (e) { toast("No se pudo quitar: " + errGuardar(e), "bad"); return false; }
 }
 function editarSuperficie(id) {
   const subId = S.panel.subId, a = MOD.res[subId]?.[id]; if (!a) return;
@@ -6099,9 +6125,9 @@ function editarSuperficie(id) {
     o => {
       const codigo = (o.k || "").toUpperCase(), tipoId = o.t || "", capa = normCapa(o.c || "", subId, tipoId);
       if (codigo === x.codigo && tipoId === x.tipoId && capa === x.capa) return;
-      const d = { codigo, tipoId, capa, grupo: grupoDe(tipoId, capa), v: (x.v || 0) + 1, editadoEn: serverTimestamp(), editadoPor: S.email };
+      const d = { codigo, tipoId, capa, grupo: grupoDe(tipoId, capa), v: (x.v || 0) + 1, ...sello() };
       const b = writeBatch(db); b.update(doc(db, "superficies", id), d); b.set(doc(db, "superficiesRes", subId), { r: { [id]: supCompacto({ ...x, ...d }) } }, { merge: true });
-      b.commit().then(() => toast("Guardado")).catch(e => toast("No se guardó: " + e.message, "bad"));
+      b.commit().then(() => toast("Guardado")).catch(e => toast("No se guardó: " + errGuardar(e), "bad"));
       MOD.res[subId][id] = supCompacto({ ...x, ...d }); const m = MOD.sup[subId]?.get(id); if (m) Object.assign(m, d, { _v: d.v });
       S.panel.mGrupo = d.grupo; dibujarModelo();
     }, "Guardar", { ancho: true, sinFoco: true });
@@ -6180,7 +6206,7 @@ async function subirBase(file, xml) {
     const tipoId = o.tipo, capa = normCapa(o.capa, subId, tipoId);
     if (!tipoId || !capa) { toast("Elige el tipo y escribe la capa.", "bad"); return false; }
     const g = grupoDe(tipoId, capa), previa = MOD.bases[subId]?.get(g), id = idSup(subId, "base-" + g);
-    const dd = { subId, grupo: g, tipoId, capa, nombre: file.name, area: Math.round(area * 10) / 10, anillos: an.map(r => r.map(p => r2(p[0]) + "," + r2(p[1])).join(" ")), v: (previa?.v || 0) + 1, editadoEn: serverTimestamp(), editadoPor: S.email };
+    const dd = { subId, grupo: g, tipoId, capa, nombre: file.name, area: Math.round(area * 10) / 10, anillos: an.map(r => r.map(p => r2(p[0]) + "," + r2(p[1])).join(" ")), v: (previa?.v || 0) + 1, ...sello() };
     (MOD.bases[subId] ||= new Map()).set(g, { id, ...dd, anillos: an });
     P.mGrupo = g; P.mModo = "real"; P.mSel = ""; P.mVB = null; dibujarModelo();
     escribir(setDoc(doc(db, "bases", id), dd), `Base de ${nomGrupo(g)} guardada`, "No se guardó la base: ");
@@ -6386,7 +6412,9 @@ function ajustarTextos() {
 const altoGraf = q => S.panel._alt?.[q] || (innerWidth < 760 ? (q === "pl" ? 300 : 250) : (q === "pl" ? 420 : 330));
 
 /* Lista de capas con su porcentaje, filtros y orden */
-function dibujarCapasLista() {
+// Se repinta al escribir en su buscador y cuando llegan datos (de otra persona): quien escribe conserva el foco y el cursor
+function dibujarCapasLista() { conFoco("cfQ", pintarCapasLista); }
+function pintarCapasLista() {
   const box = $("#mCapas"); if (!box) return;
   const P = S.panel, subId = P.subId, F = P.capF ||= { q: "", t: "", e: "", o: "nombre", ...ls.get("lib.capF", {}) };
   const gs = gruposFrente(subId);
@@ -6413,7 +6441,7 @@ function dibujarCapasLista() {
       ${f.cruce > 0.5 || f.fuera > 0.5 ? `<span class="capw">${f.cruce > 0.5 ? `cruces ${fmtM2(f.cruce)}` : ""}${f.cruce > 0.5 && f.fuera > 0.5 ? " · " : ""}${f.fuera > 0.5 ? `fuera ${fmtM2(f.fuera)}` : ""}</span>` : ""}
     </button>`).join("") : '<p class="muted small" style="margin:6px 2px">Ninguna capa con ese filtro.</p>'}</div></div>`;
   const guardar = () => ls.set("lib.capF", F);
-  $("#cfQ").addEventListener("input", e => { F.q = e.target.value; guardar(); const pos = e.target.selectionStart; dibujarCapasLista(); const n = $("#cfQ"); n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) {} });
+  $("#cfQ").addEventListener("input", e => { F.q = e.target.value; guardar(); dibujarCapasLista(); });
   $("#cfT").addEventListener("change", e => { F.t = e.target.value; guardar(); dibujarCapasLista(); });
   $("#cfE").addEventListener("change", e => { F.e = e.target.value; guardar(); dibujarCapasLista(); });
   $("#cfO").addEventListener("change", e => { F.o = e.target.value; guardar(); dibujarCapasLista(); });
@@ -6436,7 +6464,7 @@ function rellenoSup(x) { const r = registroDe(x.codigo); return r?.estado === "O
 function pintarModelo() {
   const P = S.panel, lista = subsConDatos();
   P.mFull ??= ls.get("lib.mFull", false); P.mSinLat ??= ls.get("lib.mSinLat", false); document.body.classList.toggle("m-full", !!P.mFull && enPC()); document.body.classList.toggle("m-sinlat", !!P.mSinLat);
-  const grupos = S.listas.estructuras.filter(e => e.activo !== false).map(e => `<optgroup label="${esc(e.nombre)}">${(e.subs || []).filter(s => s.activo !== false).map(s => `<option value="${esc(s.id)}" ${s.id === P.subId ? "selected" : ""}>${esc(s.nombre)}</option>`).join("")}</optgroup>`).join("");
+  const grupos = opcionesSubs(P.subId);
   $("#view").innerHTML = `<div id="mRoot">
   <h1 class="view-title">Panel</h1>
   <p class="lead" ${innerWidth < 760 ? "hidden" : ""}>Modelo 2D del frente para gabinete: el diseño de Civil 3D con las superficies de cada liberación encima.</p>
@@ -6674,7 +6702,7 @@ function herramientaMedir(on) {
 let cfgSecT;
 function guardarCfgSec(subId) {
   clearTimeout(cfgSecT);
-  cfgSecT = setTimeout(() => updateDoc(doc(db, "secciones", subId), { cfg: MOD.secc[subId]?.cfg || {} }).catch(e => toast("No se guardó el cambio de las superficies: " + (e.code === "permission-denied" ? "no tienes permiso." : e.message), "bad")), 500);
+  cfgSecT = setTimeout(() => updateDoc(doc(db, "secciones", subId), { cfg: MOD.secc[subId]?.cfg || {} }).catch(e => toast("No se guardó el cambio de las superficies: " + errGuardar(e), "bad")), 500);
 }
 function alternarSupDiseno(i) {
   const subId = S.panel.subId, mod = MOD.secc[subId]; if (!mod || mod.sups[i] == null) return;
@@ -6926,7 +6954,9 @@ function dialogo(titulo, html, onOk, okTxt = "Aceptar", op = {}) {
   d.querySelector("form").addEventListener("submit", e => {
     e.preventDefault(); if (ocupado) return;
     const o = {}; new FormData(e.target).forEach((v, k) => { o[k] = String(v).trim(); });
-    const res = onOk(o);
+    // Si onOk falla sin avisar él mismo, se avisa aquí (antes solo quedaba en la consola) y el diálogo sigue abierto
+    const falla = err => { console.error(err); toast("No se guardó: " + errGuardar(err), "bad"); };
+    let res; try { res = onOk(o); } catch (err) { falla(err); return; }
     if (res && typeof res.then === "function") {
       const btn = d.querySelector("[type=submit]"), txt0 = btn.innerHTML; ocupado = true; btn.disabled = true; d.classList.add("ocupado");
       if (op.cargando && MOV.on) btn.innerHTML = MOV.GIRO + esc(op.cargando);
@@ -6938,7 +6968,7 @@ function dialogo(titulo, html, onOk, okTxt = "Aceptar", op = {}) {
         if (txtHecho && MOV.on && !hecho) { cierraOk = true; ocupado = true; btn.disabled = true; btn.classList.add("hecho"); btn.innerHTML = MOV.VISTO + esc(txtHecho); MOV.saltar(btn, 1.04); setTimeout(() => cerrar(true), 500); return; }
         cerrar(true);
       };
-      res.then(listo, err => { console.error(err); listo(false); });
+      res.then(listo, err => { falla(err); listo(false); });
     } else if (res !== false) cerrar(true);
   });
   setTimeout(() => (op.sinFoco ? d.querySelector("[type=submit]") : d.querySelector(".dlg-c input:not([type=checkbox]):not([type=hidden]),.dlg-c textarea") || d.querySelector("[type=submit]"))?.focus({ preventScroll: true }), 60);
@@ -6948,7 +6978,7 @@ function dialogo(titulo, html, onOk, okTxt = "Aceptar", op = {}) {
 function confirmar(titulo, texto, okTxt = "Sí, continuar", peligro = false) {
   return new Promise(res => dialogo(titulo, `<p class="dlg-p">${texto}</p>`, () => { res(true); }, okTxt, { peligro, ancho: "corto", onCancel: () => res(false), sinFoco: true }));
 }
-const hoyISO = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`; };
+const hoyISO = () => diaDe(new Date());
 function fmtNumero(n) { const c = S.config || {}; return (c.prefijo || "SKT-TOP-") + String(n).padStart(c.digitos || 5, "0"); }
 
 // Código único: una transacción lee el contador y escribe el registro; si dos personas aceptan a la vez, una espera a la otra.
@@ -6965,21 +6995,21 @@ async function generarCodigo(r, nombre, capa) {
       if (d.numero) {
         if (!["PT", "OB"].includes(d.estado)) return d.numero;
         const conCapaR = capa != null && capa !== (d.capa || "") ? { capa, solapaCon: sol } : {};
-        tx.update(lRef, { estado: "EP", nombreLiberacion: nombre || d.nombreLiberacion || "", ...conCapaR, notaObservacion: "", editadoEn: serverTimestamp(), editadoPor: S.email });
+        tx.update(lRef, { estado: "EP", nombreLiberacion: nombre || d.nombreLiberacion || "", ...conCapaR, notaObservacion: "", ...sello() });
         resumenEn(tx, r.id, { ...d, ...conCapaR, estado: "EP" });
-        tx.set(doc(collection(db, "historial")), { liberacionId: r.id, accion: "estado", de: d.estado, a: "EP", usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: "Re-aceptado con su código " + d.numero });
+        hist(tx, r, "estado", "Re-aceptado con su código " + d.numero, { de: d.estado, a: "EP" });
         r._reaceptado = true;
         return d.numero;
       }
       const n = (c.exists() ? c.data().ultimo || 0 : 0) + 1, numero = fmtNumero(n);
       tx.set(cRef, { ultimo: n }, { merge: true });
       const conCapa = capa != null && capa !== (d.capa || "") ? { capa, solapaCon: sol } : {};
-      tx.update(lRef, { numero, estado: "EP", nombreLiberacion: nombre || d.nombreLiberacion || "", ...conCapa, generadoPor: S.perfil?.nombre || S.email, fechaLiberacion: serverTimestamp(), notaObservacion: "", editadoEn: serverTimestamp(), editadoPor: S.email });
+      tx.update(lRef, { numero, estado: "EP", nombreLiberacion: nombre || d.nombreLiberacion || "", ...conCapa, generadoPor: S.perfil?.nombre || S.email, fechaLiberacion: serverTimestamp(), notaObservacion: "", ...sello() });
       resumenEn(tx, r.id, { ...d, ...conCapa, numero, estado: "EP" });
-      tx.set(doc(collection(db, "historial")), { liberacionId: r.id, accion: "estado", de: d.estado, a: "EP", usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: "Código " + numero + " generado" + (conCapa.capa != null ? ` · capa: ${conCapa.capa || "sin capa"}${d.capa ? ` (antes ${d.capa})` : ""}` : "") });
+      hist(tx, r, "estado", "Código " + numero + " generado" + (conCapa.capa != null ? ` · capa: ${conCapa.capa || "sin capa"}${d.capa ? ` (antes ${d.capa})` : ""}` : ""), { de: d.estado, a: "EP" });
       return numero;
     });
-  } catch (e) { console.error(e); BUS.en = 0; toast("No se pudo generar el código: " + (e.code === "permission-denied" ? "sin permiso." : e.message), "bad"); return null; }
+  } catch (e) { console.error(e); BUS.en = 0; toast("No se pudo generar el código: " + errGuardar(e), "bad"); return null; }
 }
 // De qué estados se puede pasar a cada uno: si otra persona ya movió el registro, no se pisa
 const DESDE = { OB: ["PT", "OB", "EP"], RE: ["PT", "OB"], EC: ["EP"], PT: ["OB", "EP", "RE"] };
@@ -6994,9 +7024,9 @@ async function cambiarEstado(ids, datos, a, nota, okTxt) {
   // «datos» puede ser una función: cada registro lleva lo suyo (por ejemplo, el XML de su superficie al entregar)
   const p = lotes(regs, (b, r) => {
     const dat = typeof datos === "function" ? datos(r) : datos;
-    b.update(doc(db, "liberaciones", r.id), { ...dat, estado: a, editadoEn: serverTimestamp(), editadoPor: S.email });
+    b.update(doc(db, "liberaciones", r.id), { ...dat, estado: a, ...sello() });
     resumenEn(b, r.id, { ...r, ...dat, estado: a });
-    b.set(doc(collection(db, "historial")), { liberacionId: r.id, accion: "estado", de: r.estado, a, usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: nota || "" });
+    hist(b, r, "estado", nota, { de: r.estado, a });
   });
   const ok = await escribir(p, (okTxt ? okTxt(regs.length) : "Guardado") + (salt ? ` · ${salt} ${salt === 1 ? "se saltó" : "se saltaron"} (ya cambiaron de estado)` : ""), "No se pudo guardar: ");
   sal.fin(ok);
@@ -7102,7 +7132,7 @@ function ponerCapa(r) {
       const capa = normCapa(o.capa, r.subestructuraId, r.tipoId); if (capa === (r.capa || "")) return;
       const sol = r.pkInicio != null ? solapados(r.subestructuraId, r.tipoId, capa, r.pkInicio, r.pkFin ?? r.pkInicio, r.id).map(x => x.id) : [];
       const b = writeBatch(db);
-      b.update(doc(db, "liberaciones", r.id), { capa, solapaCon: sol, editadoEn: serverTimestamp(), editadoPor: S.email });
+      b.update(doc(db, "liberaciones", r.id), { capa, solapaCon: sol, ...sello() });
       resumenEn(b, r.id, { ...r, capa });
       hist(b, r, "editado", `Capa: ${capa || "sin capa"}${r.capa ? ` (antes ${r.capa})` : ""}`);
       escribir(b.commit(), capa ? `Capa ${capa} guardada` : "Capa quitada", "No se guardó la capa: ").then(okk => { if (okk && S._ficha?.id === r.id) cerrarFicha(); if (okk) supDelRegistro(r, { capa }); });
@@ -7160,9 +7190,9 @@ async function generarProtocolos(r, elegidos, nombre) {
         const cods0 = (d.protocolos || []).map(x => x.numero).filter(Boolean).length ? [...new Set(d.protocolos.map(x => x.numero))] : [d.numero];
         // Ya tenía códigos (se observó o devolvió): vuelve a En proceso con los mismos
         if (["PT", "OB"].includes(d.estado)) {
-          tx.update(lRef, { estado: "EP", nombreLiberacion: nombre || d.nombreLiberacion || d.descripcion || "", notaObservacion: "", editadoEn: serverTimestamp(), editadoPor: S.email });
+          tx.update(lRef, { estado: "EP", nombreLiberacion: nombre || d.nombreLiberacion || d.descripcion || "", notaObservacion: "", ...sello() });
           resumenEn(tx, r.id, { ...d, estado: "EP" });
-          tx.set(doc(collection(db, "historial")), { liberacionId: r.id, accion: "estado", de: d.estado, a: "EP", usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: "Re-aceptado con " + (cods0.length === 1 ? "su código " : "sus códigos ") + cods0.join(", ") });
+          hist(tx, r, "estado", "Re-aceptado con " + (cods0.length === 1 ? "su código " : "sus códigos ") + cods0.join(", "), { de: d.estado, a: "EP" });
           r._reaceptado = true;
         }
         return cods0;
@@ -7172,13 +7202,13 @@ async function generarProtocolos(r, elegidos, nombre) {
       const protocolos = elegidos.map(p => ({ id: p.id, nombre: p.nombre, numero: uno ? cod1 : fmtNumero(++u) }));
       const numero = protocolos[0].numero;
       tx.set(cRef, { ultimo: u }, { merge: true });
-      tx.update(lRef, { numero, protocolos, estado: "EP", nombreLiberacion: nombre || d.nombreLiberacion || d.descripcion || "", generadoPor: S.perfil?.nombre || S.email, fechaLiberacion: serverTimestamp(), notaObservacion: "", editadoEn: serverTimestamp(), editadoPor: S.email });
+      tx.update(lRef, { numero, protocolos, estado: "EP", nombreLiberacion: nombre || d.nombreLiberacion || d.descripcion || "", generadoPor: S.perfil?.nombre || S.email, fechaLiberacion: serverTimestamp(), notaObservacion: "", ...sello() });
       resumenEn(tx, r.id, { ...d, numero, estado: "EP" });
       const cods = [...new Set(protocolos.map(x => x.numero))];
-      tx.set(doc(collection(db, "historial")), { liberacionId: r.id, accion: "estado", de: d.estado, a: "EP", usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: `${cods.length === 1 ? "Código " + cods[0] : "Códigos " + cods.join(", ")} · ${protocolos.map(x => x.nombre).join(", ")}` });
+      hist(tx, r, "estado", `${cods.length === 1 ? "Código " + cods[0] : "Códigos " + cods.join(", ")} · ${protocolos.map(x => x.nombre).join(", ")}`, { de: d.estado, a: "EP" });
       return cods;
     });
-  } catch (e) { console.error(e); BUS.en = 0; toast("No se pudieron generar los códigos: " + (e.code === "permission-denied" ? "sin permiso." : e.message), "bad"); return null; }
+  } catch (e) { console.error(e); BUS.en = 0; toast("No se pudieron generar los códigos: " + errGuardar(e), "bad"); return null; }
 }
 // observar, rechazar y reabrir reciben un registro o varios (acciones en grupo con la misma nota)
 const lista1 = r => [].concat(r).filter(Boolean);
@@ -7209,7 +7239,7 @@ function ponerCarpeta(regs) {
   dialogo(regs.length === 1 ? "Carpeta en OneDrive" : `Carpeta de ${regs.length} registros`, campoCarpeta(comun), o => {
     const c = (o.carpeta || "").trim();
     recordarCarpeta(c);
-    const p = lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { carpeta: c || deleteField(), editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", c ? "Carpeta OneDrive: " + c : "Carpeta OneDrive quitada"); });
+    const p = lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { carpeta: c || deleteField(), ...sello() }); hist(b, r, "editado", c ? "Carpeta OneDrive: " + c : "Carpeta OneDrive quitada"); });
     const hecho = c ? "Carpeta guardada" : "Carpeta quitada";
     return escribir(p, regs.length === 1 ? hecho : `${hecho} en ${regs.length} registros`, "No se guardó la carpeta: ").then(ok => { if (!ok) return false; regs.forEach(r => { if (c) r.carpeta = c; else delete r.carpeta; }); if (S._ficha && regs.some(r => r.id === S._ficha.id)) abrirFicha(S._ficha); });
   }, "Guardar");
@@ -7255,7 +7285,7 @@ async function guardarSupEntrega(regs, xmls) {
   }));
   for (const [subId, lst] of porSub) {
     // Versión correcta aunque no se haya abierto el modelo de ese frente
-    if (!MOD.res[subId]) { try { const d = await getDoc(doc(db, "superficiesRes", subId)); MOD.res[subId] = d.exists() ? d.data().r || {} : {}; } catch (e) { toast("No se pudo leer el modelo del frente: " + e.message, "bad"); return false; } }
+    if (!MOD.res[subId]) { try { const d = await getDoc(doc(db, "superficiesRes", subId)); MOD.res[subId] = d.exists() ? d.data().r || {} : {}; } catch (e) { toast("No se pudo leer el modelo del frente: " + errGuardar(e), "bad"); return false; } }
     if (!await guardarSuperficies(lst, subId, false)) return false;
   }
   return true;
@@ -7352,7 +7382,7 @@ async function completos(xs, progreso) {
         (await Promise.all(t.map(g => getDocs(query(collection(db, "liberaciones"), where(documentId(), "in", g)))))).forEach(sn => sn.docs.forEach(d => { const r = guardarLeido(fila(d)); m.set(r.id, r); }));
         n += t.reduce((a, g) => a + g.length, 0); progreso?.(n, pedir.length);
       }
-    } catch (e) { console.warn("leer registros", e); error = e.code === "permission-denied" ? "sin permiso" : e.message || "error"; }
+    } catch (e) { console.warn("leer registros", e); error = errGuardar(e).replace(/\.$/, ""); }
   }
   const regs = [], faltan = []; ids.forEach(id => { const r = m.get(id); r ? regs.push(r) : faltan.push(id); });
   return { regs, faltan, error, leidos: pedir.length };
@@ -7381,7 +7411,7 @@ function aplicarHist() {
 // Sin señal la escritura queda en el teléfono y se sube sola; con señal se espera la confirmación
 // Con señal muy lenta (el teléfono cree que hay señal pero no responde) no se espera más de 8 s: queda guardado en el teléfono
 async function escribir(p, ok, mal, o = {}) {
-  const err = e => { BUS.en = 0; toast(mal + (e.parcial ? e.message + "." : e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); };
+  const err = e => { BUS.en = 0; toast(mal + (e.parcial ? e.message + "." : errGuardar(e)), "bad"); };
   // Una transacción no queda en cola (sin señal falla): si tarda se dice que sigue guardando y se espera su respuesta de verdad
   if (o.tx) {
     const lento = setTimeout(() => toast(`Guardando… la señal está lenta. No cierres la app hasta que diga «${ok}».`, "pend"), 8000);
@@ -7402,11 +7432,15 @@ function lotes(regs, fn, n = 150) {
   return Promise.allSettled(ps).then(rs => {
     const mal = rs.filter(x => x.status === "rejected"); if (!mal.length) return;
     if (mal.length === rs.length) throw mal[0].reason;
-    const hechos = rs.reduce((s, x, i) => s + (x.status === "fulfilled" ? tam[i] : 0), 0), e = new Error(`se guardaron ${hechos} de ${regs.length} registros; faltan ${regs.length - hechos} (${mal[0].reason?.code === "permission-denied" ? "sin permiso" : mal[0].reason?.message || "error"}). Revisa la lista y repite lo que falte`);
+    const hechos = rs.reduce((s, x, i) => s + (x.status === "fulfilled" ? tam[i] : 0), 0), e = new Error(`se guardaron ${hechos} de ${regs.length} registros; faltan ${regs.length - hechos} (${errGuardar(mal[0].reason).replace(/\.$/, "")}). Revisa la lista y repite lo que falte`);
     e.parcial = true; e.hechos = hechos; throw e;
   });
 }
-const hist = (b, r, accion, nota) => b.set(doc(collection(db, "historial")), { liberacionId: r.id, accion, usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: nota || "" });
+// Quién y cuándo cambió un documento (las reglas de Firebase validan editadoPor y editadoEn)
+const sello = () => ({ editadoEn: serverTimestamp(), editadoPor: S.email });
+// Anotación del historial de un registro, siempre con los mismos campos (las reglas los validan): b es un lote o una transacción;
+// x = { de, a } en los cambios de estado y al crear o editar; ref: su id ya elegido (la edición lo guarda para saber después si llegó, lote H)
+const hist = (b, r, accion, nota, x, ref = doc(collection(db, "historial"))) => b.set(ref, { liberacionId: r.id, accion, ...(x ? { de: x.de, a: x.a } : {}), usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: nota || "" });
 async function aPapelera(regs0) {
   const regs = regs0.filter(puedeBorrar); if (!regs.length) { toast("No tienes permiso para borrar eso.", "bad"); return 0; }
   const n = regs.length, gestion = esGab() || puedeAjustes();
@@ -7482,7 +7516,7 @@ function suscribirEP() {
     if (!B.epLleno) B.epN = null;
     else getCountFromServer(query(collection(db, "liberaciones"), where("estado", "==", "EP"), where("origen", "==", "app"))).then(c => { if (!B.epLleno) return; const n = c.data().count; if (n !== B.epN) { B.epN = n; pintarNav(); if (S.view === "bandeja") enCuadro(bandejaPronto); } }).catch(e => console.warn("conteo ep", e));
     if (cambioReal("bEp", snap) && S.view === "bandeja") enCuadro(bandejaPronto);
-  }, e => { console.warn("bandeja ep", e); B.errEP = e.code === "failed-precondition" ? "Firebase pide un índice para esta lista: abre la consola del navegador (F12) y sigue el enlace que aparece para crearlo. Tarda unos minutos." : "No se pudo leer esta lista: " + e.message; if (S.view === "bandeja") pintarBandeja(); });
+  }, e => { console.warn("bandeja ep", e); B.errEP = e.code === "failed-precondition" ? "Firebase pide un índice para esta lista: abre la consola del navegador (F12) y sigue el enlace que aparece para crearlo. Tarda unos minutos." : "No se pudo leer esta lista: " + errGuardar(e); if (S.view === "bandeja") pintarBandeja(); });
 }
 // Cuántas «En proceso» hay (las de la app, o su conteo si pasan del tope, más las del histórico cargadas)
 const nEnProceso = () => { const B = S.bandeja; return (B.epLleno && B.epN != null ? Math.max(B.epN, B.ep.length) : B.ep.length) + B.epHist.length; };
@@ -7561,7 +7595,7 @@ async function masHechas(k) {
     if (SEGV[k] !== s) return;
     const ya = new Set(s.mas.map(r => r.id)); s.mas = [...s.mas, ...sn.docs.map(fila).filter(r => !ya.has(r.id))];
     s.hLleno = sn.docs.length >= SEG_PAG; s.hUlt = sn.docs[sn.docs.length - 1] || s.hUlt; segUnir(k);
-  } catch (e) { toast("No se pudo cargar: " + e.message, "bad"); }
+  } catch (e) { toast("No se pudo cargar: " + errGuardar(e), "bad"); }
   s.leyendo = false; if (S.view === "bandeja") pintarBandeja();
 }
 // Al salir de la Bandeja se suelta la escucha de lo hecho (lo ya mostrado queda hasta que vuelva a llegar)
@@ -7820,7 +7854,7 @@ function pintarBandeja() {
   $("#blist thead")?.addEventListener("click", e => { const b = e.target.closest("[data-hc]"); if (!b) return; e.stopPropagation(); if ($("#hPop")?.dataset.col === b.dataset.hc) { cerrarPop(); return; } popColumna(b, F, b.dataset.hc, COLB[b.dataset.hc], C, [], repB); $("#hPop").dataset.col = b.dataset.hc; });
   $("#bHist")?.addEventListener("click", async e => { e.target.disabled = true; e.target.textContent = "Cargando…";
     try { const sn = await getDocs(query(collection(db, "liberaciones"), where("estado", "==", "EP"), where("origen", "==", "excel"))); B.epHist = sn.docs.map(fila).filter(vivo); B.epHistOk = true; pintarBandeja(); toast(`${B.epHist.length.toLocaleString("es-PE")} del histórico cargadas`); }
-    catch (er) { toast("No se pudo cargar: " + er.message, "bad"); e.target.disabled = false; } });
+    catch (er) { toast("No se pudo cargar: " + errGuardar(er), "bad"); e.target.disabled = false; } });
   $(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-bt]"); if (b) { const otra = b.dataset.bt !== B.tab; MOV.cortar(); B.tab = b.dataset.bt; B.sel.clear(); B.ver = 60; B.cur = ""; guardarBandeja(); pintarBandeja(); if (otra) MOV.entrar($("#blist"), 4); } });
   buscadorDiferido($("#bq"), v => { B.q = v; }, pintarBandeja, () => S.view === "bandeja");
   $("#bFr")?.addEventListener("change", e => { F.sub = e.target.value; guardarBandeja(); pintarBandeja(); });
@@ -7851,10 +7885,8 @@ function pintarBandeja() {
   $("#blist")?.addEventListener("click", e => { if (e.target.matches("[data-sel]")) B._shift = e.shiftKey; }, true);
   $("#blist")?.addEventListener("change", e => {
     if (!e.target.matches("[data-sel]")) return;
-    const id = e.target.closest("[data-rid]").dataset.rid, on = e.target.checked, i = visLim.findIndex(r => r.id === id);
-    if (B._shift && B._ultCk != null && B._ultCk !== i && i >= 0) { const [a, b] = [Math.min(B._ultCk, i), Math.max(B._ultCk, i)]; visLim.slice(a, b + 1).forEach(r => on ? B.sel.add(r.id) : B.sel.delete(r.id)); }
-    else on ? B.sel.add(id) : B.sel.delete(id);
-    B._ultCk = i; B._shift = false; B.cur = id; actSel(); marcarCur();
+    const id = e.target.closest("[data-rid]").dataset.rid;
+    B._ultCk = marcarRango(B.sel, visLim, id, e.target.checked, B._shift, B._ultCk); B._shift = false; B.cur = id; actSel(); marcarCur();
   });
   marcarCur();
   if (S._ficha && !$("#sheet").hidden) marcarFilaAbierta(S._ficha.id);
@@ -7879,14 +7911,16 @@ function pintarBandejaSeg(k) {
   ${html}`;
   $(".tabs")?.addEventListener("click", e => { const b = e.target.closest("[data-bt]"); if (b) { const otra = b.dataset.bt !== B.tab; MOV.cortar(); B.tab = b.dataset.bt; B.sel.clear(); B.ver = 60; pintarBandeja(); if (otra) MOV.entrar($("#blist"), 4); } });
   $("#view .chips").addEventListener("click", e => { const c = e.target.closest(`[data-${C.chip}]`), ver = k === "ASP" ? "aspVer" : "levVer"; if (c) { const otro = (B[ver] === "hechas") !== (c.dataset[C.chip] === "hechas"); MOV.cortar(); B[ver] = c.dataset[C.chip]; B.sel.clear(); B.ver = 60; pintarBandeja(); if (otro) MOV.entrar($("#blist"), 4); } });
-  const bq = $("#bq"); bq.addEventListener("input", () => { B.q = bq.value; clearTimeout(S._qt); S._qt = setTimeout(() => { if (S.view !== "bandeja" || !$("#bq")) return; const v = $("#bq"), pos = v.selectionStart, foco = document.activeElement === v; pintarBandeja(); const n = $("#bq"); if (foco) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) {} } }, 150); });
+  buscadorDiferido($("#bq"), v => { B.q = v; }, pintarBandeja, () => S.view === "bandeja");
   const todo = on => { vis.slice(0, lim).forEach(r => on ? B.sel.add(r.id) : B.sel.delete(r.id)); pintarBandeja(); };
   $("#bAll")?.addEventListener("change", e => todo(e.target.checked)); $("#bAll2")?.addEventListener("change", e => todo(e.target.checked));
   $("#bBulk").addEventListener("click", e => { const b = e.target.closest("[data-bk]"); if (!b) return; const regs = regsDe([...B.sel]), q = b.dataset.bk;
     if (q === "limpiar") { B.sel.clear(); pintarBandeja(); } else if (q === "exportar") exportarSel(regs); else C.marcar(regs, q === C.kOk); });
   // Si lo cargado de lo hecho no alcanza para la página siguiente, se lee la siguiente del servidor
   $("#bMas")?.addEventListener("click", () => { B.ver = (B.ver || 60) + 60; const sv = SEGV[k]; if (B[k === "ASP" ? "aspVer" : "levVer"] === "hechas" && sv?.hLleno && fuente.length < B.ver) masHechas(k); pintarBandeja(); });
-  $("#blist")?.addEventListener("change", e => { if (!e.target.matches("[data-sel]")) return; const id = e.target.closest("[data-rid]").dataset.rid; e.target.checked ? B.sel.add(id) : B.sel.delete(id); pintarBandeja(); });
+  // Mayús+clic en una casilla marca (o desmarca) todo el tramo desde la anterior, como en las demás pestañas
+  $("#blist")?.addEventListener("click", e => { if (e.target.matches("[data-sel]")) B._shift = e.shiftKey; }, true);
+  $("#blist")?.addEventListener("change", e => { if (!e.target.matches("[data-sel]")) return; const id = e.target.closest("[data-rid]").dataset.rid; B._ultSeg = { k, i: marcarRango(B.sel, vis.slice(0, lim), id, e.target.checked, B._shift, B._ultSeg?.k === k ? B._ultSeg.i : null) }; B._shift = false; pintarBandeja(); });
   $("#blist")?.addEventListener("click", e => {
     const row = e.target.closest("[data-rid]"); if (!row) return;
     const r = fuente.find(x => x.id === row.dataset.rid); if (!r) return;
@@ -8053,7 +8087,7 @@ async function exportarSel(regs, que = "seleccion", de, { resumidos = false } = 
 // Un texto que empieza por «=», «@», o «+»/«-» seguido de una letra, Excel lo ejecuta como fórmula: se le antepone « ' » (números, PK y cotas como «-12.5» o «+3» no se tocan)
 const formulaCsv = s => /^([=@]|[+-]\p{L})/u.test(s) ? "'" + s : s;
 function csvLinea(arr) { return arr.map(v => { const s = formulaCsv(v == null ? "" : String(v)); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(","); }
-const fISO = v => { const d = toDate(v); return d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}` : ""; };
+const fISO = diaDe; // el mismo «AAAA-MM-DD» en hora local (para el CSV y el Excel)
 function ajExportar() {
   cuerpoAj();
   const A = S.aj; A.exp ||= { desde: hoyISO().slice(0, 8) + "01", hasta: hoyISO(), est: "" };
@@ -8069,7 +8103,7 @@ function ajExportar() {
   const leer = () => { A.exp.desde = $("#xDesde").value; A.exp.hasta = $("#xHasta").value; A.exp.est = $("#xEst").value; };
   $("#ajBody").addEventListener("click", e => {
     const r = e.target.closest("[data-r]"); if (!r) return;
-    const t = new Date(), iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const t = new Date(), iso = diaDe;
     const k = r.dataset.r; let d0 = new Date(t);
     if (k === "semana") d0.setDate(t.getDate() - 6); if (k === "mes") d0.setDate(1); if (k === "todo") d0 = new Date(2020, 0, 1);
     $("#xDesde").value = iso(d0); $("#xHasta").value = iso(t);
@@ -8105,7 +8139,7 @@ function ajExportar() {
       }
       descargar(nombre, "\ufeff" + lineas.map(csvLinea).join("\r\n"), "text/csv;charset=utf-8");
       st.textContent = `${nombre}: ${lineas.length - 1} filas de ${regs.length} registros.`;
-    } catch (e) { console.error(e); st.textContent = "No se pudo exportar: " + (e.code === "failed-precondition" ? "Firebase pide un índice; abre la consola del navegador y sigue el enlace." : e.message); }
+    } catch (e) { console.error(e); st.textContent = "No se pudo exportar: " + (e.code === "failed-precondition" ? "Firebase pide un índice; abre la consola del navegador y sigue el enlace." : errGuardar(e)); }
     finally { $("#xReg").disabled = $("#xDia").disabled = false; }
   }
 }
@@ -8182,7 +8216,7 @@ function guardarCapas(sid, puesto, antes, msg) {
   const base = clon(antes?.tipos || {}), mio = clon(puesto.tipos || {});
   const p = COLA_CAPAS[sid] = (COLA_CAPAS[sid] || Promise.resolve()).catch(() => {}).then(() => runTransaction(db, async t => {
     const ref = doc(db, "capas", sid), d = await t.get(ref);
-    t.set(ref, { tipos: mezclarCapas(base, mio, d.exists() ? d.data().tipos || {} : {}), editadoEn: serverTimestamp(), editadoPor: S.email });
+    t.set(ref, { tipos: mezclarCapas(base, mio, d.exists() ? d.data().tipos || {} : {}), ...sello() });
   }));
   revertirSiNiega(p, puesto, antes, () => S.capasCfg[sid], v => { if (v) S.capasCfg[sid] = v; else delete S.capasCfg[sid]; S._cfgV = (S._cfgV || 0) + 1; });
   return escribir(p, msg, "No se guardó: ", { tx: true });
@@ -8206,7 +8240,7 @@ function guardarLista(lista, items, msg = "Guardado", base, fijar) {
     const ref = doc(db, "listas", lista), d = await t.get(ref);
     const srv = d.exists() ? d.data().items || [] : [];
     const its = conSubs(conAjenos(lista, clon(limpio), srv, vistos), srv); if (fijar) its.forEach(fijar);
-    t.set(ref, { items: its, editadoEn: serverTimestamp(), editadoPor: S.email });
+    t.set(ref, { items: its, ...sello() });
   });
   revertirSiNiega(p, puesto, antes, () => S.listas[lista], v => { S.listas[lista] = v || []; });
   return escribir(p, msg, "No se guardó: ", { tx: true });
@@ -8264,7 +8298,7 @@ function ajArchivos() {
       if (!navigator.onLine) { toast("Se necesita señal para calcular.", "bad"); return; }
       e.target.disabled = true; e.target.textContent = "Calculando…";
       try { const sn = await getDocs(query(collection(db, "liberaciones"), where("origen", "==", "app"))); X.regs = sn.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => (r.archivos || []).length); }
-      catch (er) { toast("No se pudo calcular: " + er.message, "bad"); }
+      catch (er) { toast("No se pudo calcular: " + errGuardar(er), "bad"); }
       pintar(); return;
     }
     if (e.target.id === "arBorrar") {
@@ -8284,7 +8318,7 @@ function ajArchivos() {
           await b.commit(); hechos += Math.min(40, grupos.length - i); if (est) est.textContent = `Borrando… ${hechos} de ${grupos.length} registros`;
         }
         toast(`${cand.length} fotos borradas`); X.regs = null; pintar();
-      } catch (er) { toast("Se detuvo: " + (er.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : er.message), "bad"); e.target.disabled = false; }
+      } catch (er) { toast("Se detuvo: " + errGuardar(er), "bad"); e.target.disabled = false; }
     }
   });
   body.addEventListener("change", e => { if (e.target.id === "arHasta") { A.arch.hasta = e.target.value; pintar(); } });
@@ -8311,7 +8345,7 @@ async function frenteLibre(s) {
 }
 // Lo que cuelga del frente (eje, capas configuradas y su resumen vacío) se borra junto con él
 async function borrarDatosFrente(id) {
-  let partes = 1; try { const s = await getDoc(doc(db, "secciones", id)); partes = (s.exists() && s.data().partes) || 1; } catch (e) { console.warn("secciones del frente", e); toast("No se pudo leer las secciones del frente; puede quedar parte de su modelo sin borrar: " + (e.code === "permission-denied" ? "sin permiso" : e.message), "bad"); }
+  let partes = 1; try { const s = await getDoc(doc(db, "secciones", id)); partes = (s.exists() && s.data().partes) || 1; } catch (e) { console.warn("secciones del frente", e); toast("No se pudo leer las secciones del frente; puede quedar parte de su modelo sin borrar: " + errGuardar(e), "bad"); }
   const ps = [deleteDoc(doc(db, "ejes", id)), deleteDoc(doc(db, "capas", id)), deleteDoc(doc(db, "superficiesRes", id)), deleteDoc(doc(db, "secciones", id)),
     ...Array.from({ length: partes - 1 }, (_, k) => deleteDoc(doc(db, "secciones", id + "~p" + (k + 1)))), ...[0, 1, 2, 3].map(k => deleteDoc(docRes(id, k)))];
   await Promise.all(ps.map(p => p.catch(e => console.warn("quitar frente", id, e))));
@@ -8320,7 +8354,7 @@ async function borrarDatosFrente(id) {
 async function quitarFrente(eId, sId) {
   const est = L.est(eId), s = (est?.subs || []).find(x => x.id === sId); if (!s) return;
   if (!navigator.onLine) { toast("Se necesita señal para revisar si tiene registros.", "bad"); return; }
-  let motivo; try { motivo = await frenteLibre(s); } catch (e) { toast("No se pudo revisar: " + e.message, "bad"); return; }
+  let motivo; try { motivo = await frenteLibre(s); } catch (e) { toast("No se pudo revisar: " + errGuardar(e), "bad"); return; }
   if (motivo) { toast(motivo, "bad"); return; }
   const solo = (est.subs || []).length === 1;
   if (!await confirmar("Quitar frente", `Se quita <b>${esc(s.nombre)}</b> de ${esc(est.nombre)}${S.ejes[s.id] ? " junto con su eje" : ""}. No tiene registros.${solo ? " Es el único frente: la estructura queda sin frentes." : ""} No se puede deshacer.`, "Quitar", true)) return;
@@ -8334,7 +8368,7 @@ async function quitarEstructura(eId) {
   try {
     if (await hayRegistros("estructuraId", est.id)) { toast(`«${est.nombre}» tiene registros: desactívala en lugar de quitarla.`, "bad"); return; }
     for (const s of est.subs || []) { const m = await frenteLibre(s); if (m) { toast(m, "bad"); return; } }
-  } catch (e) { toast("No se pudo revisar: " + e.message, "bad"); return; }
+  } catch (e) { toast("No se pudo revisar: " + errGuardar(e), "bad"); return; }
   const n = (est.subs || []).length;
   if (!await confirmar("Quitar estructura", `Se quita <b>${esc(est.nombre)}</b>${n ? ` con ${n === 1 ? "su frente" : `sus ${n} frentes`}` : ""}. No tiene registros. No se puede deshacer.`, "Quitar", true)) return;
   if (await guardarLug(estFresca().filter(x => x.id !== eId), `Estructura «${est.nombre}» quitada`)) { for (const s of est.subs || []) await borrarDatosFrente(s.id); repintarLug(); }
@@ -8366,13 +8400,13 @@ function moverFrenteA(eId, sId) {
       if (!L.est(o.dest) || !(L.est(eId)?.subs || []).some(x => x.id === sId)) { toast("La lista cambió mientras tanto: vuelve a intentarlo.", "bad"); repintarLug(); return false; }
       const regs = (await getDocsFromServer(query(collection(db, "liberaciones"), where("subestructuraId", "==", sId)))).docs.map(fila).filter(r => r.estructuraId !== o.dest);
       const dest = L.est(o.dest);
-      await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { estructuraId: o.dest, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Frente «${s.nombre}» movido de «${est.nombre}» a «${dest.nombre}»`); }, 150);
+      await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { estructuraId: o.dest, ...sello() }); hist(b, r, "editado", `Frente «${s.nombre}» movido de «${est.nombre}» a «${dest.nombre}»`); }, 150);
       const items = estFresca(), de = items.find(x => x.id === eId), a = items.find(x => x.id === o.dest), sub = (de?.subs || []).find(x => x.id === sId); if (!de || !a || !sub) { toast("La lista cambió mientras tanto: vuelve a intentarlo.", "bad"); repintarLug(); return false; }
       de.subs = de.subs.filter(x => x.id !== sId); (a.subs ||= []).push(sub);
       if (BUS.todos) BUS.todos.forEach(r => { if (r.subestructuraId === sId) r.estructuraId = o.dest; });
       if (!await guardarLug(items, `«${s.nombre}» pasó a ${dest.nombre}${regs.length ? ` con ${regs.length} ${regs.length === 1 ? "registro" : "registros"}` : ""}`)) { toast("Sus registros ya pasaron, pero la lista no se guardó: vuelve a moverlo a la misma estructura.", "bad"); return false; }
       repintarLug();
-    } catch (e) { toast("No se pudo mover: " + (e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); return false; }
+    } catch (e) { toast("No se pudo mover: " + errGuardar(e), "bad"); return false; }
   }, "Mover");
 }
 function ajLugares() {
@@ -8486,11 +8520,11 @@ async function subirEje(subId, file) {
     if (S.ejes[subId] && !await confirmar("Reemplazar eje", `${esc(sub?.nombre || "")} ya tiene eje (${esc(S.ejes[subId].nombre || "")}). Se reemplaza por ${esc(file.name)}.`, "Reemplazar")) return;
     const flat = pts.flatMap(q => [Math.round(q[0] * 100) / 100, Math.round(q[1] * 1000) / 1000, Math.round(q[2] * 1000) / 1000]);
     S.ejes[subId] = { puntos: flat, nombre: file.name };
-    setDoc(doc(db, "ejes", subId), { puntos: flat, nombre: file.name, editadoEn: serverTimestamp(), editadoPor: S.email })
-      .catch(e => toast("No se guardó el eje: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"));
+    setDoc(doc(db, "ejes", subId), { puntos: flat, nombre: file.name, ...sello() })
+      .catch(e => toast("No se guardó el eje: " + errGuardar(e), "bad"));
     toast(`Eje de ${sub?.nombre || ""} guardado: ${pts.length} puntos, PK ${fmtPk(pts[0][0])} a ${fmtPk(pts[pts.length - 1][0])}`);
     if (S.view === "ajustes") ajLugares();
-  } catch (e) { toast("No se pudo leer el eje: " + e.message, "bad"); }
+  } catch (e) { toast("No se pudo leer el eje: " + errGuardar(e), "bad"); }
 }
 
 function ajCapas() {
@@ -8507,7 +8541,7 @@ function ajCapas() {
   A.capSel = new Set([...A.capSel].filter(n => cfg.capas.some(c => c.nombre === n)));
   const q = A.capQ.trim().toLowerCase();
   const vis = cfg.capas.map((c, i) => ({ c, i })).filter(x => !q || x.c.nombre.toLowerCase().includes(q) || String(x.c.cota || "").includes(q));
-  const grupos = S.listas.estructuras.filter(e => e.activo !== false).map(e => `<optgroup label="${esc(e.nombre)}">${(e.subs || []).filter(x => x.activo !== false).map(x => `<option value="${esc(x.id)}" ${x.id === A.capSub ? "selected" : ""}>${esc(x.nombre)}</option>`).join("")}</optgroup>`).join("");
+  const grupos = opcionesSubs(A.capSub);
   const numDe = n => { const m = String(n).match(/\d+/); return m ? parseInt(m[0], 10) : NaN; };
   // «Capa 02», «capa 2» y «Capa 2» son la misma capa (sin mayúsculas ni tildes)
   const igualCapa = (a, b) => sinTilde(normCapa(a, A.capSub, A.capTipo) || a) === sinTilde(normCapa(b, A.capSub, A.capTipo) || b);
@@ -8575,7 +8609,7 @@ function ajCapas() {
   const reabrir = (foco) => { ajCapas(); if (foco) { const el = $(foco); if (el) { el.focus(); try { el.select(); } catch (e) {} } } };
   $("#cSub").addEventListener("change", e => { A.capSub = e.target.value; A.capSel = new Set(); A.capQ = ""; ajCapas(); });
   $("#cTipo").addEventListener("change", e => { A.capTipo = e.target.value; A.capSel = new Set(); A.capQ = ""; ajCapas(); });
-  $("#cQ").addEventListener("input", e => { A.capQ = e.target.value; const pos = e.target.selectionStart; ajCapas(); const n = $("#cQ"); n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) {} });
+  $("#cQ").addEventListener("input", e => { A.capQ = e.target.value; conFoco("cQ", ajCapas); });
   const body = $("#ajBody");
   body.addEventListener("keydown", e => {
     if (e.key !== "Enter" || e.target.tagName !== "INPUT" || e.target.type === "search") return;
@@ -8674,7 +8708,7 @@ function ajCapas() {
         nuevas.forEach(n => cfg.capas.push({ nombre: n, cota: cotas[n] || "" }));
         if (nuevas.length) guardar(`${nuevas.length} capas creadas desde los registros`); else toast(enReg.length ? "Todas las capas de los registros ya están en la lista" : "Los registros de este tipo no tienen capa");
         ajCapas();
-      } catch (er) { toast("No se pudo leer los registros: " + er.message, "bad"); btn.disabled = false; btn.textContent = "Crear desde los registros"; }
+      } catch (er) { toast("No se pudo leer los registros: " + errGuardar(er), "bad"); btn.disabled = false; btn.textContent = "Crear desde los registros"; }
       return;
     }
     if (btn.id === "nAdd") {
@@ -8724,11 +8758,11 @@ async function trabajadosEnApp(regs) {
 async function leerLotes() { const d = await getDocFromServer(doc(db, "config", "importaciones")); S.lotes = d.exists() ? d.data().items || [] : []; return S.lotes; }
 // Cambia la lista de importaciones dentro de una transacción (si otro la toca a la vez, se reintenta con lo nuevo)
 const editarLotes = fn => runTransaction(db, async t => { const ref = doc(db, "config", "importaciones"), d = await t.get(ref), items = fn(d.exists() ? d.data().items || [] : []).filter(Boolean);
-  t.set(ref, { items: clon(items), editadoEn: serverTimestamp(), editadoPor: S.email }); S.lotes = items; return items; });
+  t.set(ref, { items: clon(items), ...sello() }); S.lotes = items; return items; });
 // Agrega a una lista (tipos, topógrafos) lo que falte, leyendo la lista en el momento: no pisa lo que otro agregó
 const agregarALista = (lista, nuevos) => runTransaction(db, async t => { const ref = doc(db, "listas", lista), d = await t.get(ref), items = d.exists() ? d.data().items || [] : [];
   const add = nuevos.filter(n => !items.some(x => x.id === n.id)); if (!add.length) return items; const max = Math.max(0, ...items.map(x => x.orden || 0));
-  const todo = [...items, ...add.map((x, i) => lista === "tipos" ? { ...x, orden: max + i + 1 } : x)]; t.set(ref, { items: clon(todo), editadoEn: serverTimestamp(), editadoPor: S.email }); S.listas[lista] = clon(todo); return todo; });
+  const todo = [...items, ...add.map((x, i) => lista === "tipos" ? { ...x, orden: max + i + 1 } : x)]; t.set(ref, { items: clon(todo), ...sello() }); S.listas[lista] = clon(todo); return todo; });
 async function cargarLote(id) {
   const col = collection(db, "liberaciones");
   const snap = await getDocsFromServer(id === LOTE_VIEJO || id === LOTE_TODO ? query(col, where("origen", "==", "excel")) : query(col, where("lote", "==", id)));
@@ -9031,7 +9065,7 @@ function ajHistorico() {
   const enHist = () => S.view === "ajustes" && S.aj.tab === "historico";
   // Tamaño de la parte más grande: si en esta sesión aún no se midió, se lee el resumen (el mismo que usa el buscador)
   if (!tamResTxt()) cargarTodoResumen().then(() => { const t = $("#hResTam"); if (t && enHist()) t.innerHTML = tamResTxt() || (BUS.cargando ? t.innerHTML : "Sin datos del resumen todavía."); });
-  const revisar = async () => { $("#hEst").textContent = "Comparando con lo que ya hay en la app…"; try { await revisarImp(A.imp); } catch (e) { console.error(e); A.impMsg = "No se pudo comparar: " + esc(e.message); } if (enHist()) ajHistorico(); };
+  const revisar = async () => { $("#hEst").textContent = "Comparando con lo que ya hay en la app…"; try { await revisarImp(A.imp); } catch (e) { console.error(e); A.impMsg = "No se pudo comparar: " + esc(errGuardar(e)); } if (enHist()) ajHistorico(); };
   $("#hFile").addEventListener("change", async e => {
     // La vista previa anterior se va al instante (antes de terminar de leer el archivo nuevo)
     const n0 = e.target.files?.[0]?.name; if (!n0) return;
@@ -9039,7 +9073,7 @@ function ajHistorico() {
     const [f] = await tomarArchivos(e.target); if (!f) { ajHistorico(); return; }
     if (!navigator.onLine) { toast("Se necesita señal para revisar el archivo.", "bad"); ajHistorico(); return; }
     try { A.imp = await leerArchivoImp(f); A.impMsg = ""; ajHistorico(); await revisarImp(A.imp); if (enHist()) ajHistorico(); }
-    catch (err) { console.error(err); A.imp = null; toast("No se pudo leer: " + err.message, "bad"); if (enHist()) ajHistorico(); }
+    catch (err) { console.error(err); A.imp = null; toast("No se pudo leer: " + errGuardar(err), "bad"); if (enHist()) ajHistorico(); }
   });
   $("#hRes").addEventListener("change", e => { const s = e.target.closest("[data-par]"); if (s) { if (s.value) A.imp.pares[s.dataset.par][s.dataset.raw] = s.value; else delete A.imp.pares[s.dataset.par][s.dataset.raw];
       { const xr = s.dataset.par === "tipo" ? ((A.imp.lect?.tipo || []).find(z => z.raw === s.dataset.raw)?.ele || "") : ""; recordarPar(s.dataset.par, s.dataset.raw + (s.dataset.par === "tipo" ? "|" + xr : ""), s.value); } if (s.closest("#hLect")) A.imp.lectAb = true; emparejarImp(A.imp); if (!A.imp.faltan.sub.length && !A.imp.faltan.tipo.length) { A.imp.clas = null; $("#hImp").disabled = true; revisar(); } }
@@ -9059,16 +9093,16 @@ function ajHistorico() {
       + (A.hayViejo === false ? "" : fila_(LOTE_VIEJO, "Importado antes (sin nombre)", A.hayViejo ? `${A.nViejo.toLocaleString("es-PE")} registros cargados con el archivo del histórico, antes de la versión 30` : "Lo que se cargó con el archivo del histórico, antes de la versión 30"))
       || '<p class="muted small" style="margin:0">Todavía no hay importaciones.</p>';
   };
-  leerLotes().then(pintarLotes).catch(e => { const el = $("#hLotes"); if (el) el.textContent = "No se pudo leer: " + e.message; });
+  leerLotes().then(pintarLotes).catch(e => { const el = $("#hLotes"); if (el) el.textContent = "No se pudo leer: " + errGuardar(e); });
   // ¿Queda algo de antes? Una sola lectura (el primero que aparezca)
   if (A.hayViejo == null) getDocs(query(collection(db, "liberaciones"), where("origen", "==", "excel"), limit(400))).then(s => { const v = s.docs.filter(d => !d.data().lote).length; if (!v && s.docs.length < 400) A.hayViejo = false; pintarLotes(); }).catch(() => {});
   $("#hLotes").addEventListener("click", async e => {
     const b = e.target.closest("[data-lk]"); if (!b) return; const id = b.closest("[data-lote]").dataset.lote, k = b.dataset.lk;
     if (k === "ver") { S.filtro.todos.lote = id; S.filtro.todos.pap = false; S.filtro.todos.st = ""; S.filtro.todos.q = ""; ir("todos"); }
-    if (k === "csv") { b.disabled = true; try { const regs = (await cargarLote(id)).filter(vivo).sort((x, y) => numDe(x.numero) - numDe(y.numero)); if (regs.length) exportarSel(regs, "importacion_" + slug(nombreLote(id))); else toast("Esa importación no tiene registros."); } catch (er) { toast("No se pudo descargar: " + er.message, "bad"); } b.disabled = false; }
+    if (k === "csv") { b.disabled = true; try { const regs = (await cargarLote(id)).filter(vivo).sort((x, y) => numDe(x.numero) - numDe(y.numero)); if (regs.length) exportarSel(regs, "importacion_" + slug(nombreLote(id))); else toast("Esa importación no tiene registros."); } catch (er) { toast("No se pudo descargar: " + errGuardar(er), "bad"); } b.disabled = false; }
     if (k === "quitar") quitarImportacion(id);
   });
-  const leerCorr = () => getDoc(doc(db, "contadores", "skt")).then(c => { const u = c.exists() ? c.data().ultimo || 0 : 0; A.corr = u; const el = $("#cActual"); if (el) el.innerHTML = `Último: <b>${esc(fmtNumero(u))}</b> · siguiente: <b>${esc(fmtNumero(u + 1))}</b>`; }).catch(e => { const el = $("#cActual"); if (el) el.textContent = "No se pudo leer: " + e.message; });
+  const leerCorr = () => getDoc(doc(db, "contadores", "skt")).then(c => { const u = c.exists() ? c.data().ultimo || 0 : 0; A.corr = u; const el = $("#cActual"); if (el) el.innerHTML = `Último: <b>${esc(fmtNumero(u))}</b> · siguiente: <b>${esc(fmtNumero(u + 1))}</b>`; }).catch(e => { const el = $("#cActual"); if (el) el.textContent = "No se pudo leer: " + errGuardar(e); });
   leerCorr();
   $("#cGuardar").addEventListener("click", async () => {
     const n = parseInt(String($("#cNuevo").value).replace(/\D/g, ""), 10);
@@ -9077,11 +9111,11 @@ function ajHistorico() {
     if (!navigator.onLine) { toast("Se necesita señal.", "bad"); return; }
     if (!await confirmar("Cambiar correlativo", `El último código usado pasa a <b>${esc(fmtNumero(n))}</b>. El próximo que genere gabinete será <b>${esc(fmtNumero(n + 1))}</b>.`, "Cambiar")) return;
     try {
-      await runTransaction(db, async t => { const ref = doc(db, "contadores", "skt"), c = await t.get(ref), u = c.exists() ? c.data().ultimo || 0 : 0; if (n <= u) throw new Error(`ya va en ${fmtNumero(u)}`); t.set(ref, { ultimo: n, editadoPor: S.email, editadoEn: serverTimestamp() }, { merge: true }); });
+      await runTransaction(db, async t => { const ref = doc(db, "contadores", "skt"), c = await t.get(ref), u = c.exists() ? c.data().ultimo || 0 : 0; if (n <= u) throw new Error(`ya va en ${fmtNumero(u)}`); t.set(ref, { ultimo: n, ...sello() }, { merge: true }); });
       toast(`Siguiente código: ${fmtNumero(n + 1)}`); $("#cNuevo").value = ""; leerCorr();
-    } catch (e) { toast("No se cambió: " + e.message, "bad"); leerCorr(); }
+    } catch (e) { toast("No se cambió: " + errGuardar(e), "bad"); leerCorr(); }
   });
-  $("#hRes2").addEventListener("click", async e => { const b = e.target; if (!await confirmar("Reconstruir resumen", "Se leen todos los registros para rehacer el resumen del panel. Úsalo solo si el panel no cuadra; consume lecturas.", "Reconstruir")) return; b.disabled = true; b.textContent = "Reconstruyendo…"; try { const n = await reconstruirResumen(); toast(`Resumen listo: ${n.toLocaleString("es-PE")} registros`); } catch (er) { toast("No se pudo: " + er.message, "bad"); } b.disabled = false; b.textContent = "Reconstruir resumen"; });
+  $("#hRes2").addEventListener("click", async e => { const b = e.target; if (!await confirmar("Reconstruir resumen", "Se leen todos los registros para rehacer el resumen del panel. Úsalo solo si el panel no cuadra; consume lecturas.", "Reconstruir")) return; b.disabled = true; b.textContent = "Reconstruyendo…"; try { const n = await reconstruirResumen(); toast(`Resumen listo: ${n.toLocaleString("es-PE")} registros`); } catch (er) { toast("No se pudo: " + errGuardar(er), "bad"); } b.disabled = false; b.textContent = "Reconstruir resumen"; });
 }
 // Huella de un registro: si cambia entre la revisión y la escritura, alguien lo trabajó en la app y no se toca
 const huellaImp = r => JSON.stringify([r.estado || "", msDe(r.editadoEn), msDe(r.fechaEntrega), msDe(r.fechaLiberacion), r.carpeta || "", (r.xmlEntrega || []).length, (r.archivos || []).length, !!r.borrado,
@@ -9102,7 +9136,7 @@ async function importarHist0() {
   const ts = ms => ms ? Timestamp.fromDate(new Date(ms)) : null, LOTE = 100, m = x => x.toLocaleString("es-PE");
   try {
     // 1) El correlativo sube primero: desde aquí gabinete ya no puede generar un código que trae el archivo
-    await runTransaction(db, async t => { const ref = doc(db, "contadores", "skt"), d = await t.get(ref), u = d.exists() ? d.data().ultimo || 0 : 0; if (u < I.maxNum) t.set(ref, { ultimo: I.maxNum, editadoPor: S.email, editadoEn: serverTimestamp() }, { merge: true }); });
+    await runTransaction(db, async t => { const ref = doc(db, "contadores", "skt"), d = await t.get(ref), u = d.exists() ? d.data().ultimo || 0 : 0; if (u < I.maxNum) t.set(ref, { ultimo: I.maxNum, ...sello() }, { merge: true }); });
     // Se vuelve a comparar justo antes de escribir: lo que alguien haya hecho en la app mientras tanto queda protegido
     await revisarImp(I); c = cuentaImp(I);
     const escr = I.clas.filter(x => x.k === "nuevo" || x.k === "cambia");
@@ -9134,7 +9168,7 @@ async function importarHist0() {
           // Las aspas del Excel nacen «por procesar» con el campo puesto (lo procesado ya se protege arriba: no se reimporta)
           t.set(doc(db, "liberaciones", id), { ...(r.actividad === "ASP" ? { procesado: false } : {}), ...resto, fechaCampo: ts(fechaCampo), fechaLiberacion: ts(fechaLiberacion), fechaEntrega: ts(fechaEntrega),
             nombreLiberacion: "", notaObservacion: "", linksCsv: [], linksFotos: [], archivos: [],
-            creadoEn: ts(fechaCampo) || serverTimestamp(), creadoPor: "importado", editadoEn: serverTimestamp(), editadoPor: S.email, origen: "excel", lote, importadoEn: serverTimestamp() });
+            creadoEn: ts(fechaCampo) || serverTimestamp(), creadoPor: "importado", ...sello(), origen: "excel", lote, importadoEn: serverTimestamp() });
           ok_.push(x);
         });
         res.a(t);
@@ -9155,7 +9189,7 @@ async function importarHist0() {
     A.hayViejo = null; BUS.todos = null; S._loteId = "";
     toast("Importación lista");
     await revisarImp(I).catch(() => {});
-  } catch (e) { console.error(e); A.impMsg = "Se detuvo: " + esc(e.code === "permission-denied" ? "sin permiso. Publica las reglas nuevas en Firebase." : e.message) + " Vuelve a pulsar «Importar»: sigue en la misma importación y no se duplica."; toast("La importación se detuvo", "bad"); }
+  } catch (e) { console.error(e); A.impMsg = "Se detuvo: " + esc(errGuardar(e)) + " Vuelve a pulsar «Importar»: sigue en la misma importación y no se duplica."; toast("La importación se detuvo", "bad"); }
   if (S.view === "ajustes" && S.aj.tab === "historico") ajHistorico();
 }
 // Registro → forma del archivo de importación (para la copia que se descarga antes de quitar)
@@ -9200,7 +9234,7 @@ async function quitarImportacion(id) {
     A.hayViejo = null; BUS.todos = null; S._loteId = ""; if (A.imp?.clas) await revisarImp(A.imp).catch(() => {});
     A.quitMsg = `Listo: ${m(borrados.size)} registros importados quitados.${quedan ? ` ${m(quedan)} se conservaron porque se trabajaron en la app.` : ""} La copia quedó en tus descargas.`;
     toast(`${m(borrados.size)} registros importados quitados`);
-  } catch (e) { if (e) { console.error(e); A.quitMsg = "No se pudo quitar: " + e.message; toast("No se pudo quitar: " + e.message, "bad"); } }
+  } catch (e) { if (e) { console.error(e); A.quitMsg = "No se pudo quitar: " + errGuardar(e); toast("No se pudo quitar: " + errGuardar(e), "bad"); } }
   A.quitando = false;
   if (S.view === "ajustes" && S.aj.tab === "historico") ajHistorico();
 }
@@ -9215,7 +9249,7 @@ async function respaldoCompleto() {
     descargar(`respaldo_liberaciones_${hoyISO()}.json`, JSON.stringify({ tipo: "respaldo-liberaciones", fecha: new Date().toISOString(), versionApp: VERSION_APP, por: S.email, liberaciones: docs(lib), historial: docs(his), listas: docs(lis), config: docs(cfg), contadores: docs(con) }), "application/json");
     S.aj.quitMsg = `Respaldo descargado: ${lib.docs.length.toLocaleString("es-PE")} registros y ${his.docs.length.toLocaleString("es-PE")} anotaciones del historial. Guárdalo en un lugar seguro.`; const el = $("#hEst2"); if (el) el.textContent = S.aj.quitMsg;
     toast("Respaldo descargado");
-  } catch (e) { console.error(e); toast("No se pudo hacer el respaldo: " + e.message, "bad"); }
+  } catch (e) { console.error(e); toast("No se pudo hacer el respaldo: " + errGuardar(e), "bad"); }
   b.disabled = false; b.textContent = "Descargar respaldo completo";
 }
 
@@ -9246,7 +9280,7 @@ function ajProtocolos() {
   $("#prCod").addEventListener("change", e => {
     if (e.target.name !== "drnCod") return; const v = e.target.value;
     S.config = { ...(S.config || {}), drnCodigos: v };
-    setDoc(doc(db, "config", "general"), { drnCodigos: v }, { merge: true }).then(() => toast(v === "uno" ? "Un solo código por levantamiento" : "Un código por protocolo")).catch(er => toast("No se guardó: " + er.message, "bad"));
+    setDoc(doc(db, "config", "general"), { drnCodigos: v }, { merge: true }).then(() => toast(v === "uno" ? "Un solo código por levantamiento" : "Un código por protocolo")).catch(er => toast("No se guardó: " + errGuardar(er), "bad"));
   });
   const LP = $("#prList");
   LP.addEventListener("change", e => { const r = e.target.closest("[data-i]"); if (r && e.target.dataset.k === "nom") { const v = capital(e.target.value); if (!v) { ajProtocolos(); return; } P[+r.dataset.i].nombre = v; guardarLista("protocolos", P, "Protocolo guardado", []); } });
@@ -9326,7 +9360,7 @@ async function pasarRegsTopo(vieja, nueva) {
   S._ocupado = (S._ocupado || 0) + 1;
   try {
     const regs = (await getDocsFromServer(query(collection(db, "liberaciones"), where("topografoId", "==", vieja)))).docs.map(fila);
-    await lotes(regs, (b, r) => { const dat = { topografoId: nueva, editadoEn: serverTimestamp(), editadoPor: S.email }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Clave del topógrafo: ${vieja} → ${nueva}`); }, 120);
+    await lotes(regs, (b, r) => { const dat = { topografoId: nueva, ...sello() }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Clave del topógrafo: ${vieja} → ${nueva}`); }, 120);
     if (BUS.todos) BUS.todos.forEach(r => { if (r.topografoId === vieja) r.topografoId = nueva; });
     const cuentas = (await getDocs(query(collection(db, "usuarios"), where("topografoId", "==", vieja)))).docs;
     let fallan = 0;
@@ -9337,13 +9371,12 @@ async function pasarRegsTopo(vieja, nueva) {
     return true;
   } catch (e) {
     console.error(e);
-    toast(`La clave ${nueva} ya quedó en la lista, pero no se pasó a todos sus registros (${e.parcial ? e.message : sinPermiso(e)}). Los que siguen con ${vieja} se ven igual con su nombre.`, "bad", { t: "Reintentar", fn: () => pasarRegsTopo(vieja, nueva) });
+    toast(`La clave ${nueva} ya quedó en la lista, pero no se pasó a todos sus registros (${e.parcial ? e.message : errGuardar(e)}). Los que siguen con ${vieja} se ven igual con su nombre.`, "bad", { t: "Reintentar", fn: () => pasarRegsTopo(vieja, nueva) });
     if (S.view === "ajustes" && S.aj.tab === "topografos") ajTopografos();
     return false;
   } finally { S._ocupado--; }
 }
 const nRegs = n => `${n} ${n === 1 ? "registro" : "registros"}`;
-const sinPermiso = e => e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message;
 // Identifica una superficie o base del modelo para poder devolverla a su tipo si se deshace una unión
 const claveGrupo = d => JSON.stringify([d.subId || "", d.nombre || "", d.fecha || 0, d.liberacionId || "", (d.capa || "").trim()]);
 // Pasa los registros de un tipo repetido al correcto y quita el repetido de la lista. El aviso trae «Deshacer».
@@ -9358,20 +9391,20 @@ async function unirTipo(viejoId, destinoId, yaConfirmado) {
     const antes = tiposFrescos(), pos = antes.findIndex(t => t.id === viejo.id), item = clon(antes[pos]);
     const capasAntes = Object.entries(S.capasCfg || {}).filter(([, c]) => c?.tipos?.[viejo.id]).map(([sid, c]) => ({ sid, val: clon(c.tipos[viejo.id]), teniaDest: !!c.tipos[dest.id] }));
     let capasMal = ""; // el aviso final lo lleva (un aviso suelto lo taparía el de «Unido»)
-    await lotes(regs, (b, r) => { const dat = { tipoId: dest.id, elementoId: dest.elementoId || r.elementoId || "", editadoEn: serverTimestamp(), editadoPor: S.email }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Tipo unido: «${viejo.nombre}» → «${dest.nombre}»`); }, 120);
+    await lotes(regs, (b, r) => { const dat = { tipoId: dest.id, elementoId: dest.elementoId || r.elementoId || "", ...sello() }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Tipo unido: «${viejo.nombre}» → «${dest.nombre}»`); }, 120);
     // Las capas configuradas del tipo quitado pasan al tipo correcto (si este no tenía) en cada frente
-    await Promise.all(capasAntes.map(x => updateDoc(doc(db, "capas", x.sid), { [`tipos.${viejo.id}`]: deleteField(), ...(x.teniaDest ? {} : { [`tipos.${dest.id}`]: x.val }) }))).catch(e => { console.warn("capas al unir", e); capasMal = " Pero la configuración de capas no se pudo pasar (" + sinPermiso(e).replace(/\.$/, "") + "): revisa Ajustes → Capas."; });
+    await Promise.all(capasAntes.map(x => updateDoc(doc(db, "capas", x.sid), { [`tipos.${viejo.id}`]: deleteField(), ...(x.teniaDest ? {} : { [`tipos.${dest.id}`]: x.val }) }))).catch(e => { console.warn("capas al unir", e); capasMal = " Pero la configuración de capas no se pudo pasar (" + errGuardar(e).replace(/\.$/, "") + "): revisa Ajustes → Capas."; });
     // Superficies XML y bases del tipo quitado pasan al tipo correcto (el Modelo 2D las muestra con su nombre)
     const movidos = new Set(); let yaDest = new Set();
     try { yaDest = new Set((await getDocsFromServer(query(collection(db, "bases"), where("tipoId", "==", dest.id)))).docs.map(x => claveGrupo(x.data()))); } catch (e) { console.warn("bases del destino", e); }
-    await moverGrupos("tipoId", viejo.id, d => { if (d.tipoId !== viejo.id) return null; movidos.add(claveGrupo(d)); return { tipoId: dest.id }; }).catch(e => { console.warn("superficies al unir", e); toast("Los registros se unieron, pero sus superficies XML no se pudieron pasar en el modelo: " + e.message + ". Vuelve a unir con señal.", "bad"); });
+    await moverGrupos("tipoId", viejo.id, d => { if (d.tipoId !== viejo.id) return null; movidos.add(claveGrupo(d)); return { tipoId: dest.id }; }).catch(e => { console.warn("superficies al unir", e); toast("Los registros se unieron, pero sus superficies XML no se pudieron pasar en el modelo: " + errGuardar(e).replace(/\.$/, "") + ". Vuelve a unir con señal.", "bad"); });
     yaDest.forEach(k => movidos.delete(k));
     if (BUS.todos) BUS.todos.forEach(r => { if (r.tipoId === viejo.id) r.tipoId = dest.id; });
     T_FRENTE_PEDIDO.clear(); Object.keys(T_FRENTE).forEach(k => delete T_FRENTE[k]); Object.keys(RES_UNA).forEach(k => delete RES_UNA[k]);
     const ok = await Promise.resolve(guardarLista("tipos", tiposFrescos().filter(t => t.id !== viejo.id), `Unido con «${dest.nombre}» · ${nRegs(n)}`));
     if (!ok) { toast(`Los registros ya pasaron a «${dest.nombre}», pero «${viejo.nombre}» no se quitó de la lista: vuelve a unirlo para terminar (ya no tiene registros).`, "bad"); return; }
     toast(`«${viejo.nombre}» unido con «${dest.nombre}» · ${nRegs(n)}.${capasMal}`, capasMal ? "bad" : "", { t: "Deshacer", fn: () => deshacerUnionTipo({ item, pos, dest, regs, capasAntes, movidos }) });
-  } catch (e) { console.error(e); toast("No se pudo unir: " + sinPermiso(e), "bad"); }
+  } catch (e) { console.error(e); toast("No se pudo unir: " + errGuardar(e), "bad"); }
 }
 // Devuelve el tipo a la lista, y sus registros, capas, superficies y bases a como estaban
 async function deshacerUnionTipo({ item, pos, dest, regs, capasAntes, movidos }) {
@@ -9380,13 +9413,13 @@ async function deshacerUnionTipo({ item, pos, dest, regs, capasAntes, movidos })
   try {
     const its = tiposFrescos();
     if (!its.some(o => o.id === item.id)) { its.splice(Math.min(pos, its.length), 0, item); if (!await Promise.resolve(guardarTipos(its, `«${item.nombre}» restaurado`, false))) return; }
-    await lotes(regs, (b, r) => { const dat = { tipoId: item.id, elementoId: r.elementoId || "", editadoEn: serverTimestamp(), editadoPor: S.email }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Unión deshecha: vuelve a «${item.nombre}»`); }, 120);
-    await Promise.all(capasAntes.map(x => updateDoc(doc(db, "capas", x.sid), { [`tipos.${item.id}`]: x.val, ...(x.teniaDest ? {} : { [`tipos.${dest.id}`]: deleteField() }) }))).catch(e => { console.warn("capas al deshacer", e); capasMal = " Pero la configuración de capas no se pudo devolver (" + sinPermiso(e).replace(/\.$/, "") + "): revisa Ajustes → Capas."; });
-    if (movidos.size) await moverGrupos("tipoId", dest.id, d => d.tipoId === dest.id && movidos.has(claveGrupo(d)) ? { tipoId: item.id } : null).catch(e => { console.warn("superficies al deshacer", e); toast("Los registros volvieron, pero sus superficies XML no: " + e.message, "bad"); });
+    await lotes(regs, (b, r) => { const dat = { tipoId: item.id, elementoId: r.elementoId || "", ...sello() }; b.update(doc(db, "liberaciones", r.id), dat); resumenEn(b, r.id, { ...r, ...dat }); hist(b, r, "editado", `Unión deshecha: vuelve a «${item.nombre}»`); }, 120);
+    await Promise.all(capasAntes.map(x => updateDoc(doc(db, "capas", x.sid), { [`tipos.${item.id}`]: x.val, ...(x.teniaDest ? {} : { [`tipos.${dest.id}`]: deleteField() }) }))).catch(e => { console.warn("capas al deshacer", e); capasMal = " Pero la configuración de capas no se pudo devolver (" + errGuardar(e).replace(/\.$/, "") + "): revisa Ajustes → Capas."; });
+    if (movidos.size) await moverGrupos("tipoId", dest.id, d => d.tipoId === dest.id && movidos.has(claveGrupo(d)) ? { tipoId: item.id } : null).catch(e => { console.warn("superficies al deshacer", e); toast("Los registros volvieron, pero sus superficies XML no: " + errGuardar(e), "bad"); });
     const ids = new Set(regs.map(r => r.id)); if (BUS.todos) BUS.todos.forEach(r => { if (ids.has(r.id)) r.tipoId = item.id; });
     T_FRENTE_PEDIDO.clear(); Object.keys(T_FRENTE).forEach(k => delete T_FRENTE[k]); Object.keys(RES_UNA).forEach(k => delete RES_UNA[k]);
     toast(`Unión deshecha: «${item.nombre}» volvió${regs.length ? ` con ${regs.length === 1 ? "su registro" : `sus ${regs.length} registros`}` : ""}.${capasMal}`, capasMal ? "bad" : "");
-  } catch (e) { console.error(e); toast("No se pudo deshacer: " + sinPermiso(e), "bad"); }
+  } catch (e) { console.error(e); toast("No se pudo deshacer: " + errGuardar(e), "bad"); }
   repintarTipos();
 }
 async function unirElemento(viejoId, destinoId, yaConfirmado) {
@@ -9396,7 +9429,7 @@ async function unirElemento(viejoId, destinoId, yaConfirmado) {
   try {
     const els = clon(S.listas.elementos), pos = els.findIndex(e => e.id === viejo.id), item = clon(els[pos]);
     const regs = (await getDocs(query(collection(db, "liberaciones"), where("elementoId", "==", viejo.id)))).docs.map(fila);
-    await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: dest.id, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Elemento unido: «${viejo.nombre}» → «${dest.nombre}»`); }, 150);
+    await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: dest.id, ...sello() }); hist(b, r, "editado", `Elemento unido: «${viejo.nombre}» → «${dest.nombre}»`); }, 150);
     const movT = S.listas.tipos.filter(t => t.elementoId === viejo.id).map(t => t.id);
     const tipos = clon(S.listas.tipos); tipos.forEach(t => { if (t.elementoId === viejo.id) t.elementoId = dest.id; });
     // Un tipo que campo agregó bajo «viejo» mientras tanto se conserva y también pasa a «dest» (lote H)
@@ -9409,12 +9442,12 @@ async function unirElemento(viejoId, destinoId, yaConfirmado) {
         const es = clon(S.listas.elementos);
         if (!es.some(e => e.id === item.id)) { es.splice(Math.min(pos, es.length), 0, item); if (!await Promise.resolve(guardarLista("elementos", es, `«${item.nombre}» restaurado`))) return; }
         const ts = clon(S.listas.tipos); ts.forEach(t => { if (movT.includes(t.id)) t.elementoId = item.id; }); guardarLista("tipos", ts, "Tipos restaurados");
-        await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: item.id, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Unión deshecha: vuelve a «${item.nombre}»`); }, 150);
+        await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: item.id, ...sello() }); hist(b, r, "editado", `Unión deshecha: vuelve a «${item.nombre}»`); }, 150);
         toast(`Unión deshecha: «${item.nombre}» volvió con sus tipos.`);
-      } catch (e) { console.error(e); toast("No se pudo deshacer: " + sinPermiso(e), "bad"); }
+      } catch (e) { console.error(e); toast("No se pudo deshacer: " + errGuardar(e), "bad"); }
       repintarTipos();
     } });
-  } catch (e) { console.error(e); toast("No se pudo unir: " + sinPermiso(e), "bad"); }
+  } catch (e) { console.error(e); toast("No se pudo unir: " + errGuardar(e), "bad"); }
 }
 // Elegir con qué tipo (o elemento) unir: buscador, los parecidos arriba y cuántos registros tiene cada uno
 function elegirDestino(x, esTipo) {
@@ -9462,10 +9495,10 @@ async function separarDetTipo(t, nombreActual) {
     const igual = tiposActivos().find(o => o.id !== t.id && similitud(o.nombre, s.base) === 1);
     const txt = `${sinDet.length ? `${sinDet.length === 1 ? "Su registro guarda" : `Sus <b>${sinDet.length}</b> registros guardan`} «${esc(s.det)}» como detalle` : "No tiene registros sin detalle"} y ${igual ? `se une con «${esc(igual.nombre)}», que ya existe` : `el tipo pasa a llamarse «${esc(s.base)}»`}.`;
     if (!await confirmar("Separar detalle", txt, "Separar")) return;
-    await lotes(sinDet, (b, r) => { b.update(doc(db, "liberaciones", r.id), { detalle: s.det, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Detalle separado del tipo: ${s.det}`); }, 120);
+    await lotes(sinDet, (b, r) => { b.update(doc(db, "liberaciones", r.id), { detalle: s.det, ...sello() }); hist(b, r, "editado", `Detalle separado del tipo: ${s.det}`); }, 120);
     if (igual) { await unirTipo(t.id, igual.id, true); return; }
     await Promise.resolve(cambiarTipo(t.id, x => { x.nombre = s.base; }, `Ahora se llama «${s.base}»`));
-  } catch (e) { console.error(e); toast("No se pudo separar: " + sinPermiso(e), "bad"); }
+  } catch (e) { console.error(e); toast("No se pudo separar: " + errGuardar(e), "bad"); }
 }
 // «Está bien» de un tipo agregado desde campo: guarda el nombre y el elemento corregidos y lo da por revisado
 async function aprobarTipo(t, nombre0, ele) {
@@ -9479,8 +9512,8 @@ async function aprobarTipo(t, nombre0, ele) {
   // Si cambió el elemento, sus registros también pasan
   try {
     const regs = (await getDocs(query(collection(db, "liberaciones"), where("tipoId", "==", t.id)))).docs.map(fila).filter(r => r.elementoId !== ele);
-    await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: ele, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Elemento del tipo «${nombre}»: ${nom(L.ele(r.elementoId))} → ${nom(L.ele(ele))}`); }, 150);
-  } catch (e) { toast("Los registros no cambiaron de elemento: " + sinPermiso(e), "bad"); }
+    await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: ele, ...sello() }); hist(b, r, "editado", `Elemento del tipo «${nombre}»: ${nom(L.ele(r.elementoId))} → ${nom(L.ele(ele))}`); }, 150);
+  } catch (e) { toast("Los registros no cambiaron de elemento: " + errGuardar(e), "bad"); }
 }
 // Cuántos registros usa cada tipo (del resumen del panel; se carga una vez y se reutiliza 5 minutos)
 function usosTipos() {
@@ -9514,9 +9547,9 @@ function cambiarEleTipo(t) {
     if (o.regs) {
       try {
         const regs = (await getDocs(query(collection(db, "liberaciones"), where("tipoId", "==", t.id)))).docs.map(fila);
-        await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: o.ele, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Elemento del tipo «${t.nombre}»: ${nom(L.ele(r.elementoId))} → ${nom(L.ele(o.ele))}`); }, 150);
+        await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: o.ele, ...sello() }); hist(b, r, "editado", `Elemento del tipo «${t.nombre}»: ${nom(L.ele(r.elementoId))} → ${nom(L.ele(o.ele))}`); }, 150);
         toast(`${regs.length} ${regs.length === 1 ? "registro pasado" : "registros pasados"} a ${nom(L.ele(o.ele))}`);
-      } catch (e) { toast("Los registros no se movieron: " + (e.code === "permission-denied" ? "sin permiso (publica las reglas nuevas)." : e.message), "bad"); }
+      } catch (e) { toast("Los registros no se movieron: " + errGuardar(e), "bad"); }
     }
   }, "Cambiar");
 }
@@ -9549,17 +9582,17 @@ async function quitarTipo(t) {
     if (await hayRegistros("tipoId", t.id)) { toast(`«${t.nombre}» tiene registros (también cuentan los de la papelera): desactívalo o únelo con otro tipo.`, "bad"); return; }
     if ((await getDocsFromServer(query(collection(db, "bases"), where("tipoId", "==", t.id), limit(1)))).size > 0) { toast(`«${t.nombre}» tiene bases en el modelo: desactívalo o únelo con otro tipo.`, "bad"); return; }
     if ((await getDocsFromServer(query(collection(db, "superficies"), where("tipoId", "==", t.id), limit(1)))).size > 0) { toast(`«${t.nombre}» tiene superficies XML en el modelo: desactívalo o únelo con otro tipo.`, "bad"); return; }
-  } catch (e) { toast("No se pudo revisar: " + e.message, "bad"); return; }
+  } catch (e) { toast("No se pudo revisar: " + errGuardar(e), "bad"); return; }
   quitarDeLista("tipos", t.id, t.nombre, repintarTipos);
   // Sin registros: su configuración de capas ya no sirve (un tipo nuevo con el mismo nombre no la hereda)
   let avisado = false;
-  for (const [sid, c] of Object.entries(S.capasCfg || {})) if (c?.tipos?.[t.id]) updateDoc(doc(db, "capas", sid), { [`tipos.${t.id}`]: deleteField() }).catch(e => { console.warn("capas del tipo", e); if (!avisado) { avisado = true; toast("El tipo se quitó, pero parte de su configuración de capas no se pudo borrar: " + sinPermiso(e).replace(/\.$/, "") + ".", "bad"); } });
+  for (const [sid, c] of Object.entries(S.capasCfg || {})) if (c?.tipos?.[t.id]) updateDoc(doc(db, "capas", sid), { [`tipos.${t.id}`]: deleteField() }).catch(e => { console.warn("capas del tipo", e); if (!avisado) { avisado = true; toast("El tipo se quitó, pero parte de su configuración de capas no se pudo borrar: " + errGuardar(e).replace(/\.$/, "") + ".", "bad"); } });
 }
 async function quitarElemento(e) {
   if (S.listas.tipos.some(t => t.elementoId === e.id)) { toast(`«${e.nombre}» tiene tipos: quítalos o pásalos a otro elemento primero (o únelo con otro elemento).`, "bad"); return; }
   if (!navigator.onLine) { toast("Se necesita señal para revisar si tiene registros.", "bad"); return; }
   try { if (await hayRegistros("elementoId", e.id)) { toast(`«${e.nombre}» tiene registros (también cuentan los de la papelera): desactívalo o únelo con otro elemento.`, "bad"); return; } }
-  catch (er) { toast("No se pudo revisar: " + er.message, "bad"); return; }
+  catch (er) { toast("No se pudo revisar: " + errGuardar(er), "bad"); return; }
   quitarDeLista("elementos", e.id, e.nombre, repintarTipos);
 }
 function cambiarElemento(id, fn, msg) {
@@ -9845,10 +9878,10 @@ function pintarUsuarios() {
       const b = writeBatch(db);
       b.set(doc(db, "usuarios", s.email.toLowerCase()), { nombre: s.nombre || s.email, rol: row.querySelector('[data-k="rol"]').value, topografoId: row.querySelector('[data-k="topo"]').value, activo: true, creadoEn: serverTimestamp() });
       b.delete(doc(db, "solicitudes", s.id));
-      b.commit().then(() => toast("Acceso aprobado")).catch(err => toast("No se pudo aprobar: " + err.message, "bad"));
+      b.commit().then(() => toast("Acceso aprobado")).catch(err => toast("No se pudo aprobar: " + errGuardar(err), "bad"));
     } else if (e.target.closest("[data-rc]")) {
       if (!await confirmar("Rechazar solicitud", `${esc(s.nombre || s.email)} no podrá entrar. Si vuelve a intentarlo, aparecerá otra solicitud.`, "Rechazar", true)) return;
-      deleteDoc(doc(db, "solicitudes", s.id)).then(() => toast("Solicitud rechazada")).catch(err => toast(err.message, "bad"));
+      deleteDoc(doc(db, "solicitudes", s.id)).then(() => toast("Solicitud rechazada")).catch(err => toast("No se pudo rechazar: " + errGuardar(err), "bad"));
     }
   });
   $("#uAdd").addEventListener("click", async () => {
@@ -9872,7 +9905,7 @@ function pintarUsuarios() {
         S.aj.nu = null;
         if ($("#uMail")) { $("#uMail").value = ""; $("#uNom").value = ""; $("#uRol").value = "topografo"; $("#uTopo").value = ""; }
       })
-      .catch(err => toast("No se pudo agregar: " + err.message, "bad"));
+      .catch(err => toast("No se pudo agregar: " + errGuardar(err), "bad"));
   });
   for (const [id, k] of [["uMail", "mail"], ["uNom", "nom"], ["uRol", "rol"], ["uTopo", "topo"]]) $("#" + id).addEventListener(id.startsWith("uM") || id === "uNom" ? "input" : "change", e => { (S.aj.nu ||= { mail: "", nom: "", rol: "topografo", topo: "" })[k] = e.target.value; });
   $("#usr").addEventListener("change", async e => {
@@ -9881,13 +9914,13 @@ function pintarUsuarios() {
     if (k === "rol") { const u = S.usuarios.find(x => x.id === row.dataset.mail), sinClave = e.target.value === "topografo" && !u?.topografoId; if (!await confirmar("Cambiar rol", `${esc(u?.nombre || row.dataset.mail)} pasa de ${esc(ROLES[u?.rol] || u?.rol || "")} a <b>${esc(ROLES[e.target.value])}</b>.${sinClave ? AVISO_SIN_CLAVE : ""}`, sinClave ? "Cambiar sin clave" : "Cambiar")) { e.target.value = u?.rol || ""; return; } }
     else if (k === "topo" && !e.target.value) { const u = S.usuarios.find(x => x.id === row.dataset.mail); if (u?.rol === "topografo" && !await confirmar("Quitar la clave", `${esc(u.nombre || u.id)} es <b>Topógrafo</b>.${AVISO_SIN_CLAVE}`, "Quitar la clave")) { e.target.value = u.topografoId || ""; return; } }
     updateDoc(doc(db, "usuarios", row.dataset.mail), k === "rol" ? { rol: e.target.value } : { topografoId: e.target.value })
-      .then(() => toast("Actualizado")).catch(err => toast(err.message, "bad"));
+      .then(() => toast("Actualizado")).catch(err => toast("No se guardó: " + errGuardar(err), "bad"));
   });
   $("#usr").addEventListener("click", async e => {
     const b = e.target.closest("[data-act]"); if (!b) return;
     const row = b.closest("[data-mail]"); const u = S.usuarios.find(x => x.id === row.dataset.mail);
     if (u.activo !== false && !await confirmar("Desactivar usuario", `${esc(u.nombre || u.id)} ya no podrá entrar. Sus registros se quedan; puedes activarlo otra vez.`, "Desactivar", true)) return;
-    updateDoc(doc(db, "usuarios", u.id), { activo: u.activo === false }).then(() => toast(u.activo === false ? "Activado" : "Desactivado")).catch(err => toast(err.message, "bad"));
+    updateDoc(doc(db, "usuarios", u.id), { activo: u.activo === false }).then(() => toast(u.activo === false ? "Activado" : "Desactivado")).catch(err => toast("No se guardó: " + errGuardar(err), "bad"));
   });
 }
 </script>
