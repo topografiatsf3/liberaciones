@@ -21,6 +21,17 @@ Desde el 18/11/2026 la versión lleva tres números, **grande.mediano.mínimo** 
 
 `VERSION_APP` en `index.html` y `CACHE` en `sw.js` (`liberaciones-v1.43.1`) suben juntos; `pruebas/prueba12.js` espera el nombre de la caché.
 
+## Versión 1.45.1: cabos sueltos de consistencia y primer paso del resumen protegido
+
+Cambio mínimo. **Reglas de Firebase (fase 1b), publicadas el 20/11/2026 antes que esta versión**: el resumen del Panel admite la clave `u` cuando escribe campo (no la exige). Sin esa regla, esta versión no podría guardar desde campo.
+
+- **Capas y «no se libera»** se guardan con transacción: ya no borran lo que otra sesión cambió en el mismo frente. «Guardado» sale cuando Firebase confirma.
+- **Lugares**: un frente agregado por otra sesión dentro de una estructura se conserva. **Unir elementos**: un tipo agregado a mitad pasa también al destino.
+- **Edición sin señal rechazada**: queda una copia y al entrar se ofrece «Volver a abrir la edición» o «Descartarla».
+- **Aviso de versión nueva** que llegaba antes de que la app cargara: ya no se pierde.
+- **Jefe y administrador**: aviso cuando una parte del resumen de un frente pasa de 700 KB (el tope es 1 MB) y el tamaño de la parte más grande en Ajustes → Histórico.
+- **Resumen del Panel**: topógrafo y operario mandan con cada registro la clave `u` (el id del registro cuya fila tocan). Es el paso 2 de 3 para que campo no pueda alterar filas ajenas; el paso 3 (reglas que lo exigen, en `analisis/auditoria-codigo/datos/firestore-fase2.rules`, sin versionar) se publica solo cuando todos tengan esta versión o una posterior.
+
 ## Versión 1.45.0: menos lecturas de Firebase y datos que no se pisan
 
 Cambio mediano: algunas cosas se notan. No cambia las reglas de Firebase.

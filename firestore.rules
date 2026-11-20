@@ -160,12 +160,14 @@ service cloud.firestore {
     match /capas/{id}      { allow read: if member(); allow write: if isConf(); }
     // Resumen por frente para el panel (se actualiza junto con cada registro).
     // Campo solo agrega o actualiza sus filas: no puede vaciarlo, borrarlo ni llenarlo de golpe.
+    // Campo puede mandar además «u» (el id del registro cuya fila toca; la app lo manda desde la versión que sigue a la 1.45.0). No se exige:
+    // en la fase 2 de la auditoría (cuando todos tengan esa versión) solo podrá cambiar esa fila y si el registro es suyo.
     match /resumen/{id} {
       allow read: if member();
       allow create: if isGab() || isConf() || (writer()
-        && request.resource.data.keys().hasOnly(['r']) && request.resource.data.r.size() <= 200);
+        && request.resource.data.keys().hasOnly(['r', 'u']) && request.resource.data.r.size() <= 200);
       allow update: if isGab() || isConf() || (writer()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['r'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['r', 'u'])
         && request.resource.data.r.size() >= resource.data.r.size() - 1
         && request.resource.data.r.size() <= resource.data.r.size() + 200);
       allow delete: if isConf();

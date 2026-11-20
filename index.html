@@ -1547,6 +1547,10 @@ body:has(.cap-bulk.flota.on) .toast{bottom:calc(var(--nav-h) + 24px + var(--bulk
   setTimeout(function(){ if(!window.__arranco){ var g=document.getElementById('gate'); if(g&&!g.hidden) g.innerHTML='<div class="box card"><h1>No se pudo cargar</h1><p>Revisa la señal y vuelve a abrir la página. La primera vez se necesita internet; después funciona sin señal.</p><button class="btn pri gbtn" onclick="location.reload()">Reintentar</button></div>'; } }, 15000);
   // App instalable: el aviso de instalación puede llegar antes de que cargue el resto, se guarda para el botón «Instalar»
   window.__inst = null;
+  // Aviso de versión nueva (lote H): puede llegar antes de que cargue el módulo de la app, que es quien lo escucha;
+  // queda anotado en window.__verNueva y la app lo atiende al arrancar
+  window.__verNueva = false;
+  function avisarVersionNueva(){ window.__verNueva = true; document.dispatchEvent(new Event('version-nueva')); }
   addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window.__inst = e; document.dispatchEvent(new Event('instalable')); });
   if('serviceWorker' in navigator && location.protocol==='https:'){
     var habia = !!navigator.serviceWorker.controller, ultimo = 0;
@@ -1556,10 +1560,10 @@ body:has(.cap-bulk.flota.on) .toast{bottom:calc(var(--nav-h) + 24px + var(--bulk
         if(document.visibilityState==='visible' && Date.now()-ultimo>120000){ ultimo = Date.now(); reg.update().catch(function(){}); }
       });
     }).catch(function(){});
-    navigator.serviceWorker.addEventListener('controllerchange', function(){ if(habia) document.dispatchEvent(new Event('version-nueva')); habia = true; });
+    navigator.serviceWorker.addEventListener('controllerchange', function(){ if(habia) avisarVersionNueva(); habia = true; });
   }
   // La página abre con la copia guardada; si al bajar la nueva resulta distinta, el service worker avisa
-  if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function(e){ if(e.data && e.data.tipo==='version-nueva') document.dispatchEvent(new Event('version-nueva')); });
+  if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function(e){ if(e.data && e.data.tipo==='version-nueva') avisarVersionNueva(); });
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
@@ -2081,7 +2085,7 @@ addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false);
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
 // Versión: grande.mediano.mínimo (1.43.0 es la antigua «versión 43»). Mínimo: arreglo chico; mediano: función nueva o cambio que se nota; grande: rediseño o cambio de reglas
-const VERSION_APP = "1.45.0";
+const VERSION_APP = "1.45.1";
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2112,6 +2116,7 @@ function revisarVersionMin() {
 // La versión nueva se aplica sola: al momento si no hay nada escrito; si lo hay, en cuanto se vuelva a la app sin nada pendiente
 function recargarApp() { if (recargando) return; recargando = true; if (S.view === "nueva") guardarBorrador(); ls.set("lib.actualizada", VERSION_APP); location.reload(); }
 document.addEventListener("version-nueva", () => {
+  window.__verNueva = false; // atendido (el que llegó antes de cargar el módulo se atiende abajo)
   if (recargando) return;
   hayVersionNueva = true;
   if (!hayAlgoEscrito()) { recargarApp(); return; }
@@ -2122,6 +2127,8 @@ document.addEventListener("version-nueva", () => {
   d.querySelector(".x").onclick = () => d.remove();
   document.body.append(d);
 });
+// Si el service worker avisó antes de que el módulo escuchara, se atiende ahora (al terminar de cargar el módulo)
+setTimeout(() => { if (window.__verNueva) document.dispatchEvent(new Event("version-nueva")); }, 0);
 // Al volver a la app (quedó abierta desde ayer): se aplica la versión nueva pendiente y el formulario nuevo toma la hora actual
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
@@ -2721,6 +2728,7 @@ function guardarBorrador() {
    a IndexedDB, por id, hasta que Firebase confirma la escritura. Si la app se cerró antes y después Firebase la rechazó
    (cambio de rol, reglas), al volver se avisa y se ofrece recuperarlo como borrador de «Nueva» o descartarlo. */
 const SCONF = q => "lib.sinConfirmar." + q, ADJ_CONF = (q, id) => "conf|" + q + "|" + id;
+const SCONF_ED = q => "lib.sinConfirmarEd." + q, ADJ_CONF_ED = (q, id) => ADJ_CONF(q, "ed~" + id); // ediciones (lote H)
 const CONF_VIVO = new Set(), CONF_VISTO = new Set(); // de esta sesión: su propia escritura avisa si falla · ya ofrecidos
 function copiaSinConf(id, f, q) {
   const nuevos = (f.archivos || []).filter(a => a.nuevo && a.datos);
@@ -2741,15 +2749,20 @@ function revisarSinConfirmar() {
   if (!S.dentro || !S.email || revConf || !navigator.onLine || !escribe()) return;
   const q = S.email, m = ls.get(SCONF(q), {}) || {};
   const ids = Object.keys(m).filter(id => { if (S.mis.some(r => r.id === id && !r._pend)) { quitarSinConf(id, q); return false; } return !CONF_VIVO.has(id) && !CONF_VISTO.has(id) && !S.mis.some(r => r.id === id); });
-  if (!ids.length) return;
+  // Ediciones sin confirmar (lote H): se miran por el historial que subió en su mismo envío
+  const me = ls.get(SCONF_ED(q), {}) || {}, eds = Object.keys(me).filter(id => me[id]?.h && !CONF_VIVO.has("ed~" + id) && !CONF_VISTO.has("ed~" + id));
+  if (!ids.length && !eds.length) return;
   revConf = true;
   // Si no está, se mira si llegó a subirse y luego lo borraron para siempre: el historial de su creación sube en el mismo lote y
   // nunca se borra (así no se ofrece «recuperar» algo que gabinete rechazó y se vació de la papelera)
   const subio = id => getDocsFromServer(query(collection(db, "historial"), where("liberacionId", "==", id), limit(1))).then(h => h.size > 0, () => null);
-  waitForPendingWrites(db).then(() => Promise.all(ids.map(id => getDocFromServer(doc(db, "liberaciones", id)).then(s => s.exists() || subio(id), () => null)))).then(hay => {
+  waitForPendingWrites(db).then(() => Promise.all([Promise.all(ids.map(id => getDocFromServer(doc(db, "liberaciones", id)).then(s => s.exists() || subio(id), () => null))),
+    Promise.all(eds.map(id => getDocFromServer(doc(db, "historial", me[id].h)).then(s => s.exists(), () => null)))])).then(([hay, hayEd]) => {
     revConf = false; if (S.email !== q) return;
     const perdidos = ids.filter((id, i) => { if (hay[i]) quitarSinConf(id, q); return hay[i] === false && !CONF_VIVO.has(id) && !CONF_VISTO.has(id); });
-    if (perdidos.length) ofrecerSinConf(perdidos[0], q);
+    if (perdidos.length) { ofrecerSinConf(perdidos[0], q); return; }
+    const edPerdidas = eds.filter((id, i) => { if (hayEd[i]) quitarEdSinConf(id, q, me[id].h); return hayEd[i] === false && !CONF_VIVO.has("ed~" + id) && !CONF_VISTO.has("ed~" + id); });
+    if (edPerdidas.length) ofrecerEdSinConf(edPerdidas[0], q);
   }, e => { revConf = false; console.warn("copias sin confirmar", e); });
 }
 function ofrecerSinConf(id, q) {
@@ -2780,6 +2793,48 @@ function recuperarSinConf(id, q) {
       toast("Se recuperó en «Nueva». Revísalo y vuelve a guardarlo.");
     });
   preguntarReemplazarNueva(poner);
+}
+/* Lo mismo para una edición de un registro propio (lote H): la copia guarda lo escrito y el id del historial que va en el mismo
+   envío. Si ese historial no está en el servidor, la edición no llegó: se ofrece volver a abrirla (por el camino de
+   recuperarEdicion, que ya avisa si el registro cambió o ya no se puede editar) o descartarla. */
+function copiaEdSinConf(E, f, h, q) {
+  const nuevos = (f.archivos || []).filter(a => a.nuevo && a.datos);
+  const form = { ...f, archivos: (f.archivos || []).filter(a => !a.nuevo), borrarArchivos: (f.borrarArchivos || []).slice(), adjuntos: nuevos.map(a => ({ id: a.id, nombre: a.nombre, tipo: a.tipo })) };
+  delete form._adjPend; CONF_VIVO.add("ed~" + E.id);
+  ls.set(SCONF_ED(q), { ...(ls.get(SCONF_ED(q), {}) || {}), [E.id]: { form, h, numero: E.numero || "", base: toDate(E.editadoEn)?.getTime() || 0, t: Date.now() } });
+  (nuevos.length ? adjOp("readwrite", st => st.put({ archivos: nuevos.map(a => ({ ...a })), t: Date.now() }, ADJ_CONF_ED(q, E.id))) : adjOp("readwrite", st => st.delete(ADJ_CONF_ED(q, E.id)))).catch(e => console.warn("copia de los adjuntos", e));
+}
+// h: solo si la copia es de ese envío (una edición posterior del mismo registro no borra la copia de otra)
+function quitarEdSinConf(id, q, h) {
+  const m = ls.get(SCONF_ED(q), {}) || {}; if (!m[id] || (h && m[id].h !== h)) return;
+  delete m[id]; ls.set(SCONF_ED(q), Object.keys(m).length ? m : null); adjOp("readwrite", st => st.delete(ADJ_CONF_ED(q, id))).catch(() => {});
+}
+function ofrecerEdSinConf(id, q) {
+  const c = (ls.get(SCONF_ED(q), {}) || {})[id]; if (!c) return;
+  if (S.editando || ls.get(EDI(), null)?.id) return; // hay otra edición abierta o por recuperar: se ofrece después
+  CONF_VISTO.add("ed~" + id);
+  const r = [...S.mis, ...S.todos].find(x => x.id === id), nombre = c.numero || (r ? [nom(L.tipo(r.tipoId), ""), r.pkInicio != null ? "PK " + rangoPk(r.pkInicio, r.pkFin) : ""].filter(Boolean).join(" · ") : "") || "un registro tuyo";
+  const nA = (c.form?.adjuntos || []).length;
+  const d = dialogo("Una edición no llegó a subirse", `<p class="dlg-p">Los cambios que guardaste sin señal en <b>${esc(nombre)}</b> no llegaron a subirse: Firebase no los aceptó.</p>${nA ? `<p class="dlg-p small">Tenías ${nA === 1 ? "1 archivo nuevo" : nA + " archivos nuevos"}.</p>` : ""}<p class="muted small" style="margin:8px 0">Puedes volver a abrir la edición con lo que habías escrito, revisarla y guardarla otra vez.</p>
+    <button type="button" class="btn warn" style="width:100%;margin-top:4px" data-descartar>Descartarla</button>`, () => { recuperarEdSinConf(id, q); }, "Volver a abrir la edición", { ancho: "corto", sinFoco: true });
+  d.querySelector("[data-descartar]").addEventListener("click", async () => {
+    d.cerrar(true);
+    if (!await confirmar("Descartar la edición", "Se borra la copia de los cambios que quedó en este teléfono. El registro queda como está en el servidor. No se puede deshacer.", "Descartar", true)) { CONF_VISTO.delete("ed~" + id); revisarSinConfirmar(); return; }
+    quitarEdSinConf(id, q); toast("Edición descartada");
+  });
+}
+function recuperarEdSinConf(id, q) {
+  const c = (ls.get(SCONF_ED(q), {}) || {})[id]; if (!c || S.email !== q) return;
+  // Pasa a ser «la edición sin guardar» (con sus adjuntos) y se abre como al volver a la app con una edición a medias
+  adjOp("readonly", st => st.get(ADJ_CONF_ED(q, id))).catch(() => null)
+    .then(v => (v && (v.archivos || []).length ? adjOp("readwrite", st => st.put({ archivos: v.archivos, t: Date.now() }, ADJ_EDI())) : null))
+    .catch(e => console.warn("adjuntos de la copia", e))
+    .then(() => {
+      if (S.email !== q) return;
+      adjFirma[ADJ_EDI()] = null; ls.set(EDI(), { id, numero: c.numero || "", base: c.base || 0, form: c.form, t: Date.now() }); quitarEdSinConf(id, q);
+      S._edPospuesta = null; S.editando = null; S.form = null;
+      if (S.view !== "nueva") ir("nueva"); else pintarForm();
+    });
 }
 // En Android la pestaña se puede cerrar sola al abrir la cámara: lo escrito se guarda al salir de la app
 addEventListener("pagehide", () => { if (S.dentro && S.view === "nueva") guardarBorrador(); });
@@ -3430,7 +3485,8 @@ function guardar() {
   const cambios = E ? cambiosDe(E, { ...E, ...datos }) : [];
   const notaH = [motivoEC && "Edición de entregado: " + motivoEC, de === "OB" && a === "PT" && "Corregido", cambios.length && cambios.join("; "),
     solapes.length && "Guardado aunque se superpone con " + solapes.map(r => r.numero || "un registro sin número").join(", ")].filter(Boolean).join(" · ");
-  b.set(doc(collection(db, "historial")), { liberacionId: ref.id, accion: E ? "editado" : "creado", de, a,
+  const hRef = doc(collection(db, "historial")); // su id sirve para saber después si la edición llegó (lote H)
+  b.set(hRef, { liberacionId: ref.id, accion: E ? "editado" : "creado", de, a,
     usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: notaH });
   // Copia de lo escrito: si Firebase rechaza la grabación, el formulario vuelve tal cual
   const respaldo = { ...f, archivos: f.archivos.map(x => ({ ...x })), borrarArchivos: f.borrarArchivos.slice(), linksCsv: f.linksCsv.slice(), linksFotos: f.linksFotos.slice() };
@@ -3442,6 +3498,8 @@ function guardar() {
     if (E && navigator.onLine && (E.tipoId !== datos.tipoId || capaDe(E) !== datos.capa) && (esGab() || puedeAjustes())) pc.then(() => supDelRegistro(E, { tipoId: datos.tipoId, capa: datos.capa }), () => {});
     // Si era el último observado por corregir, la lista vuelve a mostrar todo (si no, quedaría vacía)
     if (E && E.estado === "OB" && S.filtro.mis.st === "OB" && !S.mis.some(r => r.estado === "OB" && r.id !== E.id)) S.filtro.mis.st = "";
+    // Una edición aún sin confirmar también deja su copia (lote H): si Firebase la rechaza con la app cerrada, se ofrece reabrirla
+    if (E && !subido) copiaEdSinConf(E, respaldo, hRef.id, quien);
     if (E) { if (!S.editando || S.editando.id === E.id) borrarEdicion(); S.editando = null; S.form = null; if (S.view === "nueva") ir(E.creadoPor === S.email ? "mis" : "todos"); return; }
     // Aún sin confirmar: queda una copia (con sus adjuntos) hasta que Firebase la acepte, por si la rechaza con la app cerrada
     if (!subido) copiaSinConf(ref.id, respaldo, quien);
@@ -3463,11 +3521,12 @@ function guardar() {
     if (S.view !== "nueva") ir("nueva"); else pintarForm();
     guardarBorrador(); // lo recuperado vuelve a tener su borrador (y sus archivos) por si se cierra la app
     if (!E) quitarSinConf(ref.id, quien); // ya volvió al formulario: la copia sobra (si no se recuperó, queda para la próxima vez)
+    else quitarEdSinConf(E.id, quien, hRef.id);
     toast(msg + " Lo escrito sigue en el formulario.", "bad");
   };
   // Con señal se espera la respuesta un momento antes de decir «guardada»; sin señal queda en el teléfono y se sube sola
   const pc = b.commit(), quien = S.email; let hecho = false, subido = false;
-  if (!E) pc.then(() => { subido = true; quitarSinConf(ref.id, quien); }, () => {});
+  pc.then(() => { subido = true; if (E) quitarEdSinConf(E.id, quien, hRef.id); else quitarSinConf(ref.id, quien); }, () => {});
   MOV.nuevo(ref.id); // en «Mis registros» (o Registros) aparece resaltado la primera vez que se vea
   pc.catch(e => { if (hecho) fallo(e); });
   if (!navigator.onLine) { hecho = true; listo(); }
@@ -4300,7 +4359,7 @@ async function cargarTodoResumen(forzar) {
   if (BUS.cargando || (BUS.todos && !forzar && Date.now() - BUS.en < 300000)) return; BUS.cargando = true;
   try {
     const snap = await getDocs(collection(db, "resumen"));
-    const porSid = {}; snap.docs.forEach(d => { const sid = sidDeRes(d.id), k = d.id.slice(sid.length + 1) || "0"; (porSid[sid] ||= {})[k] = d.data().r; });
+    const porSid = {}; snap.docs.forEach(d => { const sid = sidDeRes(d.id), k = d.id.slice(sid.length + 1) || "0"; (porSid[sid] ||= {})[k] = d.data().r; medirRes(sid, k, d.data().r); });
     BUS.todos = Object.entries(porSid).flatMap(([sid, partes]) => desempacar(sid, estDeSub(sid)?.id || "", unirPartesRes(partes))); BUS.en = Date.now();
   } catch (e) { console.warn("buscador", e); BUS.todos ||= []; }
   BUS.cargando = false;
@@ -4391,11 +4450,15 @@ const idRes = (sid, k) => k ? `${sid}~${k}` : sid;
 const docRes = (sid, k) => doc(db, "resumen", idRes(sid, k));
 const sidDeRes = docId => docId.split("~")[0];
 const resRepartido = () => (S.config?.resumenV || 0) >= 2;
+// Campo (topógrafo y operario) manda en el mismo envío «u» con el id del registro cuya fila toca (D1, lote H): las reglas de la
+// fase 2 exigirán que solo cambie esa fila y que el registro sea suyo. Gabinete, jefe y administrador no la mandan.
+// Quien lee el resumen solo mira «r»: «u» nunca es un registro
+const conU = id => esGab() || puedeAjustes() ? {} : { u: id };
 function quitarResumen(w, id, sid) {
   notarHist(id, null);
   const k = parteRes(id);
-  w.set(docRes(sid, k), { r: { [id]: deleteField() } }, { merge: true });
-  if (k && !resRepartido()) w.set(docRes(sid, 0), { r: { [id]: deleteField() } }, { merge: true });
+  w.set(docRes(sid, k), { r: { [id]: deleteField() }, ...conU(id) }, { merge: true });
+  if (k && !resRepartido()) w.set(docRes(sid, 0), { r: { [id]: deleteField() }, ...conU(id) }, { merge: true });
 }
 function resumenEn(w, id, d, subAnterior) {
   if (subAnterior && subAnterior !== d.subestructuraId) quitarResumen(w, id, subAnterior);
@@ -4403,14 +4466,31 @@ function resumenEn(w, id, d, subAnterior) {
   // Eliminados y en papelera no van al panel ni a la búsqueda
   if (d.estado === "X" || d.borrado) { quitarResumen(w, id, d.subestructuraId); return; }
   const k = parteRes(id);
-  w.set(docRes(d.subestructuraId, k), { r: { [id]: compacto(d) } }, { merge: true });
+  w.set(docRes(d.subestructuraId, k), { r: { [id]: compacto(d) }, ...conU(id) }, { merge: true });
   notarHist(id, d);
-  if (k && !resRepartido()) w.set(docRes(d.subestructuraId, 0), { r: { [id]: deleteField() } }, { merge: true });
+  if (k && !resRepartido()) w.set(docRes(d.subestructuraId, 0), { r: { [id]: deleteField() }, ...conU(id) }, { merge: true });
+}
+// R10 (lote H): cada parte es un documento con tope de 1 MiB; si una se llena, ese frente no podría guardar nada. Se anota
+// el tamaño de cada parte que llega y a jefe y administrador se les avisa una vez por sesión y por frente al pasar ~700 KB
+const TAM_RES = {}, AVISO_RES = new Set(), LIM_RES = 700 * 1024;
+function medirRes(sid, k, r) {
+  if (!puedeAjustes()) return;
+  const n = r ? new TextEncoder().encode(JSON.stringify(r)).length : 0; TAM_RES[idRes(sid, +k || 0)] = n;
+  if (n <= LIM_RES || AVISO_RES.has(sid)) return;
+  AVISO_RES.add(sid);
+  toast(`El frente ${nom(L.sub(sid), sid)} está llegando al límite del resumen: avisa al administrador.`, "bad", { t: "Ver", fn: () => { S.aj.tab = "historico"; ir("ajustes"); } });
+}
+// La parte más grande medida en esta sesión (Ajustes → Histórico, junto a «Reconstruir resumen»)
+function tamResTxt() {
+  const e = Object.entries(TAM_RES).sort((a, b) => b[1] - a[1])[0]; if (!e) return "";
+  const [rid_, n] = e, sid = sidDeRes(rid_);
+  return `Parte más grande del resumen: <b>${kb(n)}</b> de 1 MB (${esc(nom(L.sub(sid), sid))}${rid_ !== sid ? " · parte " + esc(rid_.slice(sid.length + 1)) : ""})${n > LIM_RES ? " · <b>cerca del límite: avisa al administrador</b>" : ""}.`;
 }
 // Junta las partes de un frente; la copia de una parte gana a la del documento base (que puede ser vieja)
 function unirPartesRes(partes) { const m = {}; Object.keys(partes).sort().forEach(k => Object.assign(m, partes[k] || {})); return m; }
 async function leerResumenFrente(sid) {
   const ds = await Promise.all(Array.from({ length: PARTES_RES }, (_, k) => getDoc(docRes(sid, k))));
+  ds.forEach((d, k) => { if (d.exists()) medirRes(sid, k, d.data().r); });
   return unirPartesRes(Object.fromEntries(ds.map((d, k) => [k, d.exists() ? d.data().r : {}])));
 }
 function desempacar(sid, estId, m) {
@@ -4602,10 +4682,8 @@ function guardarNoAplica(subId, tipoId, lista, msg) {
   tipos[tipoId] = { ...(tipos[tipoId] || {}), capas: tipos[tipoId]?.capas || [], noAplica: lista };
   const antes = S.capasCfg[subId], puesto = { ...cfg, tipos };
   S.capasCfg[subId] = puesto; S._cfgV = (S._cfgV || 0) + 1; actualizarPanel();
-  const p = setDoc(doc(db, "capas", subId), { tipos: { [tipoId]: { noAplica: lista } }, editadoEn: serverTimestamp(), editadoPor: S.email }, { merge: true });
-  revertirSiNiega(p, puesto, antes, () => S.capasCfg[subId], v => { if (v) S.capasCfg[subId] = v; else delete S.capasCfg[subId]; S._cfgV = (S._cfgV || 0) + 1; });
-  p.catch(e => toast("No se guardó: " + (e.code === "permission-denied" ? "sin permiso." : e.message), "bad"));
-  toast(msg);
+  // Como en Ajustes → Capas: transacción que conserva lo que otra sesión cambió en el frente (también otro tramo del mismo tipo)
+  return guardarCapas(subId, puesto, antes, msg);
 }
 function marcarNoLibera(sub, b, a, e, nota) {
   const lista = cfgTipo(sub.id, b.t.id).noAplica.map(x => ({ ...x }));
@@ -4694,7 +4772,7 @@ function suscribirPanel(estId) {
     if (!ya && sid !== S.panel.subId && antes === S.panelCargando && (S.panel.vista === "perfil" || S.panel.vista === "lista")) return;
     if (S.view === "panel") enCuadro(panelPronto);
   };
-  subs.forEach(sid => { for (let k = 0; k < PARTES_RES; k++) unsubPanel.push(onSnapshot(docRes(sid, k), snap => listo(sid, k, snap.exists() ? snap.data().r : {}), e => { console.warn("panel", e); listo(sid, k, {}); })); });
+  subs.forEach(sid => { for (let k = 0; k < PARTES_RES; k++) unsubPanel.push(onSnapshot(docRes(sid, k), snap => { if (snap.exists()) medirRes(sid, k, snap.data().r); listo(sid, k, snap.exists() ? snap.data().r : {}); }, e => { console.warn("panel", e); listo(sid, k, {}); })); });
   S.subs.push(() => { unsubPanel.forEach(u => u()); unsubPanel = []; S.panelEst = ""; S._panelPrev = ""; });
 }
 // Al salir del Panel se suelta su escucha (cada cambio del resumen bajaba la parte entera aunque se estuviera en otra pantalla)
@@ -8077,20 +8155,58 @@ function conAjenos(lista, items, srv, vistos) {
   if (ordenada) out.forEach((t, j) => { t.orden = j + 1; });
   return out;
 }
+// Capas de un frente (lote H): se mezcla lo de esta pantalla con lo que hay en Firebase. Lo que aquí no se tocó (otro tipo,
+// otra capa, otro tramo) queda como está en Firebase; lo cambiado aquí manda; lo que otra sesión agregó se conserva
+function mezclarCapas(base, mio, srv) {
+  const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const lista = (b = [], m = [], s = [], k) => {
+    const kb = new Map(b.map(x => [k(x), x])), ks = new Map(s.map(x => [k(x), x])), km = new Set(m.map(k)), out = [];
+    for (const x of m) { const xb = kb.get(k(x)), xs = ks.get(k(x)); if (xb && igual(x, xb)) { if (xs) out.push(clon(xs)); } else out.push(x); }
+    for (const x of s) if (!kb.has(k(x)) && !km.has(k(x))) out.push(clon(x));
+    return out;
+  };
+  const out = {};
+  for (const t of new Set([...Object.keys(mio || {}), ...Object.keys(srv || {})])) {
+    const b = base?.[t], m = mio?.[t], s = srv?.[t];
+    if (igual(m, b)) { if (s !== undefined) out[t] = clon(s); continue; }
+    if (m === undefined) continue;
+    const capas = lista(b?.capas, m.capas, s?.capas, c => c.nombre).sort((x, y) => natural(x.nombre, y.nombre));
+    out[t] = { ...(s || {}), ...m, capas, noAplica: lista(b?.noAplica, m.noAplica, s?.noAplica, x => x.id || [x.capa || "", x.pkInicio, x.pkFin].join("|")) };
+  }
+  return out;
+}
+// Guarda las capas de un frente en una transacción que relee el documento (no pisa lo que otra sesión cambió en ese frente).
+// Las de un mismo frente van en fila: la segunda lee ya lo que guardó la primera (si no, la tomaría por quitada en otra sesión)
+const COLA_CAPAS = {};
+function guardarCapas(sid, puesto, antes, msg) {
+  const base = clon(antes?.tipos || {}), mio = clon(puesto.tipos || {});
+  const p = COLA_CAPAS[sid] = (COLA_CAPAS[sid] || Promise.resolve()).catch(() => {}).then(() => runTransaction(db, async t => {
+    const ref = doc(db, "capas", sid), d = await t.get(ref);
+    t.set(ref, { tipos: mezclarCapas(base, mio, d.exists() ? d.data().tipos || {} : {}), editadoEn: serverTimestamp(), editadoPor: S.email });
+  }));
+  revertirSiNiega(p, puesto, antes, () => S.capasCfg[sid], v => { if (v) S.capasCfg[sid] = v; else delete S.capasCfg[sid]; S._cfgV = (S._cfgV || 0) + 1; });
+  return escribir(p, msg, "No se guardó: ", { tx: true });
+}
 // base (opcional): ids de la lista que mostraba la pantalla al empezar el cambio (si no, la que hay en el teléfono)
-function guardarLista(lista, items, msg = "Guardado", base) {
+// fijar (opcional): se aplica a cada item de lo que se escribe, también a lo ajeno que se conserva (unirElemento lo usa)
+function guardarLista(lista, items, msg = "Guardado", base, fijar) {
   // Sin señal no se cambian las listas: el cambio subiría horas después sobre lo que otros cambiaron
   if (!navigator.onLine) { toast("Se necesita señal para cambiar las listas.", "bad"); if (S.view === "ajustes") pintarAjustes(); return false; }
   const err = AJ_VALIDAR[lista]?.(items); if (err) { toast(err, "bad"); pintarAjustes(); return false; }
   const limpio = clon(items), antes = S.listas[lista], puesto = clon(limpio);
   const vistos = new Set([...(base || (antes || []).map(x => x.id)), ...limpio.map(x => x.id)]);
+  // Lugares: la mezcla baja a los frentes (un frente que otra sesión agregó dentro de una estructura que está aquí no se pierde)
+  const vistosSub = lista === "estructuras" ? new Set([...(antes || []), ...limpio].flatMap(e => (e.subs || []).map(s => s.id))) : null;
+  const conSubs = (its, srv) => { if (vistosSub) its.forEach(e => { const se = srv.find(x => x && x.id === e.id); if (se && (se.subs || []).length) e.subs = conAjenos("subs", e.subs || [], se.subs, vistosSub); }); return its; };
   S.listas[lista] = puesto;
   // «Guardado» solo cuando Firebase lo confirma; si lo rechaza, se avisa y la lista vuelve a lo que había.
   // Devuelve la promesa de escribir (verdadera para quien solo pregunta si pasó la validación)
   // Se relee la lista al guardar (transacción): lo que otro agregó mientras tanto no se pisa
   const p = runTransaction(db, async t => {
     const ref = doc(db, "listas", lista), d = await t.get(ref);
-    t.set(ref, { items: conAjenos(lista, clon(limpio), d.exists() ? d.data().items || [] : [], vistos), editadoEn: serverTimestamp(), editadoPor: S.email });
+    const srv = d.exists() ? d.data().items || [] : [];
+    const its = conSubs(conAjenos(lista, clon(limpio), srv, vistos), srv); if (fijar) its.forEach(fijar);
+    t.set(ref, { items: its, editadoEn: serverTimestamp(), editadoPor: S.email });
   });
   revertirSiNiega(p, puesto, antes, () => S.listas[lista], v => { S.listas[lista] = v || []; });
   return escribir(p, msg, "No se guardó: ", { tx: true });
@@ -8452,10 +8568,8 @@ function ajCapas() {
     // Se guarda en orden natural (Capa 2 antes que Capa 10), sin importar en qué orden se agregaron (versión 44)
     Object.values(puesto.tipos || {}).forEach(t => { if (Array.isArray(t.capas)) t.capas.sort((a, b) => natural(a.nombre, b.nombre)); });
     S.capasCfg[sid] = puesto; S._cfgV = (S._cfgV || 0) + 1;
-    const p = setDoc(doc(db, "capas", sid), { tipos: clon(puesto.tipos), editadoEn: serverTimestamp(), editadoPor: S.email });
-    revertirSiNiega(p, puesto, antes, () => S.capasCfg[sid], v => { if (v) S.capasCfg[sid] = v; else delete S.capasCfg[sid]; S._cfgV = (S._cfgV || 0) + 1; });
-    p.catch(e => toast("No se guardó: " + (e.code === "permission-denied" ? "publica las reglas nuevas en Firebase." : e.message), "bad"));
-    toast(msg);
+    // Transacción que relee el frente: lo que otra sesión cambió en él mientras tanto no se pisa (lote H)
+    return guardarCapas(sid, puesto, antes, msg);
   };
   plegarLista($("#cCapas .ctab"), { clave: "capas", filas: ":scope > .ct-row:not(.head)", n: 12, buscando: !!q });
   const reabrir = (foco) => { ajCapas(); if (foco) { const el = $(foco); if (el) { el.focus(); try { el.select(); } catch (e) {} } } };
@@ -8912,8 +9026,11 @@ function ajHistorico() {
   <div class="card section"><h2>Correlativo SKT-TOP</h2><p class="muted small" style="margin:0 0 10px">Último código usado. Gabinete genera desde el siguiente. Solo se puede subir (bajarlo repetiría códigos). Quitar lo importado no lo cambia.</p>
     <div class="corr"><span class="mono" id="cActual">Leyendo…</span><input id="cNuevo" class="mono" inputmode="numeric" placeholder="Ej. 02692" aria-label="Último código usado"><button type="button" class="btn sec" id="cGuardar">Cambiar</button></div></div>
   <div class="card section"><h2>Resumen del panel</h2><p class="muted small" style="margin:0 0 10px">El panel lee un resumen por frente para gastar pocas lecturas. Se actualiza solo con cada registro; usa este botón solo si ves algo raro en el panel.</p>
-    <div class="actions" style="margin:0 0 10px"><button type="button" class="btn sec" id="hRes2">Reconstruir resumen</button></div></div>`;
+    <div class="actions" style="margin:0 0 10px"><button type="button" class="btn sec" id="hRes2">Reconstruir resumen</button></div>
+    <p class="small muted" id="hResTam" style="margin:0 0 8px">${tamResTxt() || "Midiendo el tamaño del resumen…"}</p></div>`;
   const enHist = () => S.view === "ajustes" && S.aj.tab === "historico";
+  // Tamaño de la parte más grande: si en esta sesión aún no se midió, se lee el resumen (el mismo que usa el buscador)
+  if (!tamResTxt()) cargarTodoResumen().then(() => { const t = $("#hResTam"); if (t && enHist()) t.innerHTML = tamResTxt() || (BUS.cargando ? t.innerHTML : "Sin datos del resumen todavía."); });
   const revisar = async () => { $("#hEst").textContent = "Comparando con lo que ya hay en la app…"; try { await revisarImp(A.imp); } catch (e) { console.error(e); A.impMsg = "No se pudo comparar: " + esc(e.message); } if (enHist()) ajHistorico(); };
   $("#hFile").addEventListener("change", async e => {
     // La vista previa anterior se va al instante (antes de terminar de leer el archivo nuevo)
@@ -9282,7 +9399,8 @@ async function unirElemento(viejoId, destinoId, yaConfirmado) {
     await lotes(regs, (b, r) => { b.update(doc(db, "liberaciones", r.id), { elementoId: dest.id, editadoEn: serverTimestamp(), editadoPor: S.email }); hist(b, r, "editado", `Elemento unido: «${viejo.nombre}» → «${dest.nombre}»`); }, 150);
     const movT = S.listas.tipos.filter(t => t.elementoId === viejo.id).map(t => t.id);
     const tipos = clon(S.listas.tipos); tipos.forEach(t => { if (t.elementoId === viejo.id) t.elementoId = dest.id; });
-    const okT = await Promise.resolve(guardarLista("tipos", tipos, "Tipos actualizados"));
+    // Un tipo que campo agregó bajo «viejo» mientras tanto se conserva y también pasa a «dest» (lote H)
+    const okT = await Promise.resolve(guardarLista("tipos", tipos, "Tipos actualizados", undefined, t => { if (t.elementoId === viejo.id) { t.elementoId = dest.id; if (!movT.includes(t.id)) movT.push(t.id); } }));
     const ok = okT && await Promise.resolve(guardarLista("elementos", S.listas.elementos.filter(e => e.id !== viejo.id), `Unido con «${dest.nombre}» · ${nRegs(regs.length)}`));
     if (!ok) { toast(`Los registros ya pasaron a «${dest.nombre}», pero ${okT ? `«${viejo.nombre}» no se quitó de la lista de elementos` : "sus tipos no se movieron"}: vuelve a unirlo para terminar.`, "bad"); return; }
     toast(`«${viejo.nombre}» unido con «${dest.nombre}» · ${nRegs(regs.length)}.`, "", { t: "Deshacer", fn: async () => {
