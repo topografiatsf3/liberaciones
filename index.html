@@ -44,7 +44,6 @@
   --eje:#d9e5e1; --eje-sel:#c3d6d0; --sinreg:#5b7fa6; --fuera-a:#fff4dd; --fuera-b:#e0a43a; --fuera-borde:#c17f12;
   --scrim:rgba(17,28,25,.45);
   --flota:0 8px 24px rgba(17,28,25,.16);
-  --shadow:none;
   --f-disp:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -54,7 +53,7 @@
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;min-height:100vh}
 button,input,select,textarea{font:inherit;color:inherit}
-button{cursor:pointer}
+button{cursor:pointer;touch-action:manipulation}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 [hidden]{display:none!important}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
@@ -132,7 +131,7 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 .grid{display:grid;gap:12px 14px;grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-bottom:12px}
 .grid>*{min-width:0}
 .grid .full{grid-column:1/-1}
-@media (max-width:520px){.grid{grid-template-columns:minmax(0,1fr)}.grid .half-m{grid-column:auto}}
+@media (max-width:520px){.grid{grid-template-columns:minmax(0,1fr)}}
 /* Solo las etiquetas de campo (sin clase): las casillas y botones con etiqueta conservan su propio estilo */
 .f label:not([class]),.flabel{display:block;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 6px}
 .f label .opt{font-weight:400;text-transform:none;letter-spacing:0}
@@ -211,11 +210,11 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 .bcard{flex:1;min-width:0}
 .bact{display:flex;gap:6px;flex-wrap:wrap;padding:6px 2px 10px}
 .bact .mini{min-height:36px;font-size:12.5px;padding:0 12px}
-@media (max-width:620px){.nav button{font-size:11.5px}.nav button svg{width:20px;height:20px}}
+@media (max-width:620px){.nav button svg{width:20px;height:20px}}
 .nav button{min-width:0;position:relative}
 @media (max-width:859px){.nav .badge{position:absolute;top:5px;left:calc(50% + 5px);margin:0;min-width:17px;text-align:center}}
 /* En celular la línea de explicación bajo el título se oculta (salvo la que dice qué se está editando) */
-@media (max-width:759px){.lead:not(.keep){display:none}.solo-pc{display:none}}
+@media (max-width:759px){.lead:not(.keep),.solo-pc{display:none}}
 @media (min-width:760px){.solo-cel{display:none}}
 /* Ficha: la acción principal ocupa todo el ancho y las demás van en fila debajo */
 .sheet .actions .btn.block{flex:1 1 100%}
@@ -230,12 +229,12 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 
 /* Ajustes */
 .tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:0 0 14px;padding:3px;background:var(--surface-2);border-radius:8px;width:max-content;max-width:100%}
-.tabs button{border:0;background:transparent;border-radius:6px;padding:0 14px;min-height:34px;font-weight:600;font-size:13.5px;color:var(--muted);white-space:nowrap}
+.tabs button{border:0;background:transparent;border-radius:6px;min-height:34px;font-weight:600;color:var(--muted);white-space:nowrap}
 .tabs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
 .est{padding:16px 16px 8px;margin-bottom:12px}
 .est-h{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-.est-h input{flex:1;font-family:var(--f-disp);font-weight:700;font-size:16px}
-.ed input,.ed select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 12px;min-height:42px;min-width:0;width:100%}
+.est-h input{flex:1;font-family:var(--f-disp);font-weight:700}
+.ed input,.ed select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 12px;min-width:0;width:100%}
 .ed input:focus,.ed select:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .srow{display:grid;grid-template-columns:minmax(0,1fr) 92px 92px 108px 104px 44px;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .srow.head{border-top:0;padding:0 0 4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
@@ -271,10 +270,9 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 .cap-add .inrow{align-items:center;gap:6px}
 .cap-add .inrow .mini{min-height:40px}
 @media (max-width:720px){.cap-add{grid-template-columns:1fr}.ct-row{grid-template-columns:28px 1fr 76px 64px 30px;gap:5px;padding:5px 6px}.ct-row input:not([type=checkbox]){padding:6px 8px}.vis-t{font-size:12px}}
-.crow{display:grid;grid-template-columns:1fr 130px auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
-.crow.head,.nrow.head{border-top:0;padding:0 0 4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.nrow.head{border-top:0;padding:0 0 4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
 .nrow{display:grid;grid-template-columns:150px 100px 100px 90px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
-@media (max-width:720px){.nrow{grid-template-columns:1fr 1fr}.nrow.head{display:none}.nrow select{grid-column:1/-1}.nrow [data-k="nota"],.nrow #nNota{grid-column:1/-1}}
+@media (max-width:720px){.nrow{grid-template-columns:1fr 1fr}.nrow.head{display:none}.nrow select,.nrow [data-k="nota"],.nrow #nNota{grid-column:1/-1}}
 /* Capas en dos columnas (1200 a 1799 px): cada tarjeta mide poco, así que «Agregar» y «Tramos que no se liberan» se acomodan como en el celular (versión 44) */
 .cap-add .inrow{flex-wrap:wrap}
 @media (min-width:1200px) and (max-width:1799px){.cap-add{grid-template-columns:1fr}.nrow{grid-template-columns:1fr 1fr}.nrow.head{display:none}.nrow select{grid-column:1/-1}}
@@ -291,12 +289,7 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 .ord{display:flex;gap:4px}
 .ord button{border:1px solid var(--line);background:var(--surface);border-radius:8px;width:34px;height:34px;font-weight:700;color:var(--muted)}
 .addrow{display:grid;gap:8px;grid-template-columns:1fr auto;margin-top:10px}
-.savebar{position:sticky;bottom:calc(var(--nav-h) + 12px + env(safe-area-inset-bottom,0px));z-index:15;display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--ink);color:#fff;border-radius:8px;padding:8px 8px 8px 20px;margin:12px 0;box-shadow:var(--flota);animation:entra var(--d) both}
-.savebar .btn{min-height:44px;padding:10px 20px;font-size:15px}
-@media (min-width:860px){.savebar{bottom:20px}}
 @media (max-width:560px){
-  .srow{grid-template-columns:1fr 1fr}
-  .srow .sn{grid-column:1/-1}
   .srow.head{display:none}
   .trow{grid-template-columns:1fr auto}
   .trow select{grid-column:1/-1;order:3}
@@ -310,7 +303,6 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 .ed .mini,.urow .mini{min-height:38px;padding:0 13px;font-size:12.5px}
 .ed input,.ed select{min-height:40px;font-size:14.5px}
 .est-h input{font-size:15.5px}
-.mini.eje{min-height:38px;justify-content:center;white-space:nowrap}
 .srow .mini.eje{padding:0 8px;overflow:hidden;text-overflow:ellipsis}
 /* Lugares con la lista a un lado (1200 a 1499 px): el detalle mide poco; el nombre ocupa toda la línea y lo demás baja a la siguiente (versión 44) */
 @media (min-width:1200px) and (max-width:1499px){
@@ -326,7 +318,6 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
   .est-h{flex-wrap:wrap}.est-h input{flex:1 1 100%}.est-h .lu-uso{flex:1}
   .srow input.mono{font-size:13.5px;padding:8px 9px}
   .ed .mini,.urow .mini{padding:0 10px;font-size:12px}
-  .crow{grid-template-columns:1fr 1fr auto}
   .est{padding:12px 12px 6px}
   .filters{padding:12px;gap:8px}
   .up .upbtn{min-height:50px;font-size:14px}
@@ -378,8 +369,7 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 .pfil-nota{margin:6px 0 4px;font-size:12.5px;color:var(--muted);border-left:3px solid var(--line);padding:2px 0 2px 8px}
 #chart .lab{font:700 13px var(--f-disp);fill:var(--ink)}
 #chart .lab2{font:700 12.5px var(--f-body);fill:var(--ink)}
-#chart .grp{font:700 12px var(--f-disp);fill:var(--accent-strong)}
-#chart .pct{font:700 12px var(--f-disp);fill:var(--accent-strong)}
+#chart .grp,#chart .pct{font:700 12px var(--f-disp);fill:var(--accent-strong)}
 #chart .pk-ext{font:700 11.5px var(--f-mono);fill:var(--ob)}
 #chart .lab-pl{font:700 12.5px var(--f-disp);fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px}
 #chart path.tramo{cursor:pointer}
@@ -388,13 +378,11 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 .pl-ctl{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
 .pl-ctl select{border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-height:40px;background:var(--surface);font-size:14px;max-width:100%}
 .rango{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 4px}
-.rango .rl{font-weight:700;font-size:13px}
 .rango input:not([type=checkbox]){width:96px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:40px;font-size:14px;background:var(--surface)}
 .rango input:not([type=checkbox]):focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .rango .mini{min-height:38px;padding:0 12px;font-size:12.5px}
 .rango .tog{margin-left:auto}
 @media (max-width:560px){.rango{gap:6px}.rango input:not([type=checkbox]){width:84px}.rango .tog{margin-left:0;width:100%;font-size:12.5px}}
-@media (max-width:759px){.view-panel .lead{display:none}}
 .cap-acc{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 8px}
 .cap-acc .mini{min-height:32px;padding:0 11px;font-size:12px}
 #pCapChips{padding:2px 12px 12px;display:flex;flex-direction:column;gap:8px;max-height:320px;overflow:auto}
@@ -423,17 +411,12 @@ body:has(#fLib:not([hidden])) .toast{bottom:calc(var(--nav-h) + 80px + env(safe-
 .st-corr{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:6px;font-size:12px;font-weight:700;background:var(--surface-2);color:var(--ink);border:1px solid var(--line-strong)}
 @media (max-width:859px){.st-corr{font-size:13px}}
 .falta-box h2{flex-wrap:wrap}
-.ftab{display:flex;flex-direction:column}
-.frow{display:grid;grid-template-columns:200px 90px 1fr;gap:10px;align-items:start;padding:9px 0;border-top:1px solid var(--line)}
-.frow:first-child{border-top:0}
 .fcap b{display:block;font-size:14px}
 .fcap span{font-size:12px;color:var(--muted)}
 .fm{font-weight:500;color:var(--ob);font-size:14px;padding-top:1px}
-.fpills{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
 .fpill{border:1px dashed var(--falta-borde);background:var(--falta-a);color:var(--falta-txt);border-radius:6px;padding:3px 10px;font-size:12px}
 .fpill span{color:var(--ob);margin-left:2px}
 .fpill:hover{background:var(--ob-bg)}
-@media (max-width:560px){.frow{grid-template-columns:1fr auto}.fpills{grid-column:1/-1}}
 .legend i.nolib{background:var(--nolib-a);border:1px solid var(--nolib-b)}
 /* Ventanas emergentes (DESIGN.md · Diálogos) */
 .dlg{position:fixed;inset:0;z-index:75;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity var(--d)}
@@ -542,7 +525,7 @@ html.anim .cap-bulk.flota.on{opacity:1;visibility:visible;pointer-events:auto;tr
 @media (max-width:560px){.mtab .hm{display:none}.mtab td,.mtab th{padding:7px 5px}}
 #chart .nolib-t{font:700 10.5px var(--f-body);fill:var(--nolib-txt);letter-spacing:.02em;pointer-events:none}
 .legend i.hatch{background:repeating-linear-gradient(45deg,var(--surface-2) 0 3px,var(--line) 3px 5px);border:1px solid var(--line)}
-.mini.eje{display:inline-flex;align-items:center;cursor:pointer;font-size:12.5px;min-height:42px}
+.mini.eje{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;position:relative;cursor:pointer;font-size:12.5px;min-height:42px}
 .mini.eje.tiene{background:var(--accent-soft);color:var(--accent-strong);border-color:var(--accent)}
 /* Panel en celular: vistas en una sola fila (se desliza si no cabe), leyenda y avisos plegados en una línea */
 @media (max-width:759px){
@@ -563,10 +546,8 @@ html.anim .cap-bulk.flota.on{opacity:1;visibility:visible;pointer-events:auto;tr
 .pinfo.pav-d{display:block;padding:0 12px}
 .pav-d[open]{padding-bottom:8px}
 .pav-d ul{margin:0 0 4px}
-#chart .sum{font:700 11.5px var(--f-body);fill:var(--muted)}
 #chart .tick{font:500 10.5px var(--f-mono);fill:var(--muted)}
 #chart .grid{stroke:var(--rejilla);stroke-width:1}
-#chart .track{fill:var(--pista)}
 .seg-anim{animation:crece .25s ease-out both;transform-box:fill-box;transform-origin:left center}
 @keyframes crece{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .nota-g{font-size:12.5px;color:var(--muted);margin:6px 0 0}
@@ -574,7 +555,6 @@ html.anim .cap-bulk.flota.on{opacity:1;visibility:visible;pointer-events:auto;tr
 .tip.on{opacity:1}
 
 /* Repaso: celular y datos */
-button{touch-action:manipulation}
 .sheet,.dlg,#pCapChips,.ctab,.lb{overscroll-behavior:contain}
 h1,h2,h3{text-wrap:balance}
 .item{content-visibility:auto;contain-intrinsic-size:auto 120px}
@@ -608,7 +588,7 @@ h1,h2,h3{text-wrap:balance}
 .pf-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
 .pf-k{color:var(--ink)}
 .pf-f{color:var(--muted)}
-@media (max-width:620px){.pfila{grid-template-columns:auto 1fr auto}.pf-t{grid-column:1/-1;order:3}.pf-k{order:4;grid-column:1/3}.pf-f{order:5}}
+@media (max-width:620px){.pf-t{grid-column:1/-1;order:3}.pf-k{order:4;grid-column:1/3}.pf-f{order:5}}
 #pLista{gap:6px}
 
 /* Listas */
@@ -713,9 +693,7 @@ h1,h2,h3{text-wrap:balance}
 kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 6px;color:var(--muted)}
 @media (min-width:1024px){
   :root{--side:240px;--ficha:440px}
-  body{font-size:14px}
-  .f input,.f select,.f textarea,.search{font-size:14px}
-  .btn{font-size:14px}
+  body,.f input,.f select,.f textarea,.search,.btn{font-size:14px}
   .top{position:fixed;top:0;left:0;width:var(--side);background:transparent;border:0;z-index:27;padding:0}
   .top .wrap{flex-direction:column;align-items:flex-start;gap:4px;padding:18px 20px 0;min-height:0;max-width:none}
   .sync{padding-left:20px;color:var(--ep)}
@@ -773,8 +751,7 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
 .cmdk-in svg{width:20px;height:20px;color:var(--muted);flex:none}
 .cmdk-in input{flex:1;border:0;outline:0;font-size:17px;background:transparent;min-width:0}
 .cmdk-res{overflow:auto;padding:6px}
-.cmdk-i{display:grid;grid-template-columns:auto auto 1fr auto;gap:4px 12px;align-items:center;width:100%;text-align:left;border:0;background:transparent;border-radius:8px;padding:9px 12px;font-size:13.5px}
-.cmdk-i.cmd{grid-template-columns:1fr auto}
+.cmdk-i{display:grid;gap:4px 12px;align-items:center;width:100%;text-align:left;border:0;background:transparent;border-radius:8px;padding:9px 12px;font-size:13.5px}
 .cmdk-i[aria-selected="true"]{background:var(--accent-soft)}
 .cmdk-i .ct{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cmdk-i .ct small,.cmdk-i>small{display:block;font-weight:600;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -856,7 +833,6 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
   .rtab.compacta td.tcod .st,.rtab.compacta td.tcod .pend-tag{margin:3px 0 0}
   .rtab.compacta .tl>span{display:none}
   .rtab.compacta .tl>b{max-width:100%}
-  .rtab.compacta td.tfr{max-width:130px}
   .rtab.compacta td,.rtab.compacta .hcb{padding-left:7px;padding-right:7px}
   .rgrid{grid-template-columns:210px minmax(0,1fr)}
   .rtab.compacta td.tfr{max-width:120px}
@@ -958,7 +934,6 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
   .md-det .tycard>.tygrp,.md-det .tycard>.ty-add2,.md-det .tycard>.plg-mas{grid-column:1/-1}
 }
 .plg-cerrado>.tygrp,.plg-cerrado>.est-h{border-bottom:0;margin-bottom:0;padding-bottom:0}
-.plg-h{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-weight:800;font-size:13px}
 /* Versión 37: planta recortada a su cuadro, barra de tipo y capa, avance por capa y frente, aviso de Ctrl + rueda */
 .plwrap>svg{overflow:hidden!important}
 .pl-bar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 14px;margin:8px 0 6px}
@@ -1137,13 +1112,12 @@ kbd{font:600 11px var(--f-mono);background:var(--surface-2);border:1px solid var
 #chart rect.nolib{cursor:default}
 body.poder #chart rect.nolib{cursor:pointer}
 @media (min-width:1024px){
-  .pgrid{display:grid;grid-template-columns:310px minmax(0,1fr);gap:16px;align-items:start}
+  .pgrid{display:grid;gap:16px;align-items:start}
   .pside{position:sticky;top:16px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 32px);overflow:auto;padding-bottom:4px}
   .pside .filters{grid-template-columns:1fr 1fr;margin:0}
   .pside .filters .wide{grid-column:1/-1}
   .pside .filters .f input[type=date]{padding:9px 8px;font-size:14px}
   .pside .rango{display:grid;grid-template-columns:1fr auto 1fr;gap:8px}
-  .pside .rango .rl{grid-column:1/-1}
   .pside .rango input:not([type=checkbox]){width:100%}
   .pside .rango .mini,.pside .rango .tog{grid-column:1/-1}
   .pside .rango .tog{margin-left:0;width:100%}
@@ -1325,9 +1299,6 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 .nuevos h3{margin:0 0 4px;font-size:15px}
 .nv{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
 .nv:first-of-type{border-top:0}
-.nv .nn{flex:1;min-width:180px}
-.nv .nn b{display:block}
-.nv .nn small{color:var(--muted)}
 .nv-acc{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .nv-sel{min-height:var(--h-mini);border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);padding:0 10px;font-size:13px;max-width:240px}
 .nv-ed{display:flex;flex-wrap:wrap;gap:8px;flex:1 1 100%;align-items:center}
@@ -1353,7 +1324,6 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 .typos{width:64px;text-align:center}
 .tynom b{display:block;font-weight:600}.tynom small{color:var(--muted)}
 .ord button[disabled]{opacity:.35}
-.ty-add{grid-template-columns:minmax(0,1fr) minmax(200px,240px) auto}
 /* Catálogo: cada elemento es un grupo con su nombre editable, su uso, «⋯» y su propia fila para agregar tipos */
 .ty-bar .tog{white-space:nowrap}
 .elgrp{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:0 0 8px;margin-bottom:4px;border-bottom:1px solid var(--line)}
@@ -1365,14 +1335,11 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 .elgrp.off-row>input{text-decoration:line-through}
 .ty-add2{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:8px 0 4px;margin-top:4px;border-top:1px solid var(--line)}
 .ty-add2 input{font-size:14px}
-.el-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:14px;padding-top:12px;border-top:2px solid var(--line)}
 .lu-uso{white-space:nowrap;font-size:13px}
 .ty-add2 input:not(:placeholder-shown)+.mini,.addrow input[data-k="snew"]:not(:placeholder-shown)+.mini{background:var(--accent);color:#fff;border-color:var(--accent)}
 /* «Subir eje»: el selector de archivo cubre la etiqueta (se alcanza con Tab y se abre con Enter o Espacio) */
-.mini.eje{position:relative}
 .mini.eje input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;min-height:0!important;padding:0;border:0}
 .mini.eje:focus-within{outline:2px solid var(--accent);outline-offset:2px}
-.lu-off{margin:6px 0 0}
 @media (max-width:720px){
   .elgrp{grid-template-columns:minmax(0,1fr) auto;row-gap:4px}
   .elgrp>input{grid-column:1/-1}
@@ -1381,7 +1348,6 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
   .tyrow>input[data-k="nom"]{grid-column:1/-1}
   .tyuso{text-align:left;min-width:0}
   .tyord{grid-template-columns:56px minmax(0,1fr) auto}
-  .ty-add{grid-template-columns:1fr!important}
   .nv-sel{max-width:none;flex:1 1 100%;min-height:44px}
   .nv-nom{flex-basis:100%;min-height:44px}
   .nv-acc .mini{min-height:44px}
@@ -1409,7 +1375,6 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 .rfil .f label{font-size:12px}
 .rfil .rf-tipo{grid-column:span 2}
 #view:has(.rfil) #rSt{flex-wrap:wrap;overflow:visible}
-.rfil-fe{display:flex;gap:6px}
 .rf-hoja .f{margin:0 0 14px}
 .rf-hoja .chips{flex-wrap:wrap;overflow:visible;margin:0}
 .rf-hoja .chip{min-height:40px;font-size:14px}
@@ -1419,8 +1384,7 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 /* ===== Reglas para obra (DESIGN.md): en celular y tableta todo lo que se toca mide al menos 44 px; letra mínima 13 px (12 px en el menú) =====
    Van al final y con !important solo en los mínimos de alto: muchas pantallas achican sus botones para computadora. */
 @media (max-width:1023px){
-  :is(.mini,.chip,.cchip,.pill,.fpill,.vis-t,.tabs button,.seg button,.btn-txt,.cgrp-x,.rzoom button,.me button,.qf-mas,.ctx-i,.vernueva button){min-height:44px !important}
-  :is(input:not([type=checkbox],[type=radio],[type=range],[type=hidden],[type=file]),select){min-height:44px !important}
+  :is(.mini,.chip,.cchip,.pill,.fpill,.vis-t,.tabs button,.seg button,.btn-txt,.cgrp-x,.rzoom button,.me button,.qf-mas,.ctx-i,.vernueva button),:is(input:not([type=checkbox],[type=radio],[type=range],[type=hidden],[type=file]),select){min-height:44px !important}
   :is(.x-btn,.ord button,.link button,.arch>button){width:44px !important;height:44px !important}
   /* Los que ya eran más grandes se quedan como estaban */
   .pills.eq .pill,.rf-hoja select{min-height:48px !important}
@@ -1430,22 +1394,20 @@ body:has(#gate:not([hidden])) .mudanza{bottom:calc(18px + env(safe-area-inset-bo
 }
 @media (max-width:759px){
   .flabel,.f label:not([class]),.f .hint,.hint,.f .err-msg,.err-msg,.legend,.stat span,.kv dt,.sub,.st,.act,.pend-tag,.cchip,.nota-g,
-  .rtab th,.mtab th,.ftab2 th,.srow.head,.ct-row.head,.crow.head,.nrow.head,.mleg,
+  .rtab th,.mtab th,.ftab2 th,.srow.head,.ct-row.head,.nrow.head,.mleg,
   .sync,.section h2 .n,.arch .ext,.cnt,.vis-t,.cgrp-t span,.cgrp-x,.fcap span,.ftab2 .fcap span,.fpill,.qf .fpill,.mprev-n small,.mex,
   .mtab .st,.rtab .st,.rtab .tdesc span,.ctx-head span,.ctx-head .st,.ctx-body .f label,.solapa,.solist .st,.cmdk-i .st,.cmdk-i .ct small,.cmdk-i>small,.cmdk-pie,
   .mini,.bact .mini,.btab .bact .mini,.ed .mini,.urow .mini,.rango .mini,.rango .tog,.cap-acc .mini,.qf-res .mini,.qf-mas,.mini.eje,
   .fchips .chip,.acc .cap-acc .chip,.prot-e .chip.sub,.qf-h .t,.qf-ej,.me .rol,.rzoom button[data-rz="0"],.avc-n span,.capn small,.capv small,.capw,
   .acc-r,.tsel-sub,.ver-app,.tip,.check.opc small{font-size:13px}
   .flabel,.f label:not([class]),.tsel-sub,.stat span,.kv dt,.sub,.avc-n span{text-transform:none;letter-spacing:0}
-  .nav button,.nav .badge,.me-aj .badge,.acc-b{font-size:12px}
-  #chart .tick,.mlab,#chart .pk-ext,#chart .nolib-t,#mReal .rlab,.norte text{font-size:12px}
-  #chart .lab2,#chart .pct,#chart .sum,#chart .grp,#chart .lab-pl{font-size:13px}
+  .nav button,.nav .badge,.me-aj .badge,.acc-b,#chart .tick,.mlab,#chart .pk-ext,#chart .nolib-t,#mReal .rlab,.norte text{font-size:12px}
+  #chart .lab2,#chart .pct,#chart .grp,#chart .lab-pl{font-size:13px}
 }
 /* Pantallas táctiles anchas (tableta echada, 1024 px o más): se usa el diseño de computadora, pero lo que se toca mide 44 px igual (versión 29).
    Se decide por si la pantalla es táctil, no por el ancho. */
 @media (min-width:1024px) and (pointer:coarse){
-  :is(.mini,.chip,.cchip,.pill,.fpill,.vis-t,.tabs button,.seg button,.btn-txt,.cgrp-x,.rzoom button,.me button,.qf-mas,.ctx-i,.vernueva button,.nav button){min-height:44px !important}
-  :is(input:not([type=checkbox],[type=radio],[type=range],[type=hidden],[type=file]),select){min-height:44px !important}
+  :is(.mini,.chip,.cchip,.pill,.fpill,.vis-t,.tabs button,.seg button,.btn-txt,.cgrp-x,.rzoom button,.me button,.qf-mas,.ctx-i,.vernueva button,.nav button),:is(input:not([type=checkbox],[type=radio],[type=range],[type=hidden],[type=file]),select){min-height:44px !important}
   :is(.x-btn,.ord button,.link button,.arch>button,.mas){width:44px !important;height:44px !important}
   .rtab .ck{width:48px}
   .rtab .ck input,.rtab th.ck input,.ck input{width:22px;height:22px}
@@ -1671,7 +1633,7 @@ const LISTAS_INICIALES = {
 
 const ROLES = { topografo: "Topógrafo", operario: "Operario", gabinete: "Gabinete", jefe: "Jefe de área", admin: "Administrador" };
 const ESTADOS = { PT: "Pendiente topografía", EP: "En proceso", EC: "Entregado a Calidad", OB: "Observado", RE: "Rechazado", X: "Eliminado", NA: "No lleva código" };
-// Seguimiento de lo que no lleva código: las aspas se «procesan» (jefe/administrador) y los levantamientos se dan por «enterados» (gabinete).
+// Seguimiento de lo que no lleva código: las aspas se «procesan» (jefe de área y administrador) y los levantamientos se dan por «enterados» (gabinete, jefe de área y administrador).
 // Una sola regla para todas las pantallas (tabla, lista, ficha, menú, Ctrl+K) y para los chips de filtro de Registros.
 const SEGUIM = { porproc: ["Por procesar", "Por procesar"], proc: ["Procesado", "Procesadas"], porver: ["Por ver", "Por ver"], ent: ["Enterado", "Enterados"] };
 function seguimientoDe(r) {
@@ -1689,23 +1651,32 @@ const chipSeguim = r => { const k = seguimientoDe(r); if (!k) return ""; const h
   return `<span class="st seg ${hecho ? "EC" : "por"}"${quien ? ` title="${esc(SEGUIM[k][0] + " por " + quien)}"` : ""}>${SEGUIM[k][0]}</span>`; };
 const chipsReg = r => chipEstado(r) + chipSeguim(r);
 
+/* ---------- Límites y cortes de pantalla: cada número en un solo lugar (los códigos de estado y de actividad no van aquí) ---------- */
+// Cortes de ancho en px: «celular» es menos de CORTE_CELULAR y «pantalla amplia» desde CORTE_AMPLIO (el CSS tiene los suyos en @media)
+const CORTE_CELULAR = 760, CORTE_AMPLIO = 1200;
+// Registros por página: Registros (los últimos en vivo y cada «más»), Mis registros, y lo que se muestra al abrir una lista y en cada «Ver más»
+const PAG_TODOS = 100, PAG_MIS = 400, PAG_LISTA = 60;
+// Documentos por lote: escritura (aceptar, papelera…), borrado al vaciar la papelera, y filas viejas del Excel que se leen de una vez
+const LOTE_ESCRITURA = 150, LOTE_BORRAR = 400, LIM_LEER_EXCEL = 400;
+// El histórico completo se vuelve a pedir si pasaron más de 5 minutos
+const CACHE_HIST_MS = 5 * 60 * 1000;
 /* ---------- Estado ---------- */
 const S = {
   user: null, email: "", perfil: null,
   listas: { estructuras: [], elementos: [], tipos: [], topografos: [], actividades: [], equipos: [], protocolos: [] },
   mis: [], todos: [], solicitudes: [], usuarios: [],
   view: "", filtro: { mis: { q: "", st: "" }, todos: { q: "", st: "", pap: false } }, selReg: new Set(),
-  editando: null, form: null, limiteTodos: 100, verTodos: 60,
+  editando: null, form: null, limiteTodos: PAG_TODOS, verTodos: PAG_LISTA,
   subs: [], dentro: false,
   aj: { tab: "usuarios", b: null, capSub: "", capTipo: "", solSel: {} }, ejes: {}, capasCfg: {}, config: null,
-  bandeja: { tab: "PT", q: "", sel: new Set(), pend: [], ep: [], epHist: [], epHistOk: false, ver: 60, aspas: [], aspVer: "por", levs: [], levVer: "por", todos() { return [...this.pend, ...this.ep, ...this.epHist, ...this.aspas, ...this.levs]; } },
+  bandeja: { tab: "PT", q: "", sel: new Set(), pend: [], ep: [], epHist: [], epHistOk: false, ver: PAG_LISTA, aspas: [], aspVer: "por", levs: [], levVer: "por", todos() { return [...this.pend, ...this.ep, ...this.epHist, ...this.aspas, ...this.levs]; } },
   panel: { subId: "", desde: "", hasta: "", st: "", topo: "", capa: "", todas: false, hoy: false, zoom: false, vista: "perfil", tipoPl: "", pkDesde: "", pkHasta: "", mGrupo: "", mSel: "", mSta: null, mZoom: 1 }, panelDatos: [], panelSub: ""
 };
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
-S.panel.zoom = ls.get("lib.panelZoom", false); S.panel.vista = ls.get("lib.panelVista", innerWidth < 760 ? "lista" : "perfil");
+S.panel.zoom = ls.get("lib.panelZoom", false); S.panel.vista = ls.get("lib.panelVista", innerWidth < CORTE_CELULAR ? "lista" : "perfil");
 
 /* ---------- Progresivas ---------- */
 function leerPk(t) {
@@ -1778,7 +1749,8 @@ const claveTopo = id => L.topo(id)?.id || id || "";
    Iguala tildes, mayúsculas, signos, plurales, palabras de enlace («de», «para»…), orden de las palabras,
    letras cambiadas o faltantes y abreviaturas («rell.» = relleno). Los números cuentan: «filtro 1» ≠ «filtro 2». */
 const ENLACE = new Set(["de", "del", "la", "las", "el", "los", "para", "en", "y", "a", "con", "al", "por", "o", "e"]);
-const sinTilde = t => String(t ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ñ/g, "n");
+// Minúsculas y sin tildes («ñ» queda «n»). Con «??», 0 y false se leen como «0» y «false»; normTxt (más abajo) los lee como texto vacío
+const sinTilde = t => String(t ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const singular = w => /^\d+$/.test(w) ? w : w.length > 4 && /[lrndzj]es$/.test(w) ? w.slice(0, -2) : w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w;
 function palabras(t) {
   return sinTilde(t).replace(/(\d+)/g, " $1 ").replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(w => w && !ENLACE.has(w)).map(singular);
@@ -1859,7 +1831,7 @@ const MOV = (() => {
   const D = () => on ? 200 : 0, pausa = ms => new Promise(r => setTimeout(r, ms));
   // el.animate con el ritmo común; null si está apagado. Sin fill (salvo que se pida) para no dejar estilos pegados
   const mover = (el, kf, op = {}) => !on || !el?.animate ? null : el.animate(kf, { duration: D(), easing: "ease-out", ...op });
-  const entrar = (el, dy = 6, dur = D() * .7) => mover(el, [{ opacity: 0, transform: `translateY(${dy}px)` }, { opacity: 1, transform: "none" }], { duration: dur });
+  const aparecer = (el, dy = 6, dur = D() * .7) => mover(el, [{ opacity: 0, transform: `translateY(${dy}px)` }, { opacity: 1, transform: "none" }], { duration: dur });
   const saltar = (el, k = 1.3) => mover(el, [{ transform: "none" }, { transform: `scale(${k})`, offset: .4 }, { transform: "none" }]);
   const GIRO = '<span class="giro" aria-hidden="true"></span>';
   const VISTO = '<svg class="visto" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
@@ -1973,7 +1945,7 @@ const MOV = (() => {
     return ctl;
   }
   // La persona cambió de pantalla o de pestaña: lo que estaba saliendo termina ya, sin esperar
-  function cortar() {
+  function cortarSalidas() {
     SAL.forEach((e, id) => { if (e.fase !== "sale") return; e.fase = "fuera"; if (e.el) { e.el.getAnimations().forEach(a => a.cancel()); e.el.classList.add("mov-fuera"); } if (e.ok) limpiar(id); });
     aplazado = null;
   }
@@ -2028,7 +2000,7 @@ const MOV = (() => {
     if (!on || !e.target.closest?.(".tabs button, .chip")) return;
     const h = document.documentElement; h.classList.add("mov-clic"); clearTimeout(h._movT); h._movT = setTimeout(() => h.classList.remove("mov-clic"), 600);
   }, true);
-  return { get on() { return on; }, get d() { return D(); }, GIRO, VISTO, mover, entrar, saltar, salir, correr, cortar, aplaza, trasPintar, nuevo, vigilarCifras, revisarCifras, marcaNav, pantalla, fundir, esqueleto };
+  return { get on() { return on; }, get d() { return D(); }, GIRO, VISTO, mover, entrar: aparecer, saltar, salir, correr, cortar: cortarSalidas, aplaza, trasPintar, nuevo, vigilarCifras, revisarCifras, marcaNav, pantalla, fundir, esqueleto };
 })();
 
 /* ---------- Avisos ---------- */
@@ -2048,11 +2020,11 @@ function toast(msg, tipo = "", accion) {
   requestAnimationFrame(() => { t.classList.add("on"); evitarTapar(t); });
   // El campo en error se desplaza al centro un instante después: se vuelve a mirar
   setTimeout(() => evitarTapar(t), 500);
-  const ms = accion ? 10000 : tipo === "bad" ? 6000 : 3600, ir = () => { clearTimeout(tTimer); tTimer = setTimeout(() => t.classList.remove("on"), ms); };
-  ir();
+  const ms = accion ? 10000 : tipo === "bad" ? 6000 : 3600, programarCierre = () => { clearTimeout(tTimer); tTimer = setTimeout(() => t.classList.remove("on"), ms); };
+  programarCierre();
   // Con un botón (p. ej. «Deshacer»), el aviso no se va mientras el mouse o el foco están encima
   t.onmouseenter = t.onfocusin = accion ? () => clearTimeout(tTimer) : null;
-  t.onmouseleave = t.onfocusout = accion ? ir : null;
+  t.onmouseleave = t.onfocusout = accion ? programarCierre : null;
 }
 // Por qué no se guardó (o no se leyó), en español llano, para poner tras «No se guardó: », «No se pudo unir: »…
 // Sin permiso: al administrador se le dice que revise las reglas; a los demás, que le avisen (ellos no pueden publicarlas).
@@ -2081,7 +2053,6 @@ function errLeer(clave, que) {
   };
 }
 
-/* ---------- Pantalla de entrada ---------- */
 /* ---------- App instalada (ícono en el celular o la computadora) ---------- */
 const instalada = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 const ICON_APP = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>';
@@ -2099,9 +2070,10 @@ matchMedia("(display-mode: standalone)").addEventListener?.("change", () => { do
 document.addEventListener("instalable", pintarInstalar);
 addEventListener("online", () => { if (S.dentro && enDirVieja()) mudarse(false); });
 addEventListener("appinstalled", () => { window.__inst = null; pintarInstalar(); });
+/* ---------- Versión de la app y actualizaciones ---------- */
 // Número de versión de la app (sube con cada publicación; es el mismo de la copia guardada en sw.js)
 // Versión: grande.mediano.mínimo (1.43.0 es la antigua «versión 43»). Mínimo: arreglo chico; mediano: función nueva o cambio que se nota; grande: rediseño o cambio de reglas
-const VERSION_APP = "1.45.2";
+const VERSION_APP = "1.45.3";
 // Versión nueva: si se acaba de abrir la app y aún no se escribió nada, se recarga sola;
 // si ya se está trabajando, se avisa y se actualiza cuando la persona quiera
 function hayAlgoEscrito() {
@@ -2206,6 +2178,7 @@ async function mudarse(manual) {
   }
 }
 
+/* ---------- Pantalla de entrada (Google) ---------- */
 function gate(tipo, extra = {}) {
   S.dentro = false;
   $("#app").hidden = true; const g = $("#gate"); g.hidden = false;
@@ -2427,10 +2400,10 @@ async function masTodos(btn) {
   const T = TODOS_V; if (!T.ult || T.leyendo) return; T.leyendo = true;
   if (btn) { btn.disabled = true; btn.textContent = "Cargando…"; }
   try {
-    const sn = await getDocs(query(collection(db, "liberaciones"), orderBy("creadoEn", "desc"), startAfter(T.ult), limit(100)));
+    const sn = await getDocs(query(collection(db, "liberaciones"), orderBy("creadoEn", "desc"), startAfter(T.ult), limit(PAG_TODOS)));
     const ya = new Set(T.mas.map(r => r.id)); T.mas = [...T.mas, ...sn.docs.map(fila).filter(r => !ya.has(r.id))];
-    if (sn.docs.length) T.ult = sn.docs[sn.docs.length - 1]; T.masLleno = sn.docs.length >= 100;
-    S.verTodos += 100; unirTodos(); S.todosLleno = T.masLleno;
+    if (sn.docs.length) T.ult = sn.docs[sn.docs.length - 1]; T.masLleno = sn.docs.length >= PAG_TODOS;
+    S.verTodos += PAG_TODOS; unirTodos(); S.todosLleno = T.masLleno;
   } catch (e) { toast("No se pudieron cargar: " + errGuardar(e), "bad"); }
   T.leyendo = false; if (S.view === "todos") renderSuave();
 }
@@ -2622,7 +2595,7 @@ function cambioReal(clave, snap) {
   SNAPF[clave] = f; return true;
 }
 
-/* ---------- Formulario ---------- */
+/* ---------- Formulario: borradores, adjuntos y cambios sin confirmar (se guardan en el teléfono) ---------- */
 const ULT = () => "lib.ultimo." + S.email;
 const BORR = () => "lib.borrador." + S.email;
 function formVacio() {
@@ -2654,8 +2627,8 @@ function adjDb() {
   }).catch(e => { adjDbP = null; throw e; });
 }
 function adjOp(modo, fn) {
-  return adjDb().then(db => new Promise((ok, mal) => {
-    let rq; const tx = db.transaction("b", modo);
+  return adjDb().then(idb => new Promise((ok, mal) => {
+    let rq; const tx = idb.transaction("b", modo);
     tx.oncomplete = () => ok(rq && rq.result); tx.onerror = tx.onabort = () => mal(tx.error || new Error("IndexedDB"));
     rq = fn(tx.objectStore("b"));
   }));
@@ -2884,8 +2857,8 @@ function cargarConversorHeic() {
 // Con señal, deja listo el conversor en el teléfono (una sola vez) para poder convertir HEIC sin señal en campo
 function prepararConversorHeic() {
   if (!navigator.onLine || !("caches" in window) || prepararConversorHeic.hecho) return; prepararConversorHeic.hecho = true;
-  const ir = () => caches.match(new URL(RUTA_HEIC, location.href).href).then(r => r || fetch(RUTA_HEIC).then(() => {})).catch(() => {});
-  ("requestIdleCallback" in window) ? requestIdleCallback(ir, { timeout: 8000 }) : setTimeout(ir, 4000);
+  const precargar = () => caches.match(new URL(RUTA_HEIC, location.href).href).then(r => r || fetch(RUTA_HEIC).then(() => {})).catch(() => {});
+  ("requestIdleCallback" in window) ? requestIdleCallback(precargar, { timeout: 8000 }) : setTimeout(precargar, 4000);
 }
 async function abrirFoto(file) {
   try { return await cargarImagen(file); }
@@ -2970,6 +2943,7 @@ function descargar(nombre, contenido, tipo) {
 function opciones(lista, sel, vacio) {
   return `<option value="">${esc(vacio)}</option>` + lista.filter(o => o.activo !== false || o.id === sel).map(o => `<option value="${esc(o.id)}" ${o.id === sel ? "selected" : ""}>${esc(o.nombre)}</option>`).join("");
 }
+/* ---------- Formulario «Nueva»: pantalla y textos según la actividad ---------- */
 // Nombres cortos para los botones de actividad (el completo va en title y aria-label)
 const ACT_CORTO = { LIB: "Liberación", LEV: "Levantamiento", DRN: "Dron", ASP: "Aspas" };
 // Nombre de la actividad para títulos y botones, con su género: «Nueva liberación», «Nuevo levantamiento», «Nuevas aspas»
@@ -3146,12 +3120,12 @@ function pintarTipoRes() {
   const box = $("#tRes"); if (!box) return;
   const q = (S._tq || "").trim(), todos = tiposActivos(), sid = S.form?.subestructuraId, sub = L.sub(sid);
   const aqui = sub ? tiposAqui(sid) : [], enAqui = new Set(aqui.map(t => t.id));
-  const fila = (t, ok, det) => `<button type="button" class="tsel-i" data-tipo="${esc(t.id)}"${det ? ` data-det="${esc(det)}"` : ""}><b>${resaltar(t.nombre, ok)}</b><small>${esc(nom(L.ele(t.elementoId)))}${det ? ` · detalle <b class="tsel-det-v">${esc(det)}</b>` : ""}${enAqui.has(t.id) ? ' · <span class="tsel-aqui">usado aquí</span>' : ""}</small></button>`;
+  const filaTipo = (t, ok, det) => `<button type="button" class="tsel-i" data-tipo="${esc(t.id)}"${det ? ` data-det="${esc(det)}"` : ""}><b>${resaltar(t.nombre, ok)}</b><small>${esc(nom(L.ele(t.elementoId)))}${det ? ` · detalle <b class="tsel-det-v">${esc(det)}</b>` : ""}${enAqui.has(t.id) ? ' · <span class="tsel-aqui">usado aquí</span>' : ""}</small></button>`;
   if (!q) {
     box.innerHTML = S._tTodos
-      ? (aqui.length ? `<div class="tsel-g">Usados en ${esc(sub.nombre)}</div>${aqui.map(t => fila(t)).join("")}` : "")
-        + S.listas.elementos.filter(e => e.activo !== false).map(e => { const ts = todos.filter(t => t.elementoId === e.id); return ts.length ? `<div class="tsel-g">${esc(e.nombre)}</div>${ts.map(t => fila(t)).join("")}` : ""; }).join("")
-        + (() => { const sin = todos.filter(t => !L.ele(t.elementoId) || L.ele(t.elementoId).activo === false); return sin.length ? `<div class="tsel-g">Otros</div>${sin.map(t => fila(t)).join("")}` : ""; })()
+      ? (aqui.length ? `<div class="tsel-g">Usados en ${esc(sub.nombre)}</div>${aqui.map(t => filaTipo(t)).join("")}` : "")
+        + S.listas.elementos.filter(e => e.activo !== false).map(e => { const ts = todos.filter(t => t.elementoId === e.id); return ts.length ? `<div class="tsel-g">${esc(e.nombre)}</div>${ts.map(t => filaTipo(t)).join("")}` : ""; }).join("")
+        + (() => { const sin = todos.filter(t => !L.ele(t.elementoId) || L.ele(t.elementoId).activo === false); return sin.length ? `<div class="tsel-g">Otros</div>${sin.map(t => filaTipo(t)).join("")}` : ""; })()
         + `<button type="button" class="tsel-i tsel-add" data-nuevo="">＋ Agregar un tipo nuevo</button>`
       : `<button type="button" class="tsel-i tsel-ver" data-todos>Ver todos los tipos (${todos.length})</button>`;
     return;
@@ -3163,7 +3137,7 @@ function pintarTipoRes() {
   // A igual parecido, primero los que ya se usaron en este frente
   const r = [...porId.values()].map(x => ({ ...x, s2: x.s + (enAqui.has(x.o.id) ? 0.06 : 0) })).sort((a, b) => b.s2 - a.s2 || a.o.nombre.localeCompare(b.o.nombre)).slice(0, 6);
   const igual = todos.some(t => similitud(t.nombre, q) === 1);
-  box.innerHTML = r.map(x => fila(x.o, x.ok, x.det)).join("") + (!r.length ? `<p class="tsel-nada">No hay ningún tipo parecido a «${esc(q)}».</p>` : "")
+  box.innerHTML = r.map(x => filaTipo(x.o, x.ok, x.det)).join("") + (!r.length ? `<p class="tsel-nada">No hay ningún tipo parecido a «${esc(q)}».</p>` : "")
     + (!igual && palabras(q).length && q.length >= 3 ? `<button type="button" class="tsel-i tsel-add" data-nuevo="${esc(q)}">＋ Agregar «${esc(capital(q))}» como nuevo</button>` : "");
 }
 function elegirTipo(f, id, det) {
@@ -3268,6 +3242,7 @@ function agregarTipo(nombre0) {
   }
 }
 
+/* ---------- Formulario «Nueva»: leer campos, validar y guardar ---------- */
 function leerCampos() {
   const fm = $("#fLib"); if (!fm || !S.form) return;
   const f = S.form;
@@ -3400,14 +3375,14 @@ function limpiarErr(name) { const box = $(`#fLib [name="${name}"]`)?.closest(".f
 function marcarErrores(err) {
   const fm = $("#fLib");
   fm.querySelectorAll(".f.err").forEach(x => { x.classList.remove("err"); x.querySelector(".err-msg")?.remove(); });
-  let primero = null;
+  let primerError = null;
   for (const [k, msg] of Object.entries(err)) {
     const el = fm.querySelector(`[name="${k}"]`); if (!el) continue;
     const box = el.closest(".f"); box.classList.add("err");
     const m = document.createElement("div"); m.className = "err-msg"; m.textContent = msg; box.appendChild(m);
-    if (!primero) primero = el.type === "hidden" ? (box.querySelector("input:not([type=hidden]),button") || box) : el;
+    if (!primerError) primerError = el.type === "hidden" ? (box.querySelector("input:not([type=hidden]),button") || box) : el;
   }
-  if (primero) { primero.scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => primero.focus({ preventScroll: true }), 300); }
+  if (primerError) { primerError.scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => primerError.focus({ preventScroll: true }), 300); }
 }
 
 // Qué cambió entre dos versiones de un registro, en palabras («PK 1+200 → 1+250»)
@@ -3453,10 +3428,10 @@ function guardar() {
     return;
   }
   // Aviso si el tramo se cruza con otra liberación del mismo frente, tipo y capa
-  const capaN = normCapa(f.capa, f.subestructuraId, f.tipoId);
-  const solapes = esLib && !f.sinPk && p1 != null && !isNaN(p1) ? solapados(f.subestructuraId, f.tipoId, capaN, p1, p2 == null || isNaN(p2) ? p1 : p2, E?.id) : [];
+  const capaNorm = normCapa(f.capa, f.subestructuraId, f.tipoId);
+  const solapes = esLib && !f.sinPk && p1 != null && !isNaN(p1) ? solapados(f.subestructuraId, f.tipoId, capaNorm, p1, p2 == null || isNaN(p2) ? p1 : p2, E?.id) : [];
   if (solapes.length && !S._solapeOk) {
-    dialogo("Se superpone con otra liberación", `<p class="dlg-p">El tramo ${esc(rangoPk(p1, p2 ?? p1))}${capaN ? " de " + esc(capaN) : ""} se cruza con:</p><ul class="solist">${solapes.slice(0, 6).map(r => `<li><b class="mono">${esc(r.numero || "Sin número")}</b> <span class="mono">${esc(rangoPk(r.pkInicio, r.pkFin))}</span> <span class="st ${esc(r.estado)}">${esc(ESTADOS[r.estado] || r.estado)}</span></li>`).join("")}${solapes.length > 6 ? `<li class="muted">y ${solapes.length - 6} más</li>` : ""}</ul><p class="muted small" style="margin:8px 0 0">Si es correcto (por ejemplo, un re-trabajo), guárdalo igual: gabinete lo verá marcado.</p>`,
+    dialogo("Se superpone con otra liberación", `<p class="dlg-p">El tramo ${esc(rangoPk(p1, p2 ?? p1))}${capaNorm ? " de " + esc(capaNorm) : ""} se cruza con:</p><ul class="solist">${solapes.slice(0, 6).map(r => `<li><b class="mono">${esc(r.numero || "Sin número")}</b> <span class="mono">${esc(rangoPk(r.pkInicio, r.pkFin))}</span> <span class="st ${esc(r.estado)}">${esc(ESTADOS[r.estado] || r.estado)}</span></li>`).join("")}${solapes.length > 6 ? `<li class="muted">y ${solapes.length - 6} más</li>` : ""}</ul><p class="muted small" style="margin:8px 0 0">Si es correcto (por ejemplo, un re-trabajo), guárdalo igual: gabinete lo verá marcado.</p>`,
       () => { S._solapeOk = true; guardar(); }, "Guardar igual", { onCancel: () => { S._motivoEC = null; S._choqueOk = false; } });
     return;
   }
@@ -3620,14 +3595,14 @@ function abrirResumenWsp(filtrados, hayFiltro) {
   const hoy = hoyISO(), ay = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return diaDe(d); })();
   const PER = { hoy: ["Hoy", r => diaDe(r.fechaCampo) === hoy], ayer: ["Ayer", r => diaDe(r.fechaCampo) === ay], dos: ["Ayer y hoy", r => [hoy, ay].includes(diaDe(r.fechaCampo))] };
   let per = hayFiltro ? "fil" : "hoy";
-  const regsDe = () => per === "fil" ? filtrados : S.mis.filter(PER[per][1]);
+  const regsPeriodo = () => per === "fil" ? filtrados : S.mis.filter(PER[per][1]);
   const chips = () => [...(hayFiltro ? [["fil", "Lo filtrado"]] : []), ...Object.entries(PER).map(([k, v]) => [k, v[0]])].map(([k, t]) => `<button type="button" class="chip" data-per="${k}" aria-pressed="${per === k}">${t}</button>`).join("");
   const d = dialogo("Resumen para WhatsApp", `<div class="chips wsp-per" role="group" aria-label="Periodo">${chips()}</div>
     <div class="f"><label for="dWsp">Texto <span class="opt">(puedes corregirlo antes de mandarlo)</span></label><textarea id="dWsp" name="texto" class="wsp-txt" spellcheck="false"></textarea></div>
     <div class="actions" style="margin:10px 0 0"><button type="button" class="btn sec" id="dWspCopiar">Copiar</button></div>`,
     o => { const t = o.texto || ""; if (!t.trim()) return false; window.open("https://wa.me/?text=" + encodeURIComponent(t), "_blank", "noopener"); }, "Abrir WhatsApp", { ancho: "medio", sinFoco: true });
   const ta = d.querySelector("#dWsp");
-  const llenar = () => { ta.value = textoResumen(regsDe()); ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight + 4, innerHeight * 0.5) + "px"; };
+  const llenar = () => { ta.value = textoResumen(regsPeriodo()); ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight + 4, innerHeight * 0.5) + "px"; };
   d.querySelector(".wsp-per").addEventListener("click", e => { const c = e.target.closest("[data-per]"); if (!c) return; per = c.dataset.per; d.querySelector(".wsp-per").innerHTML = chips(); llenar(); });
   d.querySelector("#dWspCopiar").addEventListener("click", async () => { try { await navigator.clipboard.writeText(ta.value); toast("Resumen copiado"); } catch (_) { ta.select(); document.execCommand?.("copy"); toast("Resumen copiado"); } });
   llenar();
@@ -3653,9 +3628,9 @@ function textoGuardado(r) {
 }
 const coincide = (r, qs) => { if (!qs.length) return true; const t = textoGuardado(r); return qs.every(x => t.includes(x) || enTramo(r, pkTermino(x))); };
 // Búsqueda que redibuja cuando se deja de escribir (150 ms) y devuelve el foco y el cursor al campo
-function buscadorDiferido(inp, guardar, repintar, sigue = () => true) {
+function buscadorDiferido(inp, alGuardar, repintar, sigue = () => true) {
   inp.addEventListener("input", () => {
-    guardar(inp.value); clearTimeout(S._qt);
+    alGuardar(inp.value); clearTimeout(S._qt);
     S._qt = setTimeout(() => { if (sigue() && document.getElementById(inp.id)) conFoco(inp.id, repintar); }, 150);
   });
 }
@@ -3689,7 +3664,7 @@ const FECHAS_RF = [["", "Todas"], ["hoy", "Hoy"], ["ayer", "Ayer"], ["sem", "Est
 const FECHA_CAMPO = { "": ["fechaCampo", "Fecha de liberación"], lib: ["fechaLiberacion", "Fecha de entrega"], ent: ["fechaEntrega", "Entrega a Calidad"] };
 const campoFecha = fl => (FECHA_CAMPO[fl.fc || ""] || FECHA_CAMPO[""])[0];
 // Filtros de Registros y Mis registros que se recuerdan al recargar (por persona; la búsqueda escrita no)
-const guardarFiltros = () => { const q = x => { const { q: _q, pap, hist, lote, ...resto } = x; return resto; }; ls.set("lib.filtros." + S.email, { mis: q(S.filtro.mis), todos: q(S.filtro.todos) }); };
+const guardarFiltros = () => { const q = x => { const { q: _q, pap, hist: _hist, lote, ...resto } = x; return resto; }; ls.set("lib.filtros." + S.email, { mis: q(S.filtro.mis), todos: q(S.filtro.todos) }); };
 function cargarFiltros() { const g = ls.get("lib.filtros." + S.email, null); if (!g) return; S.filtro.mis = { ...S.filtro.mis, ...g.mis, q: "" }; S.filtro.todos = { ...S.filtro.todos, ...g.todos, q: "", pap: false, hist: false };
   [S.filtro.mis, S.filtro.todos].forEach(f => { if (f.capa) f.capa = [...new Set(lstF(f.capa).map(v => v === "~" ? v : normCapa(v, "", "")))].join(","); }); }
 const isoAFecha = t => { if (!t) return null; const [y, m, d] = t.split("-").map(Number); return y ? new Date(y, m - 1, d) : null; };
@@ -3753,6 +3728,7 @@ function opsFac(k, fl, C, corte = 0) {
   const vals = [...new Set([...m.keys(), ...sel])].sort((a, b) => (sel.includes(b) - sel.includes(a)) || (m.get(b) || 0) - (m.get(a) || 0) || natural(nm(a), nm(b)));
   return { n: vals.length, html: vals.map((v, i) => `<label class="fop ${m.get(v) ? "" : "cero"}" ${corte && i >= corte ? "hidden data-extra" : ""} data-txt="${esc(normTxt(nm(v)))}"><input type="checkbox" data-fk="${k}" value="${esc(v)}" ${sel.includes(v) ? "checked" : ""}><span title="${esc(nm(v))}">${esc(nm(v))}</span><span class="c">${(m.get(v) || 0).toLocaleString("es-PE")}</span></label>`).join("") };
 }
+// Como sinTilde, pero con «||»: 0, false y NaN dan texto vacío (sinTilde da «0», «false» y «nan»). Por eso no se unificaron; aquí solo entran textos
 const normTxt = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 function alternarF(fl, k, v, on) { const s = new Set(lstF(fl[k])); on ? s.add(v) : s.delete(v); fl[k] = [...s].join(","); }
 // Columna de filtros de la computadora (Registros y Bandeja)
@@ -3874,7 +3850,7 @@ function controlesReg(fl, cual, hoja) {
 function abrirFiltrosReg(cual) {
   const fl = S.filtro[cual], F = {}; CAMPOS_RF.forEach(k => { F[k] = fl[k] || ""; });
   const d = dialogo("Filtrar registros", `<button type="button" class="btn-txt hoja-limpiar" id="rfLimpiar">Limpiar todo</button><div class="rf-hoja" id="rfHoja" style="clear:both"></div>`,
-    () => { CAMPOS_RF.forEach(k => { fl[k] = F[k]; }); if (F._todo) { fl.st = ""; fl.q = ""; } S.verTodos = Math.max(S.verTodos, 100); pintarLista(cual); }, "Aplicar", { ancho: "medio", sinFoco: true });
+    () => { CAMPOS_RF.forEach(k => { fl[k] = F[k]; }); if (F._todo) { fl.st = ""; fl.q = ""; } S.verTodos = Math.max(S.verTodos, PAG_TODOS); pintarLista(cual); }, "Aplicar", { ancho: "medio", sinFoco: true });
   const box = d.querySelector("#rfHoja"), pintar = () => { box.innerHTML = controlesReg(F, cual, true); };
   pintar();
   box.addEventListener("click", e => { const c = e.target.closest("[data-fe]"); if (c) { F.fecha = c.dataset.fe; if (F.fecha !== "dia" && F.fecha !== "rango") { F.f1 = ""; F.f2 = ""; } else if (!F.f1) F.f1 = hoyISO(); pintar(); } });
@@ -3898,9 +3874,9 @@ function pintarLista(cual) {
   // «Buscar en todo el historial»: sin fechas, aplica los filtros al resumen completo (no solo a los últimos 100).
   // Con texto en el buscador se busca siempre en todo el historial (auto), sin tener que pedirlo.
   const qs = terminos(fl.q), enHist = cual === "todos" && !pap && !porFecha && !loteF && poder();
-  const auto = enHist && qs.length > 0, hist = enHist && (fl.hist || auto), cargHist = hist && !BUS.todos;
-  if (hist) cargarTodoResumen();
-  const base = pap ? S.papelera || [] : cual === "mis" ? S.mis : loteF ? S.loteRegs || [] : porFecha ? S.todosFecha || [] : hist ? mezclarHist() : S.todos;
+  const auto = enHist && qs.length > 0, conHist = enHist && (fl.hist || auto), cargHist = conHist && !BUS.todos;
+  if (conHist) cargarTodoResumen();
+  const base = pap ? S.papelera || [] : cual === "mis" ? S.mis : loteF ? S.loteRegs || [] : porFecha ? S.todosFecha || [] : conHist ? mezclarHist() : S.todos;
   const datos = pap ? base : base.filter(r => pasaFiltrosReg(fl, r));
   const activos = pap ? [] : activosReg(fl, cual), pcFil = enPC() || tablaPC();
   const sel = S.selReg ||= new Set();
@@ -3916,13 +3892,13 @@ function pintarLista(cual) {
   let vis = ante.filter(r => !sts.length || sts.includes(r.estado) || sts.includes(seguimientoDe(r)));
   // En Mis registros, lo observado (lo que hay que corregir) va primero
   if (cual === "mis") vis = [...vis.filter(r => r.estado === "OB"), ...vis.filter(r => r.estado !== "OB")];
-  const lim = cual === "todos" ? S.verTodos : (S.verMis ||= 400);
+  const lim = cual === "todos" ? S.verTodos : (S.verMis ||= PAG_MIS);
   const idsVis = new Set(vis.map(r => r.id)); [...sel].forEach(id => { if (!idsVis.has(id)) sel.delete(id); });
   const nPend = (cuenta.PT || 0) + (cuenta.OB || 0);
   const chips = [["", "Todos", ante.length], ...(nPend && (cuenta.OB || 0) && (cuenta.PT || 0) ? [["PT,OB", "Pendientes + observados", nPend]] : []), ...["PT", "EP", "EC", "OB", "RE", "NA"].map(k => [k, ESTADOS[k], cuenta[k] || 0]), ...Object.keys(SEGUIM).map(k => [k, SEGUIM[k][1], cuenta[k] || 0])].filter(c => c[0] === "" || c[2] > 0 || c[0] === fl.st || sts.includes(c[0]));
-  const tabla = tablaPC(), ns = sel.size, selRegs = vis.filter(r => sel.has(r.id));
+  const tabla = tablaPC();
   // Computadora: columna de filtros con conteos y cabeceras que ordenan y filtran
-  const facOff = ls.get("lib.facOff", false), colFil = tabla && !pap && innerWidth >= 1200 && !facOff, puedeCol = tabla && !pap && innerWidth >= 1200, keysF = cual === "todos" ? ["sub", "tipo", "capa", "topo", "act", "equipo"] : ["sub", "tipo", "capa", "act"];
+  const facOff = ls.get("lib.facOff", false), colFil = tabla && !pap && innerWidth >= CORTE_AMPLIO && !facOff, puedeCol = tabla && !pap && innerWidth >= CORTE_AMPLIO, keysF = cual === "todos" ? ["sub", "tipo", "capa", "topo", "act", "equipo"] : ["sub", "tipo", "capa", "act"];
   const pre = tabla && !pap ? base.filter(r => pasaFechaReg(fl, r) && (r.estado !== "X" || esAdmin()) && coinc(r) && (!sts.length || sts.includes(r.estado) || sts.includes(seguimientoDe(r)))) : [];
   const C = tabla && !pap ? contarFac(pre, fl, keysF) : {};
   const fechaDe = r => r[campoFecha(fl)] || r.fechaCampo;
@@ -3930,8 +3906,8 @@ function pintarLista(cual) {
     fr: { t: "Frente", az: true, k: r => nom(L.sub(r.subestructuraId)) || "", fk: ["sub"] }, pk: { t: "Progresiva", k: r => r.pkInicio ?? 1e12 },
     fe: { t: pap ? "Borrado" : cual === "todos" ? (fl.fc && FECHA_CAMPO[fl.fc] ? FECHA_CAMPO[fl.fc][1] : "Fecha") + " y topógrafo" : "Fecha", k: r => toDate(pap ? r.borradoEn : fechaDe(r))?.getTime() || 0, fk: cual === "todos" ? ["topo"] : [] } };
   if (tabla && fl.ord) vis = ordenarCol(vis, fl.ord, COLR);
-  const parcial = cual === "todos" && !pap && !porFecha && !hist && !loteF && S.todosLleno && (activos.length || qs.length) && poder();
-  const hayFiltro = activos.length || qs.length || (tablaPC() && innerWidth >= 1200 && fl.st);
+  const parcial = cual === "todos" && !pap && !porFecha && !conHist && !loteF && S.todosLleno && (activos.length || qs.length) && poder();
+  const hayFiltro = activos.length || qs.length || (tablaPC() && innerWidth >= CORTE_AMPLIO && fl.st);
   // Con texto: mientras llega el historial no se dice «nada coincide»; si hay filtros puestos, se avisa y se ofrece quitarlos
   const conFil = !pap && qs.length && (activos.length || fl.st);
   const vacio = cargHist ? `<div class="empty card"><b>Buscando en todo el historial…</b>En los últimos registros no hay coincidencias; falta revisar los más antiguos.</div>${MOV.esqueleto()}`
@@ -3948,7 +3924,7 @@ function pintarLista(cual) {
   $("#view").innerHTML = `
   <h1 class="view-title">${cual === "mis" ? "Mis registros" : pap ? "Papelera" : "Registros"}</h1>
   <p class="lead">${cual === "mis" ? "Lo que registraste. Puedes editar lo que está pendiente u observado, y mandar a la papelera lo que aún no tiene código." : pap ? `Lo borrado no sale en las listas ni en el panel. ${puedeAjustes() ? "Restaura o borra para siempre." : "Puedes restaurar lo que no tiene código."}` : loteF ? `${S.loteRegs ? `${activos.length ? nDatos.toLocaleString("es-PE") + " de los " : ""}${nBase.toLocaleString("es-PE")} ${nBase === 1 ? "registro" : "registros"} de la importación «${esc(nombreLote(loteF))}».` : "Cargando la importación…"}`
-    : porFecha ? `${nDatos.toLocaleString("es-PE")} ${nDatos === 1 ? "registro" : "registros"} · ${esc(textoFecha(fl))}.` : auto ? (cargHist ? `Buscando en todo el historial… Por ahora ${vis.length.toLocaleString("es-PE")} ${vis.length === 1 ? "coincidencia" : "coincidencias"} en lo ya cargado.` : `${vis.length.toLocaleString("es-PE")} ${vis.length === 1 ? "coincidencia" : "coincidencias"} en todo el historial (${base.length.toLocaleString("es-PE")} registros).`) : hist ? `${BUS.todos ? `${nDatos.toLocaleString("es-PE")} de ${nBase.toLocaleString("es-PE")} registros de todo el historial.` : "Cargando todo el historial…"}` : `${activos.length ? nDatos.toLocaleString("es-PE") + " de los" : "Los"} últimos ${nBase.toLocaleString("es-PE")} registros de todos. Para ver más antiguos filtra por fechas${poder() ? " o escribe en el buscador: busca en todo el historial" : ""}.`}</p>
+    : porFecha ? `${nDatos.toLocaleString("es-PE")} ${nDatos === 1 ? "registro" : "registros"} · ${esc(textoFecha(fl))}.` : auto ? (cargHist ? `Buscando en todo el historial… Por ahora ${vis.length.toLocaleString("es-PE")} ${vis.length === 1 ? "coincidencia" : "coincidencias"} en lo ya cargado.` : `${vis.length.toLocaleString("es-PE")} ${vis.length === 1 ? "coincidencia" : "coincidencias"} en todo el historial (${base.length.toLocaleString("es-PE")} registros).`) : conHist ? `${BUS.todos ? `${nDatos.toLocaleString("es-PE")} de ${nBase.toLocaleString("es-PE")} registros de todo el historial.` : "Cargando todo el historial…"}` : `${activos.length ? nDatos.toLocaleString("es-PE") + " de los" : "Los"} últimos ${nBase.toLocaleString("es-PE")} registros de todos. Para ver más antiguos filtra por fechas${poder() ? " o escribe en el buscador: busca en todo el historial" : ""}.`}</p>
   ${cual === "todos" && poder() ? `<div class="tabs" role="group" aria-label="Registros o papelera"><button type="button" data-pap="0" aria-pressed="${!pap}">Registros</button><button type="button" data-pap="1" aria-pressed="${pap}">Papelera${S.papelera ? ` <span class="cnt">${S.papelera.length}</span>` : ""}</button></div>` : ""}
   ${colFil ? `<div class="rgrid"><aside class="card fcol" id="rFil" aria-label="Filtros">${colFiltros(fl, C, keysF, cual === "todos")}</aside><div class="rmain">` : ""}
   <div class="tools"><input class="search" id="q" type="search" placeholder="Buscar N°, PK, tipo, frente…" value="${esc(fl.q)}" aria-label="Buscar">${cual === "mis" ? `<button type="button" class="mini wsp-btn" id="rWsp">${ICON_WSP}Resumen WhatsApp</button>` : ""}${pap && puedeAjustes() && datos.length ? '<button type="button" class="mini warn-mini" id="rVaciar">Vaciar papelera</button>' : ""}${!pap && vis.length ? `<button type="button" class="mini" id="rExp" title="Descarga en Excel lo que se ve con estos filtros">Excel: ${hayFiltro || sts.length ? "lo filtrado" : "lista"} (${vis.length.toLocaleString("es-PE")})</button>` : ""}${puedeCol ? `<button type="button" class="mini" id="rFacT" aria-pressed="${colFil}" title="Muestra u oculta la columna de filtros">${colFil ? "Ocultar filtros" : `Filtros${activos.length ? ` (${activos.length})` : ""}`}</button>` : ""}${cual === "todos" && !pap && puedeAjustes() ? `<button type="button" class="mini sup-btn" id="rSup" title="Abre Panel → Modelo 2D, donde se ven las superficies XML de las liberaciones">${ICON_SUP}Superficies (XML)</button>` : ""}</div>
@@ -3960,14 +3936,14 @@ function pintarLista(cual) {
   ${parcial ? `<p class="rf-nota" id="rParcial">Estos filtros revisan solo los últimos ${S.todos.length.toLocaleString("es-PE")} registros. <button type="button" class="btn-txt" id="rHist">Buscar en todo el historial</button></p>` : ""}
   ${loteF ? `<p class="pinfo aviso imp-ver" role="note"><span>Solo la importación <b>«${esc(nombreLote(loteF))}»</b>${S.loteRegs ? ` · ${S.loteRegs.length.toLocaleString("es-PE")} ${S.loteRegs.length === 1 ? "registro" : "registros"}` : " · cargando…"}</span><button type="button" class="btn-txt" id="rLoteX">Ver todos los registros</button></p>` : ""}
   ${auto ? `<p class="rf-nota" id="rHistNota">${cargHist ? "Buscando en todo el historial…" : "Resultados de todo el historial."} Los registros antiguos traen datos resumidos (código, tipo, capa, PK, estado y fecha): en ellos no se busca por descripción.</p>`
-    : hist ? `<p class="rf-nota">Buscando en todo el historial (datos resumidos: código, tipo, capa, PK, estado y fecha). <button type="button" class="btn-txt" id="rHistX">Volver a los últimos</button></p>` : ""}
+    : conHist ? `<p class="rf-nota">Buscando en todo el historial (datos resumidos: código, tipo, capa, PK, estado y fecha). <button type="button" class="btn-txt" id="rHistX">Volver a los últimos</button></p>` : ""}
   ${cual === "mis" && (cuenta.OB || 0) && !sts.includes("OB") ? `<div class="pinfo aviso mis-obs" role="note"><span><b>Tienes ${cuenta.OB === 1 ? "1 observado" : cuenta.OB + " observados"} por corregir.</b> ${cuenta.OB === 1 ? "Está primero" : "Están primero"} en la lista.</span><button type="button" class="btn-txt" id="rVerObs">Ver solo ${cuenta.OB === 1 ? "ese" : "esos"}</button></div>` : ""}
   ${pap ? "" : `<div class="chips" id="rSt" role="group" aria-label="Filtrar por estado (Ctrl o Mayús + clic para elegir varios)">${chips.map(([k, t, n]) => `<button type="button" class="chip" data-st="${k}" aria-pressed="${k === "" ? !sts.length : k.includes(",") ? fl.st === k : sts.includes(k)}">${esc(t)}<span class="c">${n.toLocaleString("es-PE")}</span></button>`).join("")}</div>`}
   ${bulkHtml()}
   ${!vis.length ? vacio : tabla ? `<div class="card twrap"><table class="rtab compacta" id="lista"><thead><tr><th class="ck"><input type="checkbox" id="rAll" ${vis.slice(0, lim).every(r => sel.has(r.id)) ? "checked" : ""} aria-label="Seleccionar todos"></th>${Object.entries(COLR).map(([k, d]) => thCol(fl, k, d)).join("")}${thMas()}</tr></thead><tbody>${vis.slice(0, lim).map(filaT).join("")}</tbody></table></div><p class="nota-g">Clic en el título de una columna para ordenar o filtrar. Clic derecho sobre una fila para ver sus acciones. Marca varias para trabajarlas juntas.</p>`
     : `<div class="list" id="lista">${vis.slice(0, lim).map((r, i) => conMas(tarjeta(r, i), r)).join("")}</div>`}
   ${cual === "mis" ? `<p class="ver-app" style="text-align:center;margin:18px 0 0">Versión ${VERSION_APP}</p>` : ""}
-  ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : cual === "todos" && !pap && !porFecha && !hist && !loteF && S.todosLleno ? `<button class="btn sec more" id="bMasSrv" type="button">Cargar registros más antiguos</button>` : ""}
+  ${vis.length > lim ? `<button class="btn sec more" id="bMas" type="button">Ver más (${vis.length - lim})</button>` : cual === "todos" && !pap && !porFecha && !conHist && !loteF && S.todosLleno ? `<button class="btn sec more" id="bMasSrv" type="button">Cargar registros más antiguos</button>` : ""}
   ${colFil ? "</div></div>" : ""}`;
   if (!S._popSigue) cerrarPop(); S._popSigue = false;
   const repR = () => pintarLista(cual);
@@ -4033,7 +4009,7 @@ function pintarLista(cual) {
   });
   ligarBulk();
   if (S._ficha && !$("#sheet").hidden) marcarFilaAbierta(S._ficha.id);
-  $("#bMas")?.addEventListener("click", () => { if (cual === "todos") S.verTodos += 100; else S.verMis += 400; pintarLista(cual); });
+  $("#bMas")?.addEventListener("click", () => { if (cual === "todos") S.verTodos += PAG_TODOS; else S.verMis += PAG_MIS; pintarLista(cual); });
   $("#bMasSrv")?.addEventListener("click", e => masTodos(e.target));
   MOV.trasPintar();
 }
@@ -4142,7 +4118,7 @@ function abrirFicha(r) {
   if (!S._fichaNav) S._fichaOrden = ordenVista(); S._fichaNav = false;
   const sh = $("#sheet"), sc = $("#scrim"), idAntes = !sh.hidden && sh.classList.contains("on") ? S._ficha?.id : null;
   const sub = L.sub(r.subestructuraId), est = L.est(r.estructuraId);
-  const fila = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : "";
+  const filaDato = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : "";
   // Solo enlaces http(s): un «javascript:» o «data:» guardado en el registro se muestra como texto, no como enlace
   const links = (arr) => (arr || []).map(l => /^https?:\/\//i.test(String(l)) ? `<div class="link"><a href="${esc(l)}" target="_blank" rel="noopener noreferrer">${esc(String(l).replace(/^https?:\/\//i, ""))}</a></div>` : `<div class="link muted">${esc(l)}</div>`).join("");
   // Cabecera pegajosa (versión 43): la ✕, las flechas y «Copiar» siguen a la vista al bajar en una ficha larga
@@ -4157,27 +4133,27 @@ function abrirFicha(r) {
     ${r.motivoEdicion ? `<div class="muted small" style="margin-top:6px">Corregido después de entregar: ${esc(r.motivoEdicion)}</div>` : ""}
     ${r.borrado ? `<div class="item nota re" style="animation:none">En la papelera · borrado por ${esc(r.borradoNombre || r.borradoPor || "")}${r.borradoEn ? " el " + esc(fmtFecha(r.borradoEn)) : ""}</div>` : ""}
     <dl class="kv">
-      ${fila("Actividad", esc(nom(L.act(r.actividad), r.actividad)))}
-      ${fila("Estructura", esc([nom(est), sub && sub.nombre !== nom(est) ? sub.nombre : ""].filter(Boolean).join(" · ")))}
-      ${fila("Elemento", esc(nom(L.ele(r.elementoId))))}
-      ${fila("Tipo", esc(nom(L.tipo(r.tipoId))))}
-      ${fila("Detalle", esc(r.detalle || ""))}
-      ${fila("Progresiva", r.pkInicio != null ? `<span class="mono">${esc(rangoPk(r.pkInicio, r.pkFin))}</span>` : "")}
-      ${fila("Cota", esc(r.cota))}
-      ${fila("Capa", esc(capaDe(r)))}
-      ${fila("Área", r.area != null ? esc(r.area.toLocaleString("es-PE")) + " m²" : "")}
-      ${fila(etqFecha(r.actividad).replace(/^Fecha y hora/, "Fecha"), esc(fmtFecha(r.fechaCampo)))}
-      ${fila("Topógrafo", esc(nom(L.topo(r.topografoId), r.topografoId)))}
-      ${r.equipo ? fila("Equipo", esc(nom(L.equipo(r.equipo), r.equipo))) : ""}
-      ${(r.protocolos || []).length ? fila("Protocolos", r.protocolos.map(x => `<div>${x.numero ? `<span class="mono">${esc(x.numero)}</span> · ` : ""}${esc(x.nombre)}</div>`).join("")) : ""}
-      ${fila("Registrado por", esc(quienRegistro(r.creadoPor, r)))}
-      ${fila("Fecha de entrega", esc(fmtFecha(r.fechaLiberacion, false)))}
-      ${fila("Entrega a Calidad", esc(fmtFecha(r.fechaEntrega, false)))}
-      ${r.carpeta ? fila("Carpeta OneDrive", verCarpeta(r.carpeta)) : ""}
-      ${(r.xmlEntrega || []).length ? fila("Superficie (XML)", r.xmlEntrega.map(x => `<div><span class="mono">${esc(x.superficie)}</span><span class="muted small"> · ${esc(x.archivo)}</span></div>`).join("") + (puedeAjustes() && r.xmlEntrega.some(x => x.supId) ? '<button type="button" class="linkbtn" id="fVerSup">Ver en el modelo</button>' : "")) : ""}
-      ${fila("Observaciones", esc(r.observaciones))}
-      ${r.actividad === "ASP" && r.procesado ? fila("Procesado", esc(`${r.procesadoNombre || r.procesadoPor || ""} · ${fmtFecha(r.procesadoEn)}`)) : ""}
-      ${r.visto ? fila("Enterado por", esc(`${r.vistoNombre || r.vistoPor || ""} · ${fmtFecha(r.vistoEn)}`)) : ""}
+      ${filaDato("Actividad", esc(nom(L.act(r.actividad), r.actividad)))}
+      ${filaDato("Estructura", esc([nom(est), sub && sub.nombre !== nom(est) ? sub.nombre : ""].filter(Boolean).join(" · ")))}
+      ${filaDato("Elemento", esc(nom(L.ele(r.elementoId))))}
+      ${filaDato("Tipo", esc(nom(L.tipo(r.tipoId))))}
+      ${filaDato("Detalle", esc(r.detalle || ""))}
+      ${filaDato("Progresiva", r.pkInicio != null ? `<span class="mono">${esc(rangoPk(r.pkInicio, r.pkFin))}</span>` : "")}
+      ${filaDato("Cota", esc(r.cota))}
+      ${filaDato("Capa", esc(capaDe(r)))}
+      ${filaDato("Área", r.area != null ? esc(r.area.toLocaleString("es-PE")) + " m²" : "")}
+      ${filaDato(etqFecha(r.actividad).replace(/^Fecha y hora/, "Fecha"), esc(fmtFecha(r.fechaCampo)))}
+      ${filaDato("Topógrafo", esc(nom(L.topo(r.topografoId), r.topografoId)))}
+      ${r.equipo ? filaDato("Equipo", esc(nom(L.equipo(r.equipo), r.equipo))) : ""}
+      ${(r.protocolos || []).length ? filaDato("Protocolos", r.protocolos.map(x => `<div>${x.numero ? `<span class="mono">${esc(x.numero)}</span> · ` : ""}${esc(x.nombre)}</div>`).join("")) : ""}
+      ${filaDato("Registrado por", esc(quienRegistro(r.creadoPor, r)))}
+      ${filaDato("Fecha de entrega", esc(fmtFecha(r.fechaLiberacion, false)))}
+      ${filaDato("Entrega a Calidad", esc(fmtFecha(r.fechaEntrega, false)))}
+      ${r.carpeta ? filaDato("Carpeta OneDrive", verCarpeta(r.carpeta)) : ""}
+      ${(r.xmlEntrega || []).length ? filaDato("Superficie (XML)", r.xmlEntrega.map(x => `<div><span class="mono">${esc(x.superficie)}</span><span class="muted small"> · ${esc(x.archivo)}</span></div>`).join("") + (puedeAjustes() && r.xmlEntrega.some(x => x.supId) ? '<button type="button" class="linkbtn" id="fVerSup">Ver en el modelo</button>' : "")) : ""}
+      ${filaDato("Observaciones", esc(r.observaciones))}
+      ${r.actividad === "ASP" && r.procesado ? filaDato("Procesado", esc(`${r.procesadoNombre || r.procesadoPor || ""} · ${fmtFecha(r.procesadoEn)}`)) : ""}
+      ${r.visto ? filaDato("Enterado por", esc(`${r.vistoNombre || r.vistoPor || ""} · ${fmtFecha(r.vistoEn)}`)) : ""}
     </dl>
     ${(r.linksCsv || []).length ? `<div class="sub">CSV</div><div class="links">${links(r.linksCsv)}</div>` : ""}
     ${(r.linksFotos || []).length ? `<div class="sub">Fotos</div><div class="links">${links(r.linksFotos)}</div>` : ""}
@@ -4302,14 +4278,14 @@ addEventListener("keydown", e => {
 /* ---------- Menú de acciones (clic derecho en computadora, mantener presionado en el celular) ---------- */
 function cerrarMenu() { const m = $("#ctx"), bd = $("#ctxbd"); document.querySelectorAll(".ctx-on").forEach(x => x.classList.remove("ctx-on")); if (m) { m.id = ""; m.classList.remove("on"); setTimeout(() => m.remove(), 200); } bd?.remove(); }
 // items: [{ t, fn, peligro, sep }]; cuerpo: html opcional (por ejemplo campos) antes de los botones
-function abrirMenu({ titulo, sub, items, x, y, cuerpo, alAbrir, fila }) {
+function abrirMenu({ titulo, sub, items, x, y, cuerpo, alAbrir, fila: filaEl }) {
   cerrarMenu();
   const bd = document.createElement("div"); bd.id = "ctxbd"; bd.className = "ctxbd"; document.body.appendChild(bd);
   const m = document.createElement("div"); m.id = "ctx"; m.setAttribute("role", "menu");
   const movil = !enPC(); m.className = "ctx" + (movil ? " hoja" : "");
   m.innerHTML = `${movil ? '<span class="ctx-grip" aria-hidden="true"></span>' : ""}<div class="ctx-head"><b>${titulo}</b>${sub ? `<span>${sub}</span>` : ""}</div>${cuerpo || ""}<div class="ctx-items">${items.map((it, i) => it.sep ? '<div class="ctx-sep" role="separator"></div>' : `<button type="button" role="menuitem" class="ctx-i ${it.peligro ? "danger" : ""} ${it.pri ? "pri" : ""}" data-i="${i}" ${it.oculto ? "hidden" : ""}>${it.t}</button>`).join("")}</div>`;
   document.body.appendChild(m);
-  if (fila) fila.classList.add("ctx-on");
+  if (filaEl) filaEl.classList.add("ctx-on");
   if (!movil) { const r = m.getBoundingClientRect(); m.style.left = Math.max(8, Math.min(innerWidth - r.width - 8, x)) + "px"; m.style.top = Math.max(8, Math.min(innerHeight - r.height - 8, y)) + "px"; }
   requestAnimationFrame(() => m.classList.add("on"));
   bd.addEventListener("click", cerrarMenu); bd.addEventListener("contextmenu", e => { e.preventDefault(); cerrarMenu(); });
@@ -4342,12 +4318,11 @@ function accionesReg(r) {
   if (puedeBorrar(r)) it.push({ sep: 1 }, { t: "Mandar a la papelera", fn: () => aPapelera([r]), peligro: true });
   return it;
 }
-async function menuRegistro(id, x, y, fila) {
+async function menuRegistro(id, x, y, filaEl) {
   let r = regsDe([id])[0];
   if (!r) { const c = await completos([id]); r = c.regs[0]; if (!r) { toast(motivoFalta(c, [id]), "bad"); return; } }
-  abrirMenu({ titulo: esc(r.numero || "Sin número"), sub: `${chipsReg(r)} ${esc(nom(L.tipo(r.tipoId)))}${capaDe(r) ? " · " + esc(capaDe(r)) : ""} · <span class="mono">${esc(rangoPk(r.pkInicio, r.pkFin))}</span>`, items: accionesReg(r), x, y, fila });
+  abrirMenu({ titulo: esc(r.numero || "Sin número"), sub: `${chipsReg(r)} ${esc(nom(L.tipo(r.tipoId)))}${capaDe(r) ? " · " + esc(capaDe(r)) : ""} · <span class="mono">${esc(rangoPk(r.pkInicio, r.pkFin))}</span>`, items: accionesReg(r), x, y, fila: filaEl });
 }
-const fila0 = d => fila(d);
 function objetivoMenu(t) {
   if (!t.closest("#view")) return null;
   if (t.closest("input,textarea,select,a,[contenteditable]")) return null;
@@ -4378,11 +4353,11 @@ document.addEventListener("touchmove", e => { const p = e.touches[0]; if (p && M
 document.addEventListener("touchend", () => clearTimeout(lp.t), { passive: true });
 document.addEventListener("click", e => { if (Date.now() - lp.fired < 700 && !e.target.closest("#ctx")) { e.preventDefault(); e.stopPropagation(); } }, true);
 
-/* ---------- Buscador global (Ctrl+K o /): códigos, PK, capas, topógrafos y pantallas ---------- */
+/* ---------- Histórico completo: todos los registros resumidos (los usan Registros y el buscador global) ---------- */
 const BUS = { todos: null, cargando: false, en: 0 };
 // El histórico completo (resumen por frente); se vuelve a pedir si pasaron más de 5 minutos
-async function cargarTodoResumen(forzar) {
-  if (BUS.cargando || (BUS.todos && !forzar && Date.now() - BUS.en < 300000)) return; BUS.cargando = true;
+async function cargarTodoResumen() {
+  if (BUS.cargando || (BUS.todos && Date.now() - BUS.en < CACHE_HIST_MS)) return; BUS.cargando = true;
   try {
     const snap = await getDocs(collection(db, "resumen"));
     const porSid = {}; snap.docs.forEach(d => { const sid = sidDeRes(d.id), k = d.id.slice(sid.length + 1) || "0"; (porSid[sid] ||= {})[k] = d.data().r; medirRes(sid, k, d.data().r); });
@@ -4403,6 +4378,7 @@ function mezclarHist() {
   const v = ordenarMs([...m.values()].filter(vivo), r => r.fechaCampo, true);
   _mezcla = { k, v }; return v;
 }
+/* ---------- Buscador global (Ctrl+K o /): códigos, PK, capas, topógrafos y pantallas ---------- */
 // Texto de búsqueda de cada registro, guardado para no rearmarlo con cada tecla
 const TXT_BUS = new WeakMap();
 const txtBus = r => { let t = TXT_BUS.get(r); if (t == null) { t = sinTilde([r.numero, nom(L.tipo(r.tipoId)), r.capa, r.cota, nom(L.sub(r.subestructuraId)), fmtPk(r.pkInicio), fmtPk(r.pkFin), r.topografoId, nom(L.topo(r.topografoId)), ESTADOS[r.estado], r.descripcion, r.nombreLiberacion, r.numeroCargo].join(" ")); TXT_BUS.set(r, t); } return t; };
@@ -4458,7 +4434,7 @@ addEventListener("keydown", e => {
 });
 
 
-/* ---------- Usuarios (solo administrador) ---------- */
+/* ---------- Selectores de rol y de topógrafo (los usa Ajustes → Usuarios) ---------- */
 function selRol(v, extra = "") { return `<select ${extra} aria-label="Rol">${Object.entries(ROLES).filter(([k]) => k !== "admin" || esAdmin() || v === "admin").map(([k, t]) => `<option value="${k}" ${k === v ? "selected" : ""}>${t}</option>`).join("")}</select>`; }
 function selTopo(v, extra = "") { return `<select ${extra} aria-label="Topógrafo"><option value="">Sin clave de topógrafo</option>${S.listas.topografos.map(t => `<option value="${esc(t.id)}" ${t.id === v ? "selected" : ""}>${esc(t.id)} · ${esc(t.nombre)}</option>`).join("")}</select>`; }
 /* ---------- Resumen por frente: el panel lee 1 documento por frente en vez de cada registro ---------- */
@@ -4533,13 +4509,13 @@ async function reconstruirResumen0() {
   const por = {};
   snap.docs.forEach(d => { const r = d.data(); if (!r.subestructuraId || r.estado === "X" || r.borrado) return; (por[idRes(r.subestructuraId, parteRes(d.id))] ||= {})[d.id] = compacto(r); });
   const prev = await getDocs(collection(db, "resumen"));
-  const ops = [...Object.entries(por).map(([rid, m]) => ["set", rid, m]), ...prev.docs.filter(d => !por[d.id]).map(d => ["del", d.id])];
+  const ops = [...Object.entries(por).map(([docId, m]) => ["set", docId, m]), ...prev.docs.filter(d => !por[d.id]).map(d => ["del", d.id])];
   // Lotes por tamaño (Firestore admite hasta 10 MiB por envío), no solo por cantidad
   let b = writeBatch(db), n = 0, bytes = 0;
-  for (const [k, rid, m] of ops) {
+  for (const [k, docId, m] of ops) {
     const t = k === "set" ? JSON.stringify(m).length : 100;
     if (n && (n >= 20 || bytes + t > 6e6)) { await b.commit(); b = writeBatch(db); n = 0; bytes = 0; }
-    if (k === "set") b.set(doc(db, "resumen", rid), { r: m, editadoEn: serverTimestamp() }); else b.delete(doc(db, "resumen", rid));
+    if (k === "set") b.set(doc(db, "resumen", docId), { r: m, editadoEn: serverTimestamp() }); else b.delete(doc(db, "resumen", docId));
     n++; bytes += t;
   }
   if (n) await b.commit();
@@ -4590,7 +4566,7 @@ function pintarAvisos(sub, recs) {
   if (!puedeAjustes() || !hay || oculto) { box.innerHTML = ""; return false; }
   const n = (x, u, v) => x === 1 ? u : v, tot = pr.sinPk.length + pr.fuera.length + pr.ocultos.length;
   // En celular el recuadro va plegado en una sola línea para que el gráfico se vea sin desplazarse
-  const cel = ANCHO < 760;
+  const cel = ANCHO < CORTE_CELULAR;
   box.innerHTML = `${cel ? `<details class="pinfo aviso pavisos pav-d"${S.panel._avAbierto ? " open" : ""}><summary><b>${tot} ${n(tot, "dato", "datos")} para corregir</b></summary>` : `<div class="pinfo aviso pavisos"><b>Datos para corregir en ${esc(sub.nombre)}</b>`}<ul>
     ${pr.sinPk.length ? `<li><span>${pr.sinPk.length} ${n(pr.sinPk.length, "registro", "registros")} sin progresiva</span><button type="button" class="linkbtn" data-prob="sinPk">Ver</button></li>` : ""}
     ${pr.fuera.length ? `<li><span>${pr.fuera.length} fuera del rango ${esc(fmtPk(pr.fr0))} a ${esc(fmtPk(pr.fr1))}</span><button type="button" class="linkbtn" data-prob="fuera">Ver</button></li>` : ""}
@@ -4836,7 +4812,7 @@ function pintarPanel() {
   if (P.vista === "modelo" && !veModelo()) P.vista = "perfil";
   if (P.vista === "modelo") { pintarModelo(); return; }
   const planta = P.vista === "planta";
-  const movilP = innerWidth < 760;
+  const movilP = innerWidth < CORTE_CELULAR;
   // Leyenda: completa en computadora; en celular plegada en una línea con solo las muestras de color
   const leyenda = `<div class="legend"><span><i class="falta-i"></i>Falta liberar</span><span><i class="nolib"></i>No se libera</span>${["PT", "EP", "EC", "OB"].map(k => `<span><i style="background:${fondoLey(k)}"></i>${ESTADOS[k]}</span>`).join("")}</div>`;
   const grupos = opcionesSubs(P.subId);
@@ -4879,11 +4855,11 @@ function pintarPanel() {
   $("#pActivos").addEventListener("click", e => { const c = e.target.closest("[data-quitar]"); if (c) quitarFiltro(c.dataset.quitar); });
   $("#pFilBtn")?.addEventListener("click", abrirHojaFiltros);
   if (planta) {
-    const elegirTipo = t => { P.tipoPl = t; P.capa = ""; P.plVB = null; actualizarPanel(); };
-    $("#pTipoPl").addEventListener("change", e => elegirTipo(e.target.value));
+    const elegirTipoPl = t => { P.tipoPl = t; P.capa = ""; P.plVB = null; actualizarPanel(); };
+    $("#pTipoPl").addEventListener("change", e => elegirTipoPl(e.target.value));
     $("#pCapaPl").addEventListener("change", e => { P.capa = e.target.value; P.plVB = null; actualizarPanel(); });
-    $("#plTop").addEventListener("click", e => { const b = e.target.closest("[data-pltipo]"); if (b) elegirTipo(b.dataset.pltipo); });
-    $("#chart").addEventListener("click", e => { const b = e.target.closest("[data-pltipo]"); if (b) elegirTipo(b.dataset.pltipo); });
+    $("#plTop").addEventListener("click", e => { const b = e.target.closest("[data-pltipo]"); if (b) elegirTipoPl(b.dataset.pltipo); });
+    $("#chart").addEventListener("click", e => { const b = e.target.closest("[data-pltipo]"); if (b) elegirTipoPl(b.dataset.pltipo); });
     $("#plAvance").addEventListener("click", e => {
       if (e.target.closest("[data-irejes]")) { S.aj.tab = "lugares"; ir("ajustes"); return; }
       if (e.target.closest("[data-plmas]")) { P.plTodas = !P.plTodas; actualizarPanel(); return; }
@@ -4940,7 +4916,7 @@ function pintarAcc(box, F, enVivo) {
       <div class="cap-acc" id="pCapAcc"><button type="button" class="chip" data-cap="todas">Todas</button><button type="button" class="chip" data-cap="ninguna">Ninguna</button><button type="button" class="chip" data-cap="ultimas">Últimas 5 por tipo</button></div>
       <div id="pCapChips"></div>`
   };
-  box.innerHTML = secs.map(k => `<section class="acc-s ${abierta === k ? "on" : ""}" data-sec="${k}"><button type="button" class="acc-h" data-acc="${k}" aria-expanded="${abierta === k}"><span class="acc-n">${nombre[k]}${k === "fil" && rf.length ? ` <span class="acc-b">${rf.length}</span>` : ""}</span><span class="acc-r" ${k === "cap" ? 'id="pCapRes"' : ""}>${esc(res[k])}</span>${CHEV}</button>${abierta === k ? `<div class="acc-c">${cuerpo[k]()}</div>` : ""}</section>`).join("");
+  box.innerHTML = secs.map(k => `<section class="acc-s ${abierta === k ? "on" : ""}"><button type="button" class="acc-h" data-acc="${k}" aria-expanded="${abierta === k}"><span class="acc-n">${nombre[k]}${k === "fil" && rf.length ? ` <span class="acc-b">${rf.length}</span>` : ""}</span><span class="acc-r" ${k === "cap" ? 'id="pCapRes"' : ""}>${esc(res[k])}</span>${CHEV}</button>${abierta === k ? `<div class="acc-c">${cuerpo[k]()}</div>` : ""}</section>`).join("");
   if (abierta === "cap") pintarCapas(box);
   if (box._ok) return; box._ok = true;
   // Eventos (una sola vez por caja; leen el estado actual de box._F)
@@ -5038,7 +5014,7 @@ const bandaKey = (tipoId, capa) => tipoId + "|" + (capa || "");
 function visCapas() { const P = S.panel; if (!P._vis || P._visSub !== P.subId) { P._vis = ls.get("lib.vis." + P.subId, {}); P._visSub = P.subId; } return P._vis; }
 function guardarVis() { ls.set("lib.vis." + S.panel.subId, S.panel._vis || {}); }
 // En el celular, si la persona no eligió capas en ese frente, se ven solo las últimas 5 de cada tipo (en computadora, todas)
-const ultimasPorDefecto = () => ANCHO < 760 && !Object.keys(visCapas()).length;
+const ultimasPorDefecto = () => ANCHO < CORTE_CELULAR && !Object.keys(visCapas()).length;
 function ultimas5() {
   const P = S.panel, bs = P._bandas || [];
   if (P._ult?.bs === bs) return P._ult.set;
@@ -5047,10 +5023,6 @@ function ultimas5() {
 }
 function esVisible(b) { const v = visCapas(); if (b.key in v) return v[b.key]; if (ultimasPorDefecto()) return !b.oculta && ultimas5().has(b.key); return !b.oculta; }
 function alternarCapa(key) { const b = (S.panel._bandas || []).find(x => x.key === key); if (!b) return; visCapas()[key] = !esVisible(b); guardarVis(); actualizarPanel(); }
-function alternarGrupo(tipoId) {
-  const bs = (S.panel._bandas || []).filter(b => b.t.id === tipoId); const alguno = bs.some(esVisible);
-  bs.forEach(b => { visCapas()[b.key] = !alguno; }); guardarVis(); actualizarPanel();
-}
 function accionCapas(acc) { accionCapasEn(visCapas(), acc); guardarVis(); actualizarPanel(); }
 
 // Una banda por tipo; si el tipo tiene capas (definidas o registradas), una banda por capa. Orden: de la primera construida a la última.
@@ -5063,8 +5035,8 @@ function construirBandas(sub, recs) {
     if (!(m.size || cfg.capas.length || cfg.noAplica.length || S.panel.todas)) return;
     const deCfg = new Map(); cfg.capas.forEach(c => { const k = cv(c.nombre); if (k && !deCfg.has(k)) deCfg.set(k, c); });
     const capas = [...new Set([...deCfg.keys(), ...m.keys()].filter(Boolean))].sort(natural);
-    const sinCapa = m.get("") || [];
-    if (sinCapa.length || !capas.length) bandas.push({ key: bandaKey(t.id, ""), t, capa: "", nombre: capas.length ? `${t.nombre} · sin capa` : t.nombre, corto: capas.length ? "Sin capa" : t.nombre, rs: sinCapa, na: capas.length ? cfg.noAplica.filter(x => !cv(x.capa)) : cfg.noAplica });
+    const recsSinCapa = m.get("") || [];
+    if (recsSinCapa.length || !capas.length) bandas.push({ key: bandaKey(t.id, ""), t, capa: "", nombre: capas.length ? `${t.nombre} · sin capa` : t.nombre, corto: capas.length ? "Sin capa" : t.nombre, rs: recsSinCapa, na: capas.length ? cfg.noAplica.filter(x => !cv(x.capa)) : cfg.noAplica });
     capas.forEach(c => {
       const cc = deCfg.get(c);
       bandas.push({ key: bandaKey(t.id, c), t, capa: c, oculta: !!(cc && cc.oculta), cota: cc?.cota || "", nombre: `${t.nombre} · ${c}${cc && cc.cota ? ` (cota ${cc.cota})` : ""}`, corto: c + (cc && cc.cota ? ` · ${cc.cota}` : ""), rs: m.get(c) || [], na: cfg.noAplica.filter(x => !cv(x.capa) || cv(x.capa) === c) });
@@ -5072,12 +5044,13 @@ function construirBandas(sub, recs) {
   });
   return bandas;
 }
-function pintarChips(bandas) {
+function pintarChips() {
   const acc = $("#pAcc");
   // Si el foco está dentro del acordeón (p. ej. escribiendo en «Buscar capa»), solo se repinta la lista de capas
   if (acc) { if (!acc.contains(document.activeElement)) pintarAcc(acc, filtrosDe(), true); else { acc._F = filtrosDe(); pintarCapas(acc); } }
   pintarFilBtn(); pintarActivos();
 }
+/* ---------- Panel: redibujar según los filtros, y dibujo del perfil y de «Qué falta» ---------- */
 function actualizarPanel() {
   const P = S.panel, sub = L.sub(P.subId);
   P.pfComp ??= ls.get("lib.pfComp", false);
@@ -5408,15 +5381,15 @@ function pintarFalta() {
   const val = (x, o) => o === "capa" ? ordenB.get(x.key) : o === "desde" ? x.a : o === "hasta" ? x.b : x.largo;
   const cmp = (p, q) => (val(p, F.orden) - val(q, F.orden)) * F.dir || p.a - q.a;
   const flecha = o => F.orden === o ? (F.dir > 0 ? " ▲" : " ▼") : "";
-  const capaDe = g => { const b = g.banda; return `<b>${esc(b.capa ? b.corto : b.nombre)}</b>${b.capa ? `<span>${esc(b.t.nombre)}</span>` : ""}`; };
-  const filaH = g => `<tr data-gap="${g.i}"><td class="fcap">${F.agrupar ? "" : capaDe(g)}</td><td class="mono">${fmtPk(g.a)}</td><td class="mono">${fmtPk(g.b)}</td><td class="mono fm">${mts(g.largo)}</td></tr>`;
+  const htmlCapa = g => { const b = g.banda; return `<b>${esc(b.capa ? b.corto : b.nombre)}</b>${b.capa ? `<span>${esc(b.t.nombre)}</span>` : ""}`; };
+  const filaH = g => `<tr data-gap="${g.i}"><td class="fcap">${F.agrupar ? "" : htmlCapa(g)}</td><td class="mono">${fmtPk(g.a)}</td><td class="mono">${fmtPk(g.b)}</td><td class="mono fm">${mts(g.largo)}</td></tr>`;
   let cuerpo;
   if (F.agrupar) {
     const porKey = new Map(); filas.forEach(g => { let l = porKey.get(g.key); if (!l) porKey.set(g.key, l = []); l.push(g); });
     const grupos = conHueco.filter(b => !P.ftCapas.size || P.ftCapas.has(b.key)).map(b => { const gs = (porKey.get(b.key) || []).slice().sort((p, q) => p.a - q.a); return { b, gs, a: gs[0].a, bb: gs[gs.length - 1].b, largo: gs.reduce((t, g) => t + g.largo, 0) }; });
     const vg = (x, o) => o === "capa" ? ordenB.get(x.b.key) : o === "desde" ? x.a : o === "hasta" ? x.bb : x.largo;
     grupos.sort((p, q) => (vg(p, F.orden) - vg(q, F.orden)) * F.dir);
-    cuerpo = grupos.map(x => `<tr class="ftg"><td class="fcap">${capaDe(x.gs[0])}</td><td colspan="2" class="muted small">${x.gs.length} ${x.gs.length === 1 ? "tramo" : "tramos"}</td><td class="mono fm">${mts(x.largo)}</td></tr>${x.gs.map(filaH).join("")}`).join("");
+    cuerpo = grupos.map(x => `<tr class="ftg"><td class="fcap">${htmlCapa(x.gs[0])}</td><td colspan="2" class="muted small">${x.gs.length} ${x.gs.length === 1 ? "tramo" : "tramos"}</td><td class="mono fm">${mts(x.largo)}</td></tr>${x.gs.map(filaH).join("")}`).join("");
   } else cuerpo = filas.sort(cmp).map(filaH).join("");
   const nFil = P.ftCapas.size ? filas.reduce((t, g) => t + g.largo, 0) : total;
   box.innerHTML = `<h2>Qué falta liberar <span class="muted small" style="font-weight:700">· ${mts(nFil)} en ${(P.ftCapas.size || conHueco.length)} ${(P.ftCapas.size || conHueco.length) === 1 ? "capa" : "capas"}, entre PK ${fmtPk(x0)} y ${fmtPk(x1)}</span></h2>
@@ -5435,6 +5408,7 @@ function clickFalta(e) {
 }
 
 // Planta: el eje de cada frente (subido en Ajustes → Lugares) con los tramos liberados de la capa elegida
+/* ---------- Panel: planta (eje del frente y avance por capa) ---------- */
 function puntosEje(subId) { const e = S.ejes[subId]; if (!e || !e.puntos || e.puntos.length < 6) return null; const p = []; for (let i = 0; i + 2 < e.puntos.length; i += 3) p.push([e.puntos[i], e.puntos[i + 1], e.puntos[i + 2]]); return p; }
 function enEje(p, pk) {
   if (pk <= p[0][0]) return [p[0][1], p[0][2]]; const n = p.length - 1; if (pk >= p[n][0]) return [p[n][1], p[n][2]];
@@ -5559,10 +5533,10 @@ DESK.addEventListener("change", () => { if (!S.dentro) return; if (S.view === "n
 MEDIO.addEventListener("change", () => { if (S.dentro && ["todos", "bandeja"].includes(S.view)) render(); });
 let rzT; addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(() => { if (S.view === "panel" && ($("#chart") || $("#mBody"))) actualizarPanel(); }, 150); });
 
-/* ---------- Modelo 2D (solo gabinete): eje y secciones de Civil 3D + la superficie de cada liberación ----------
+/* ---------- Modelo 2D (gabinete, jefe de área y administrador): eje y secciones de Civil 3D + la superficie de cada liberación ----------
    Lecturas: 1 documento con las secciones de diseño del frente, 1 resumen de superficies (en vivo) y las
    superficies del frente una sola vez por sesión; después solo se leen las nuevas. */
-const MOD = { secc: {}, sup: {}, res: {}, bases: {}, med: {}, cargando: {}, supOk: {}, unsub: null, unsubB: null, resSub: "", hay: null, hayB: {}, haySub: null };
+const MOD = { secc: {}, sup: {}, res: {}, bases: {}, med: {}, cargando: {}, supOk: {}, unsub: null, unsubB: null, resSub: "", hay: null, haySub: null };
 // Qué frentes ya tienen modelo (liberaciones subidas o base), para marcarlos en la lista de frentes.
 // Versión 1.45: se lee una vez (y otra si pasaron HAY_MS) en vez de escuchar las dos colecciones enteras toda la sesión;
 // el frente abierto se cuenta con lo que ya llega en vivo de su modelo (MOD.res y MOD.bases)
@@ -5636,9 +5610,9 @@ function dp(pts, tol) {
   if (pts.length < 3) return pts.slice();
   const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1; const st = [[0, pts.length - 1]];
   while (st.length) {
-    const [i, j] = st.pop(), [x1, y1] = pts[i], [x2, y2] = pts[j], dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1;
+    const [i, j] = st.pop(), [x1, y1] = pts[i], [x2, y2] = pts[j], dx = x2 - x1, dy = y2 - y1, largo = Math.hypot(dx, dy) || 1;
     let md = 0, mk = -1;
-    for (let k = i + 1; k < j; k++) { const d = Math.abs(dy * (pts[k][0] - x1) - dx * (pts[k][1] - y1)) / L; if (d > md) { md = d; mk = k; } }
+    for (let k = i + 1; k < j; k++) { const d = Math.abs(dy * (pts[k][0] - x1) - dx * (pts[k][1] - y1)) / largo; if (d > md) { md = d; mk = k; } }
     if (md > tol) { keep[mk] = 1; st.push([i, mk], [mk, j]); }
   }
   return pts.filter((_, k) => keep[k]);
@@ -5654,16 +5628,16 @@ function ejeDeXml(al) {
   for (const g of cg.children) {
     const a = nums(xUno(g, "Start")?.textContent), b = nums(xUno(g, "End")?.textContent);
     if (a.length < 2 || b.length < 2) continue;
-    const [sN, sE] = a, [eN, eE] = b; let L = Number(g.getAttribute("length"));
+    const [sN, sE] = a, [eN, eE] = b; let largo = Number(g.getAttribute("length"));
     if (g.localName === "Curve") {
       const [cN, cE] = nums(xUno(g, "Center")?.textContent);
       if (!isFinite(cN) || !isFinite(cE)) throw new Error("una curva del alineamiento no trae su centro (<Center>); revisa la exportación de Civil 3D");
       const R = Number(g.getAttribute("radius")) || Math.hypot(sE - cE, sN - cN), ccw = g.getAttribute("rot") === "ccw", a0 = Math.atan2(sN - cN, sE - cE);
-      if (!L) { let d = Math.atan2(eN - cN, eE - cE) - a0; if (ccw && d < 0) d += 2 * Math.PI; if (!ccw && d > 0) d -= 2 * Math.PI; L = Math.abs(d) * R; }
-      const sw = L / R * (ccw ? 1 : -1), n = Math.max(4, Math.ceil(L));
-      for (let i = 0; i <= n; i++) { const f = i / n, an = a0 + sw * f; add(pk + L * f, cE + R * Math.cos(an), cN + R * Math.sin(an)); }
-    } else { if (!L) L = Math.hypot(eE - sE, eN - sN); add(pk, sE, sN); add(pk + L, eE, eN); }
-    pk += L;
+      if (!largo) { let d = Math.atan2(eN - cN, eE - cE) - a0; if (ccw && d < 0) d += 2 * Math.PI; if (!ccw && d > 0) d -= 2 * Math.PI; largo = Math.abs(d) * R; }
+      const sw = largo / R * (ccw ? 1 : -1), n = Math.max(4, Math.ceil(largo));
+      for (let i = 0; i <= n; i++) { const f = i / n, an = a0 + sw * f; add(pk + largo * f, cE + R * Math.cos(an), cN + R * Math.sin(an)); }
+    } else { if (!largo) largo = Math.hypot(eE - sE, eN - sN); add(pk, sE, sN); add(pk + largo, eE, eN); }
+    pk += largo;
   }
   if (p.length < 2) throw new Error("el alineamiento no tiene tramos");
   if (p.some(q => !isFinite(q[0]) || !isFinite(q[1]) || !isFinite(q[2]))) throw new Error("el alineamiento tiene coordenadas que no son números; revisa la exportación de Civil 3D");
@@ -5687,7 +5661,7 @@ function seccionesDeXml(al) {
 // Proyecta un punto (Este, Norte) sobre el eje → [progresiva, desfase (+ a la derecha), distancia]
 function proyector(eje) {
   const g = [];
-  for (let i = 1; i < eje.length; i++) { const a = eje[i - 1], b = eje[i], dx = b[1] - a[1], dy = b[2] - a[2], L = Math.hypot(dx, dy); if (L > 1e-9) g.push([a[0], a[1], a[2], dx / L, dy / L, L, b[0] - a[0]]); }
+  for (let i = 1; i < eje.length; i++) { const a = eje[i - 1], b = eje[i], dx = b[1] - a[1], dy = b[2] - a[2], largo = Math.hypot(dx, dy); if (largo > 1e-9) g.push([a[0], a[1], a[2], dx / largo, dy / largo, largo, b[0] - a[0]]); }
   return (E, N) => {
     let best = Infinity, s = 0, o = 0;
     for (const q of g) {
@@ -5768,7 +5742,7 @@ const supDeRes = (id, a) => ({ id, nombre: a[0], codigo: a[1], tipoId: a[2], cap
 function enDeSO(eje, s, o) {
   let lo = 0, hi = eje.length - 1;
   if (s <= eje[0][0]) hi = 1; else if (s >= eje[hi][0]) lo = hi - 1; else while (hi - lo > 1) { const m = (lo + hi) >> 1; if (eje[m][0] <= s) lo = m; else hi = m; }
-  const a = eje[lo], b = eje[hi], L = (b[0] - a[0]) || 1, t = (s - a[0]) / L;
+  const a = eje[lo], b = eje[hi], largo = (b[0] - a[0]) || 1, t = (s - a[0]) / largo;
   const dx = b[1] - a[1], dy = b[2] - a[2], d = Math.hypot(dx, dy) || 1;
   return [a[1] + dx * t + o * dy / d, a[2] + dy * t - o * dx / d];
 }
@@ -5793,7 +5767,7 @@ function zDiseno(mod, i, s, o) {
 // Compara puntos [s, o, z] con cada superficie de diseño; se queda con la más cercana que cubre al menos la mitad
 function compararDiseno(mod, pts) {
   if (!mod || !pts.length) return null;
-  const paso = Math.max(1, Math.floor(pts.length / 2500)), m = pts.filter((_, k) => k % paso === 0);
+  const salto = Math.max(1, Math.floor(pts.length / 2500)), m = pts.filter((_, k) => k % salto === 0);
   let mejor = null;
   mod.sups.forEach((nombre, i) => {
     const dz = []; for (const [s, o, z] of m) { const zd = zDiseno(mod, i, s, o); if (zd != null) dz.push(z - zd); }
@@ -6118,7 +6092,7 @@ function editarSuperficie(id) {
   const x = { ...supDeRes(id, a), subId, ...(MOD.sup[subId]?.get(id) || {}) }, r = registroDe(x.codigo);
   const tipos = S.listas.tipos.filter(t => t.enGrafico);
   const capas = new Set(Object.values(MOD.res[subId] || {}).map(v => v[3]).filter(Boolean));
-  const dd = dialogo("Liberación en el modelo", `<dl class="kv" style="margin:0 0 10px"><dt>Superficie</dt><dd>${esc(x.nombre)}</dd><dt>Tramo</dt><dd class="mono">${esc(rangoPk(x.pk0, x.pk1))} · desfase ${fmtOff(x.oMin)} a ${fmtOff(x.oMax)}</dd><dt>Cota</dt><dd class="mono">${x.zMin != null ? `${x.zMin.toFixed(2)} a ${x.zMax.toFixed(2)} · media ` : ""}${x.zMed.toFixed(2)}</dd>${x.supRef ? `<dt>Contra diseño</dt><dd class="mono">Δz ${fmtDz(x.dzMed)}${x.dzMin != null ? ` (${fmtDz(x.dzMin)} a ${fmtDz(x.dzMax)})` : ""} · ${esc(x.supRef)}</dd>` : ""}<dt>Área</dt><dd class="mono">${Math.round(x.area || 0).toLocaleString("es-PE")} m²</dd><dt>Registro</dt><dd>${r ? `<span class="st ${esc(r.estado)}">${esc(ESTADOS[r.estado])}</span>` : "Sin registro enlazado"}</dd>${x.archivo ? `<dt>Archivo</dt><dd>${esc(x.archivo)}</dd>` : ""}${x.editadoPor ? `<dt>Subido por</dt><dd>${esc(x.editadoPor)}</dd>` : ""}</dl>
+  const dlg = dialogo("Liberación en el modelo", `<dl class="kv" style="margin:0 0 10px"><dt>Superficie</dt><dd>${esc(x.nombre)}</dd><dt>Tramo</dt><dd class="mono">${esc(rangoPk(x.pk0, x.pk1))} · desfase ${fmtOff(x.oMin)} a ${fmtOff(x.oMax)}</dd><dt>Cota</dt><dd class="mono">${x.zMin != null ? `${x.zMin.toFixed(2)} a ${x.zMax.toFixed(2)} · media ` : ""}${x.zMed.toFixed(2)}</dd>${x.supRef ? `<dt>Contra diseño</dt><dd class="mono">Δz ${fmtDz(x.dzMed)}${x.dzMin != null ? ` (${fmtDz(x.dzMin)} a ${fmtDz(x.dzMax)})` : ""} · ${esc(x.supRef)}</dd>` : ""}<dt>Área</dt><dd class="mono">${Math.round(x.area || 0).toLocaleString("es-PE")} m²</dd><dt>Registro</dt><dd>${r ? `<span class="st ${esc(r.estado)}">${esc(ESTADOS[r.estado])}</span>` : "Sin registro enlazado"}</dd>${x.archivo ? `<dt>Archivo</dt><dd>${esc(x.archivo)}</dd>` : ""}${x.editadoPor ? `<dt>Subido por</dt><dd>${esc(x.editadoPor)}</dd>` : ""}</dl>
     <datalist id="dlModCapa2">${[...capas].sort(natural).map(c => `<option value="${esc(c)}">`).join("")}</datalist>
     <div class="grid g3"><div class="f"><label for="eK">Código</label><input id="eK" name="k" class="mono" value="${esc(x.codigo)}"></div><div class="f"><label for="eT">Tipo</label><select id="eT" name="t"><option value="">Sin tipo</option>${tipos.map(y => `<option value="${esc(y.id)}" ${y.id === x.tipoId ? "selected" : ""}>${esc(y.nombre)}</option>`).join("")}</select></div><div class="f"><label for="eC">Capa</label><input id="eC" name="c" value="${esc(x.capa)}" list="dlModCapa2" autocomplete="off"></div></div>
     <div class="actions" style="margin:10px 0 0;flex-wrap:wrap">${r ? '<button type="button" class="btn sec" id="eFicha">Ver registro</button>' : ""}<button type="button" class="btn warn" id="eQuitar">Quitar superficie</button></div>`,
@@ -6131,8 +6105,8 @@ function editarSuperficie(id) {
       MOD.res[subId][id] = supCompacto({ ...x, ...d }); const m = MOD.sup[subId]?.get(id); if (m) Object.assign(m, d, { _v: d.v });
       S.panel.mGrupo = d.grupo; dibujarModelo();
     }, "Guardar", { ancho: true, sinFoco: true });
-  dd.querySelector("#eFicha")?.addEventListener("click", () => { dd.cerrar(true); abrirFichaId(r.id); });
-  dd.querySelector("#eQuitar").addEventListener("click", async () => { dd.cerrar(true); await quitarSuperficie(x); });
+  dlg.querySelector("#eFicha")?.addEventListener("click", () => { dlg.cerrar(true); abrirFichaId(r.id); });
+  dlg.querySelector("#eQuitar").addEventListener("click", async () => { dlg.cerrar(true); await quitarSuperficie(x); });
 }
 const fmtDz = v => v == null ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toFixed(2) + " m";
 const fmtOff = v => v == null ? "—" : (v < 0 ? "I " : "D ") + Math.abs(v).toFixed(1);
@@ -6199,17 +6173,17 @@ async function subirBase(file, xml) {
       <div class="f"><label for="dBTipo">Tipo</label><select id="dBTipo" name="tipo">${tiposG.map(t => `<option value="${esc(t.id)}" ${t.id === tipoIni ? "selected" : ""}>${esc(t.nombre)}</option>`).join("")}</select></div>
       <div class="f"><label for="dBCapa">Capa</label><input id="dBCapa" name="capa" placeholder="Ej.: Capa 15" value="${esc(c0 || "")}" list="dlBCapa" autocomplete="off" maxlength="40" required><datalist id="dlBCapa"></datalist></div>
     </div>
-    <dl class="kv" style="margin:0 0 8px"><dt>Área (100 %)</dt><dd class="mono">${Math.round(area).toLocaleString("es-PE")} m²</dd><dt>Borde</dt><dd>${(() => { const { islas, huecos } = islasHuecos(an), v = an.reduce((t, r) => t + r.length, 0); return `${v} vértices${islas > 1 ? ` · ${islas} partes` : ""}${huecos ? ` · ${huecos} ${huecos === 1 ? "hueco" : "huecos"}` : ""}`; })()}</dd></dl>
+    <dl class="kv" style="margin:0 0 8px"><dt>Área (100 %)</dt><dd class="mono">${Math.round(area).toLocaleString("es-PE")} m²</dd><dt>Borde</dt><dd>${(() => { const { islas, huecos: nHuecos } = islasHuecos(an), v = an.reduce((t, r) => t + r.length, 0); return `${v} vértices${islas > 1 ? ` · ${islas} partes` : ""}${nHuecos ? ` · ${nHuecos} ${nHuecos === 1 ? "hueco" : "huecos"}` : ""}`; })()}</dd></dl>
     ${lejos ? `<p class="dlg-p aviso">Está a más de 300 m del eje del frente: revisa que sea el frente correcto.</p>` : ""}
     <p class="dlg-p aviso" id="dBPrev" hidden></p>
     <p class="muted small" style="margin:6px 0 0">Después sube los XML de cada liberación de esta capa (cuando quieras, poco a poco) y el porcentaje se va completando.</p>`, o => {
     const tipoId = o.tipo, capa = normCapa(o.capa, subId, tipoId);
     if (!tipoId || !capa) { toast("Elige el tipo y escribe la capa.", "bad"); return false; }
     const g = grupoDe(tipoId, capa), previa = MOD.bases[subId]?.get(g), id = idSup(subId, "base-" + g);
-    const dd = { subId, grupo: g, tipoId, capa, nombre: file.name, area: Math.round(area * 10) / 10, anillos: an.map(r => r.map(p => r2(p[0]) + "," + r2(p[1])).join(" ")), v: (previa?.v || 0) + 1, ...sello() };
-    (MOD.bases[subId] ||= new Map()).set(g, { id, ...dd, anillos: an });
+    const datosBase = { subId, grupo: g, tipoId, capa, nombre: file.name, area: Math.round(area * 10) / 10, anillos: an.map(r => r.map(p => r2(p[0]) + "," + r2(p[1])).join(" ")), v: (previa?.v || 0) + 1, ...sello() };
+    (MOD.bases[subId] ||= new Map()).set(g, { id, ...datosBase, anillos: an });
     P.mGrupo = g; P.mModo = "real"; P.mSel = ""; P.mVB = null; dibujarModelo();
-    escribir(setDoc(doc(db, "bases", id), dd), `Base de ${nomGrupo(g)} guardada`, "No se guardó la base: ");
+    escribir(setDoc(doc(db, "bases", id), datosBase), `Base de ${nomGrupo(g)} guardada`, "No se guardó la base: ");
   }, "Guardar base", { sinFoco: !!c0 });
   const selT = d.querySelector("#dBTipo"), inp = d.querySelector("#dBCapa"), prev = d.querySelector("#dBPrev"), ok = d.querySelector("[type=submit]");
   const revisar = () => {
@@ -6234,8 +6208,8 @@ function rotacion(pts, eje) {
   let cx = 0, cy = 0; pts.forEach(p => { cx += p[0]; cy += p[1]; }); cx /= pts.length; cy /= pts.length;
   let ang = null, sRango = null;
   if (eje) {
-    const pr = proyector(eje), paso = Math.max(1, Math.floor(pts.length / 400)), ss = [];
-    for (let i = 0; i < pts.length; i += paso) { const q = pr(pts[i][0], pts[i][1]); if (q[2] < 400) ss.push(q[0]); }
+    const pr = proyector(eje), salto = Math.max(1, Math.floor(pts.length / 400)), ss = [];
+    for (let i = 0; i < pts.length; i += salto) { const q = pr(pts[i][0], pts[i][1]); if (q[2] < 400) ss.push(q[0]); }
     if (ss.length > 1) { const [a, b] = mm(ss); sRango = [a, b]; if (b - a > 1) { const A = enDeSO(eje, a, 0), B = enDeSO(eje, b, 0); ang = Math.atan2(B[1] - A[1], B[0] - A[0]); } }
   }
   if (ang == null) { let xx = 0, yy = 0, xy = 0; pts.forEach(p => { const x = p[0] - cx, y = p[1] - cy; xx += x * x; yy += y * y; xy += x * y; }); ang = 0.5 * Math.atan2(2 * xy, xx - yy); }
@@ -6409,7 +6383,7 @@ function ajustarTextos() {
   document.querySelectorAll("#mReal .rlab").forEach(x => { x.style.fontSize = (11 * f).toFixed(3) + "px"; x.style.strokeWidth = (3 * f).toFixed(3); if (x.dataset.w) x.style.display = +x.dataset.w / f > 46 ? "" : "none"; });
 }
 // Alto de los gráficos: lo calcula medirAltos() según la pantalla
-const altoGraf = q => S.panel._alt?.[q] || (innerWidth < 760 ? (q === "pl" ? 300 : 250) : (q === "pl" ? 420 : 330));
+const altoGraf = q => S.panel._alt?.[q] || (innerWidth < CORTE_CELULAR ? (q === "pl" ? 300 : 250) : (q === "pl" ? 420 : 330));
 
 /* Lista de capas con su porcentaje, filtros y orden */
 // Se repinta al escribir en su buscador y cuando llegan datos (de otra persona): quien escribe conserva el foco y el cursor
@@ -6440,15 +6414,15 @@ function pintarCapasLista() {
       <span class="capb"><i style="width:${f.pct != null ? (f.pct * 100).toFixed(1) : 0}%"></i></span>
       ${f.cruce > 0.5 || f.fuera > 0.5 ? `<span class="capw">${f.cruce > 0.5 ? `cruces ${fmtM2(f.cruce)}` : ""}${f.cruce > 0.5 && f.fuera > 0.5 ? " · " : ""}${f.fuera > 0.5 ? `fuera ${fmtM2(f.fuera)}` : ""}</span>` : ""}
     </button>`).join("") : '<p class="muted small" style="margin:6px 2px">Ninguna capa con ese filtro.</p>'}</div></div>`;
-  const guardar = () => ls.set("lib.capF", F);
-  $("#cfQ").addEventListener("input", e => { F.q = e.target.value; guardar(); dibujarCapasLista(); });
-  $("#cfT").addEventListener("change", e => { F.t = e.target.value; guardar(); dibujarCapasLista(); });
-  $("#cfE").addEventListener("change", e => { F.e = e.target.value; guardar(); dibujarCapasLista(); });
-  $("#cfO").addEventListener("change", e => { F.o = e.target.value; guardar(); dibujarCapasLista(); });
+  const guardarFiltro = () => ls.set("lib.capF", F);
+  $("#cfQ").addEventListener("input", e => { F.q = e.target.value; guardarFiltro(); dibujarCapasLista(); });
+  $("#cfT").addEventListener("change", e => { F.t = e.target.value; guardarFiltro(); dibujarCapasLista(); });
+  $("#cfE").addEventListener("change", e => { F.e = e.target.value; guardarFiltro(); dibujarCapasLista(); });
+  $("#cfO").addEventListener("change", e => { F.o = e.target.value; guardarFiltro(); dibujarCapasLista(); });
   box.querySelector(".capr").addEventListener("click", e => { const b = e.target.closest("[data-capg]"); if (!b) return; P.mGrupo = b.dataset.capg; guardarCapaSub(P.subId, P.mGrupo); P.mModo = "real"; ls.set("lib.mModo", "real"); P.mSel = ""; P.mVB = null; irPrimera(); dibujarModelo(); if (!enPC()) $("#mBody")?.scrollIntoView({ behavior: "smooth", block: "start" }); });
 }
 
-/* --- Vista --- */
+/* --- Modelo 2D: pantalla (planta, sección, superficies de diseño y su lista) --- */
 const COL_DIS = [TOK.muted, "#a8875f", "#5f84ad", "#8d73ab", "#4f9187", "#b06f6f", "#7f9655", "#5a6b66", "#c08a3e", "#6e7fb8",
   "#3d6f8f", "#b3577f", "#6a8f3a", "#8a5a36", "#4a59a0", "#2f8f6f", "#a34b4b", "#7a6aa8", "#9a8a2e", "#39798c"];
 // Ajustes de cada superficie de diseño en las secciones: { [nombre]: { o: 1 (oculta), a: nombre a mostrar, c: color } }
@@ -6462,12 +6436,12 @@ function colorSup(x) { const r = registroDe(x.codigo); return r ? COLOR[r.estado
 // Relleno de una superficie: como colorSup, pero «Observado» rayado
 function rellenoSup(x) { const r = registroDe(x.codigo); return r?.estado === "OB" ? "url(#obs)" : colorSup(x); }
 function pintarModelo() {
-  const P = S.panel, lista = subsConDatos();
+  const P = S.panel;
   P.mFull ??= ls.get("lib.mFull", false); P.mSinLat ??= ls.get("lib.mSinLat", false); document.body.classList.toggle("m-full", !!P.mFull && enPC()); document.body.classList.toggle("m-sinlat", !!P.mSinLat);
   const grupos = opcionesSubs(P.subId);
   $("#view").innerHTML = `<div id="mRoot">
   <h1 class="view-title">Panel</h1>
-  <p class="lead" ${innerWidth < 760 ? "hidden" : ""}>Modelo 2D del frente para gabinete: el diseño de Civil 3D con las superficies de cada liberación encima.</p>
+  <p class="lead" ${innerWidth < CORTE_CELULAR ? "hidden" : ""}>Modelo 2D del frente para gabinete: el diseño de Civil 3D con las superficies de cada liberación encima.</p>
   ${enPC() ? '<div class="pgrid"><aside class="pside">' : ""}<div class="card filters"><div class="f wide"><label for="pSub">Frente</label><select id="pSub">${grupos}</select></div>
     <div class="f wide"><label for="mGrupo">Capa</label><select id="mGrupo"></select></div></div>${enPC() ? '<div id="mCapas"></div></aside><div class="pmain">' : ""}
   <div class="card chartbox">
@@ -6603,7 +6577,7 @@ function dibujarModelo() {
 }
 function dibujarPlanModelo(mod, eje, vis, todas, lim) {
   const P = S.panel, box = $("#mPlan"), cont = $("#mPlanBox"); if (!box) return;
-  const W0 = Math.max(300, cont.clientWidth - 2), W = Math.round(W0 * (P.mZoom || 1)), movil = innerWidth < 760, H = movil ? 210 : Math.max(260, Math.min(460, altoGraf("pl") - 18));
+  const W0 = Math.max(300, cont.clientWidth - 2), W = Math.round(W0 * (P.mZoom || 1)), movil = innerWidth < CORTE_CELULAR, H = movil ? 210 : Math.max(260, Math.min(460, altoGraf("pl") - 18));
   const padL = 10, padR = 10, padT = 14, padB = 26;
   // Rango de desfase: diseño + liberaciones
   let oA = Infinity, oB = -Infinity;
@@ -6713,16 +6687,16 @@ function alternarSupDiseno(i) {
 function editarSupsDiseno() {
   const subId = S.panel.subId, mod = MOD.secc[subId]; if (!mod) return;
   const filas = mod.sups.map((n, i) => { const c = cfgSup(mod, i); return `<div class="supf"><input type="checkbox" name="v${i}" ${c.o ? "" : "checked"} aria-label="Dibujar ${esc(n)}"><input type="color" name="c${i}" value="${esc(aHex(colDis(mod, i)))}" data-def="${esc(aHex(COL_DIS[i % COL_DIS.length]))}" aria-label="Color de ${esc(n)}"><span><input type="text" name="a${i}" value="${esc(c.a || "")}" placeholder="${esc(n)}" maxlength="60" aria-label="Nombre a mostrar de ${esc(n)}"><small>${esc(n)}</small></span></div>`; }).join("");
-  const dd = dialogo("Superficies de diseño en las secciones", `<p class="dlg-p">Elige cuáles se dibujan, con qué nombre y con qué color. Vale para todas las secciones de este frente y lo ve todo gabinete. El XML de Civil 3D no cambia.</p>
+  const dlg = dialogo("Superficies de diseño en las secciones", `<p class="dlg-p">Elige cuáles se dibujan, con qué nombre y con qué color. Vale para todas las secciones de este frente y lo ve todo gabinete. El XML de Civil 3D no cambia.</p>
     <div class="actions" style="margin:0 0 8px;flex-wrap:wrap"><button type="button" class="mini" data-todas="1">Mostrar todas</button><button type="button" class="mini" data-todas="0">Ocultar todas</button><button type="button" class="mini" data-orig>Nombres y colores originales</button></div>
     <div class="mprev" style="gap:0">${filas}</div>`, o => {
     const cfg = {};
     mod.sups.forEach((n, i) => { const e = {}, a = (o["a" + i] || "").slice(0, 60), c = (o["c" + i] || "").toLowerCase(); if (!o["v" + i]) e.o = 1; if (a && a !== n) e.a = a; if (c && c !== aHex(COL_DIS[i % COL_DIS.length]).toLowerCase()) e.c = c; if (Object.keys(e).length) cfg[n] = e; });
     mod.cfg = cfg; guardarCfgSec(subId); S.panel.sV = null; dibujarSeccion(); toast("Superficies de las secciones guardadas");
   }, "Guardar", { ancho: true, sinFoco: true });
-  dd.addEventListener("click", e => {
-    const t = e.target.closest("[data-todas]"); if (t) dd.querySelectorAll(".supf input[type=checkbox]").forEach(x => { x.checked = t.dataset.todas === "1"; });
-    if (e.target.closest("[data-orig]")) { dd.querySelectorAll(".supf input[type=text]").forEach(x => { x.value = ""; }); dd.querySelectorAll(".supf input[type=color]").forEach(x => { x.value = x.dataset.def; }); }
+  dlg.addEventListener("click", e => {
+    const t = e.target.closest("[data-todas]"); if (t) dlg.querySelectorAll(".supf input[type=checkbox]").forEach(x => { x.checked = t.dataset.todas === "1"; });
+    if (e.target.closest("[data-orig]")) { dlg.querySelectorAll(".supf input[type=text]").forEach(x => { x.value = ""; }); dlg.querySelectorAll(".supf input[type=color]").forEach(x => { x.value = x.dataset.def; }); }
   });
 }
 function leyendaSeccion(mod, secT, hayCortes) {
@@ -6911,7 +6885,6 @@ function leerEje(texto, pk0) {
   return pts;
 }
 
-/* ---------- Bandeja de gabinete: aceptar (código único), observar, entregar a Calidad ---------- */
 /* ---------- Ventanas emergentes: se cierran con ✕, «Cancelar», Escape, tocando fuera o con «Atrás» del celular ----------
    Cada ventana abierta deja una entrada en el historial; al cerrarla por botón se quita sin que la app lo tome como «Atrás». */
 const CAPAS = [], POP = { ign: 0, cola: [] };
@@ -6978,6 +6951,7 @@ function dialogo(titulo, html, onOk, okTxt = "Aceptar", op = {}) {
 function confirmar(titulo, texto, okTxt = "Sí, continuar", peligro = false) {
   return new Promise(res => dialogo(titulo, `<p class="dlg-p">${texto}</p>`, () => { res(true); }, okTxt, { peligro, ancho: "corto", onCancel: () => res(false), sinFoco: true }));
 }
+/* ---------- Bandeja de gabinete: aceptar (código único), observar, entregar a Calidad ---------- */
 const hoyISO = () => diaDe(new Date());
 function fmtNumero(n) { const c = S.config || {}; return (c.prefijo || "SKT-TOP-") + String(n).padStart(c.digitos || 5, "0"); }
 
@@ -7045,13 +7019,13 @@ const cerrarFichaDe = async ids => {
 const capasSug = regs => { const m = new Map(); regs.forEach(r => cfgTipo(r.subestructuraId, r.tipoId).capas.forEach(c => { if (!m.has(c.nombre)) m.set(c.nombre, c.cota); })); return [...m].map(([n, c]) => `<option value="${esc(n)}">${c ? "cota " + esc(c) : ""}</option>`).join(""); };
 const campoCapa = (regs, valor, lote) => `<div class="f" style="margin-top:10px"><label for="dCapa">Capa <span class="opt">(${lote ? "opcional · vacío deja la de cada una" : "opcional"})</span></label><input id="dCapa" name="capa" placeholder="Ej.: Capa 15" value="${esc(valor)}" list="dlCapaAc" autocomplete="off" maxlength="40"><datalist id="dlCapaAc">${capasSug(regs)}</datalist></div><div id="dSolape" aria-live="polite"></div>`;
 // Cruces de un grupo de registros con lo ya liberado y entre ellos mismos, con la capa que tendrían
-function crucesLote(regs, capaDe) {
+function crucesLote(regs, capaDeReg) {
   const ids = new Set(regs.map(r => r.id)), out = [];
   regs.forEach((r, i) => {
     if (r.actividad !== "LIB" || r.pkInicio == null) return;
-    const a = r.pkInicio, b = r.pkFin ?? r.pkInicio, c = capaDe(r);
+    const a = r.pkInicio, b = r.pkFin ?? r.pkInicio, c = capaDeReg(r);
     solapados(r.subestructuraId, r.tipoId, c, a, b, r.id).filter(x => !ids.has(x.id)).forEach(x => out.push([r, x, c]));
-    regs.slice(i + 1).forEach(x => { if (x.actividad === "LIB" && x.pkInicio != null && x.subestructuraId === r.subestructuraId && x.tipoId === r.tipoId && capaDe(x) === c && Math.min(b, x.pkFin ?? x.pkInicio) - Math.max(a, x.pkInicio) > 0.5) out.push([r, x, c]); });
+    regs.slice(i + 1).forEach(x => { if (x.actividad === "LIB" && x.pkInicio != null && x.subestructuraId === r.subestructuraId && x.tipoId === r.tipoId && capaDeReg(x) === c && Math.min(b, x.pkFin ?? x.pkInicio) - Math.max(a, x.pkInicio) > 0.5) out.push([r, x, c]); });
   });
   return out;
 }
@@ -7064,8 +7038,8 @@ function avisoCruces(cr, lote) {
 function vigilarCruces(d, regs, lote, txtOk) {
   const inp = d.querySelector("#dCapa"), box = d.querySelector("#dSolape"), sub = d.querySelector("[type=submit]");
   const revisar = () => {
-    const v = inp.value.trim(), capaDe = r => v ? normCapa(v, r.subestructuraId, r.tipoId) : (sinCapa(r.capa) ? "" : String(r.capa || "").trim());
-    const cr = crucesLote(regs, capaDe);
+    const v = inp.value.trim(), capaDeReg = r => v ? normCapa(v, r.subestructuraId, r.tipoId) : (sinCapa(r.capa) ? "" : String(r.capa || "").trim());
+    const cr = crucesLote(regs, capaDeReg);
     box.innerHTML = avisoCruces(cr, lote); sub.textContent = cr.length ? txtOk + " igual" : txtOk;
   };
   inp.addEventListener("input", revisar); inp.addEventListener("blur", () => { if (regs.length === 1) { const v = normCapa(inp.value, regs[0].subestructuraId, regs[0].tipoId); if (v !== inp.value.trim()) inp.value = v; } revisar(); });
@@ -7426,7 +7400,7 @@ async function escribir(p, ok, mal, o = {}) {
 }
 // Todos los lotes se arman y se mandan a la vez (sin señal quedan en cola; en serie, el 2.º no se encolaría hasta que el 1.º confirme).
 // Si solo algunos fallan, el error dice cuántos registros se guardaron y cuántos no (si fallan todos, sube el error original).
-function lotes(regs, fn, n = 150) {
+function lotes(regs, fn, n = LOTE_ESCRITURA) {
   const ps = [], tam = [];
   for (let i = 0; i < regs.length; i += n) { const sub = regs.slice(i, i + n), b = writeBatch(db); sub.forEach(r => fn(b, r)); tam.push(sub.length); ps.push(b.commit()); }
   return Promise.allSettled(ps).then(rs => {
@@ -7441,6 +7415,7 @@ const sello = () => ({ editadoEn: serverTimestamp(), editadoPor: S.email });
 // Anotación del historial de un registro, siempre con los mismos campos (las reglas los validan): b es un lote o una transacción;
 // x = { de, a } en los cambios de estado y al crear o editar; ref: su id ya elegido (la edición lo guarda para saber después si llegó, lote H)
 const hist = (b, r, accion, nota, x, ref = doc(collection(db, "historial"))) => b.set(ref, { liberacionId: r.id, accion, ...(x ? { de: x.de, a: x.a } : {}), usuario: S.email, nombre: S.perfil?.nombre || "", fecha: serverTimestamp(), nota: nota || "" });
+/* ---------- Papelera: mandar, restaurar y borrar para siempre ---------- */
 async function aPapelera(regs0) {
   const regs = regs0.filter(puedeBorrar); if (!regs.length) { toast("No tienes permiso para borrar eso.", "bad"); return 0; }
   const n = regs.length, gestion = esGab() || puedeAjustes();
@@ -7451,7 +7426,7 @@ async function aPapelera(regs0) {
     b.update(doc(db, "liberaciones", r.id), { borrado: true, borradoPor: S.email, borradoNombre: S.perfil?.nombre || "", borradoEn: serverTimestamp() });
     if (r.subestructuraId) quitarResumen(b, r.id, r.subestructuraId);
     hist(b, r, "borrado", "Enviado a la papelera");
-  }, gestion ? 150 : 1); // campo: la regla del resumen solo admite que desaparezca una fila por envío
+  }, gestion ? LOTE_ESCRITURA : 1); // campo: la regla del resumen solo admite que desaparezca una fila por envío
   const ids = new Set(regs.map(r => r.id));
   S.bandeja.sel.clear(); S.selReg?.clear?.();
   if (S._ficha && ids.has(S._ficha.id)) cerrarFicha();
@@ -7476,7 +7451,7 @@ async function borrarSiempre(regs0, titulo) {
   const n = regs.length;
   if (!await confirmar(titulo || (n === 1 ? "Borrar para siempre" : `Borrar ${n} para siempre`), `${n === 1 ? `<b>${esc(regs[0].numero || regs[0].descripcion || "El registro")}</b> y sus archivos se borran` : `<b>${n} registros</b> y sus archivos se borran`} para siempre. No se puede deshacer.${regs.some(r => r.numero) ? " Los códigos SKT-TOP no se vuelven a usar." : ""}`, "Borrar para siempre", true)) return 0;
   const ops = regs.flatMap(r => [doc(db, "liberaciones", r.id), ...(r.archivos || []).map(a => doc(db, "archivos", a.id))]);
-  const ps = []; for (let i = 0; i < ops.length; i += 400) { const b = writeBatch(db); ops.slice(i, i + 400).forEach(d => b.delete(d)); ps.push(b.commit()); }
+  const ps = []; for (let i = 0; i < ops.length; i += LOTE_BORRAR) { const b = writeBatch(db); ops.slice(i, i + LOTE_BORRAR).forEach(d => b.delete(d)); ps.push(b.commit()); }
   if (S._ficha && regs.some(r => r.id === S._ficha.id)) cerrarFicha();
   const ok = await escribir(Promise.all(ps), n === 1 ? "Borrado para siempre" : `${n} borrados para siempre`, "No se pudo borrar: ");
   if (ok) { S.papelera = (S.papelera || []).filter(r => !regs.includes(r)); if (S.view === "todos") render(); }
@@ -7496,6 +7471,7 @@ function suscribirPapelera() {
 }
 function soltarPapelera() { if (!unsubPapelera) return; unsubPapelera(); unsubPapelera = null; papSigue = S.papelera != null; }
 
+/* ---------- Bandeja: escuchas de «Por aceptar» y «En proceso» ---------- */
 // Los avisos de la Bandeja que llegan juntos (aceptar en grupo) se pintan una vez por cuadro, sin quitar el foco al buscador
 const bandejaPronto = () => { if (S.view === "bandeja") renderSuave(); };
 function suscribirBandeja() {
@@ -7760,7 +7736,7 @@ function pintarSeguimiento(k) {
   const q = terminos(B.q);
   const vis = ordenarMs(fuente.filter(r => coincide(r, q)), por ? r => r.fechaCampo : r => r[C.campo + "En"], !por);
   const idsVis = new Set(vis.map(r => r.id)); B.sel = new Set([...B.sel].filter(id => idsVis.has(id)));
-  const ns = B.sel.size, lim = B.ver || 60, nPor = porHacer(k).length, nHechas = segHechasN(k);
+  const ns = B.sel.size, lim = B.ver || PAG_LISTA, nPor = porHacer(k).length, nHechas = segHechasN(k);
   // Lo hecho que sigue en el servidor (sin buscar): «Ver más» lo trae de a SEG_PAG
   const masSrv = !por && sv?.hLleno && !terminos(B.q).length, resto = masSrv ? Math.max(nHechas, vis.length) - lim : vis.length - lim;
   const quien = r => esc(r[C.campo + "Nombre"] || r[C.campo + "Por"] || "");
@@ -7778,6 +7754,7 @@ function pintarSeguimiento(k) {
   ${lista}
   ${resto > 0 && (vis.length > lim || masSrv) ? `<button class="btn sec more" id="bMas" type="button">Ver más (${resto})</button>` : ""}` };
 }
+/* ---------- Bandeja: pestañas, filtros y pantalla ---------- */
 // La Bandeja recuerda la pestaña y los filtros de frente y topógrafo (por persona)
 const guardarBandeja = () => { const B = S.bandeja; ls.set("lib.bandeja." + S.email, { tab: B.tab, f: B.f || {} }); };
 // Filtros de la Bandeja (versión 33): frente, tipo, capa y topógrafo, de varias opciones; antes solo frente y topógrafo
@@ -7810,8 +7787,7 @@ function pintarBandeja() {
   // Si una fila está saliendo (o un diálogo la tapa), el redibujo espera a que termine: así no se corta ni rebota
   if (MOV.aplaza(() => { if (S.view === "bandeja") render(); })) return;
   const B = S.bandeja;
-  // El jefe de área solo ve la pestaña Aspas; gabinete no la ve
-  // Jefe de área: aspas y levantamientos; gabinete no ve aspas
+  // Jefe de área: Aspas y Levantamientos (si estaba en otra pestaña pasa a Aspas); gabinete no ve Aspas (si estaba ahí pasa a Por aceptar); administrador ve todas
   if (!esGab() && !["ASP", "LEV"].includes(B.tab)) B.tab = "ASP"; else if (B.tab === "ASP" && !puedeAjustes()) B.tab = "PT";
   const t = B.tab;
   if (t === "ASP" || t === "LEV") { pintarBandejaSeg(t); MOV.trasPintar(); return; }
@@ -7821,14 +7797,14 @@ function pintarBandeja() {
   const pasaB = r => KB.every(k => pasaFac(F, k, r));
   const co = new Map(), coinc = r => { let v = co.get(r); if (v === undefined) co.set(r, v = coincide(r, q)); return v; };
   let vis = ordenarMs(fuente.filter(r => pasaB(r) && coinc(r)), fB, t === "EP");
-  const pcB = tablaPC(), puedeCol = pcB && innerWidth >= 1200, colFil = puedeCol && !ls.get("lib.facOff", false), C = pcB ? contarFac(fuente.filter(coinc), F, KB) : {}, nFil = KB.filter(k => lstF(F[k]).length).length;
+  const pcB = tablaPC(), puedeCol = pcB && innerWidth >= CORTE_AMPLIO, colFil = puedeCol && !ls.get("lib.facOff", false), C = pcB ? contarFac(fuente.filter(coinc), F, KB) : {}, nFil = KB.filter(k => lstF(F[k]).length).length;
   const COLB = { ...(t === "EP" ? { cod: { t: "Código", k: r => numDe(r.numero) } } : {}), lib: { t: "Liberación", az: true, k: r => `${nom(L.tipo(r.tipoId)) || nom(L.act(r.actividad), r.actividad) || ""} ${capaDe(r)}`, fk: ["tipo", "capa"] },
     fr: { t: "Frente", az: true, k: r => nom(L.sub(r.subestructuraId)) || "", fk: ["sub"] }, pk: { t: "Progresiva", k: r => r.pkInicio ?? 1e12 },
     fe: { t: t === "EP" ? "Aceptada y topógrafo" : "Fecha y topógrafo", k: r => toDate(fB(r))?.getTime() || 0, fk: ["topo"] } };
   if (pcB && F.ord) vis = ordenarCol(vis, F.ord, COLB);
   const idsVis = new Set(vis.map(r => r.id)); B.sel = new Set([...B.sel].filter(id => idsVis.has(id)));
-  const nPT = B.pend.filter(r => r.estado === "PT").length, nOB = B.pend.length - nPT, nEP = nEnProceso(), ns = B.sel.size;
-  const lim = B.ver || 60;
+  const ns = B.sel.size;
+  const lim = B.ver || PAG_LISTA;
   $("#view").innerHTML = `
   <h1 class="view-title">Bandeja de gabinete</h1>
   <p class="lead">Lo que llega de campo. Al aceptar se genera el código único para el protocolo; luego se entrega a Calidad.</p>
@@ -7855,7 +7831,7 @@ function pintarBandeja() {
   $("#bHist")?.addEventListener("click", async e => { e.target.disabled = true; e.target.textContent = "Cargando…";
     try { const sn = await getDocs(query(collection(db, "liberaciones"), where("estado", "==", "EP"), where("origen", "==", "excel"))); B.epHist = sn.docs.map(fila).filter(vivo); B.epHistOk = true; pintarBandeja(); toast(`${B.epHist.length.toLocaleString("es-PE")} del histórico cargadas`); }
     catch (er) { toast("No se pudo cargar: " + errGuardar(er), "bad"); e.target.disabled = false; } });
-  $(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-bt]"); if (b) { const otra = b.dataset.bt !== B.tab; MOV.cortar(); B.tab = b.dataset.bt; B.sel.clear(); B.ver = 60; B.cur = ""; guardarBandeja(); pintarBandeja(); if (otra) MOV.entrar($("#blist"), 4); } });
+  $(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-bt]"); if (b) { const otra = b.dataset.bt !== B.tab; MOV.cortar(); B.tab = b.dataset.bt; B.sel.clear(); B.ver = PAG_LISTA; B.cur = ""; guardarBandeja(); pintarBandeja(); if (otra) MOV.entrar($("#blist"), 4); } });
   buscadorDiferido($("#bq"), v => { B.q = v; }, pintarBandeja, () => S.view === "bandeja");
   $("#bFr")?.addEventListener("change", e => { F.sub = e.target.value; guardarBandeja(); pintarBandeja(); });
   $("#bFacT")?.addEventListener("click", () => { ls.set("lib.facOff", !ls.get("lib.facOff", false)); pintarBandeja(); });
@@ -7878,9 +7854,9 @@ function pintarBandeja() {
     if (k === "limpiar") { B.sel.clear(); pintarBandeja(); } else if (k === "entregar") entregar(ids); else if (k === "papelera") aPapelera(regs); else if (k === "exportar") exportarSel(regs);
     else if (k === "observar") observar(regs); else if (k === "rechazar") rechazar(regs); else if (k === "reabrir") reabrir(regs); else aceptarVarios(ids);
   });
-  $("#bMas")?.addEventListener("click", () => { B.ver = (B.ver || 60) + 60; pintarBandeja(); });
+  $("#bMas")?.addEventListener("click", () => { B.ver = (B.ver || PAG_LISTA) + PAG_LISTA; pintarBandeja(); });
   // «En proceso» con más de las que se escuchan: se sube el tope de la escucha
-  $("#bMasEP")?.addEventListener("click", e => { e.target.disabled = true; e.target.textContent = "Cargando…"; B.epTope = (B.epTope || EP_TOPE) + EP_TOPE; B.ver = (B.ver || 60) + 60; suscribirEP(); });
+  $("#bMasEP")?.addEventListener("click", e => { e.target.disabled = true; e.target.textContent = "Cargando…"; B.epTope = (B.epTope || EP_TOPE) + EP_TOPE; B.ver = (B.ver || PAG_LISTA) + PAG_LISTA; suscribirEP(); });
   // Mayús+clic en una casilla marca (o desmarca) todo el tramo desde la anterior
   $("#blist")?.addEventListener("click", e => { if (e.target.matches("[data-sel]")) B._shift = e.shiftKey; }, true);
   $("#blist")?.addEventListener("change", e => {
@@ -7909,15 +7885,15 @@ function pintarBandejaSeg(k) {
   <p class="lead">${C.lead}</p>
   ${tabsBandeja(k)}
   ${html}`;
-  $(".tabs")?.addEventListener("click", e => { const b = e.target.closest("[data-bt]"); if (b) { const otra = b.dataset.bt !== B.tab; MOV.cortar(); B.tab = b.dataset.bt; B.sel.clear(); B.ver = 60; pintarBandeja(); if (otra) MOV.entrar($("#blist"), 4); } });
-  $("#view .chips").addEventListener("click", e => { const c = e.target.closest(`[data-${C.chip}]`), ver = k === "ASP" ? "aspVer" : "levVer"; if (c) { const otro = (B[ver] === "hechas") !== (c.dataset[C.chip] === "hechas"); MOV.cortar(); B[ver] = c.dataset[C.chip]; B.sel.clear(); B.ver = 60; pintarBandeja(); if (otro) MOV.entrar($("#blist"), 4); } });
+  $(".tabs")?.addEventListener("click", e => { const b = e.target.closest("[data-bt]"); if (b) { const otra = b.dataset.bt !== B.tab; MOV.cortar(); B.tab = b.dataset.bt; B.sel.clear(); B.ver = PAG_LISTA; pintarBandeja(); if (otra) MOV.entrar($("#blist"), 4); } });
+  $("#view .chips").addEventListener("click", e => { const c = e.target.closest(`[data-${C.chip}]`), ver = k === "ASP" ? "aspVer" : "levVer"; if (c) { const otro = (B[ver] === "hechas") !== (c.dataset[C.chip] === "hechas"); MOV.cortar(); B[ver] = c.dataset[C.chip]; B.sel.clear(); B.ver = PAG_LISTA; pintarBandeja(); if (otro) MOV.entrar($("#blist"), 4); } });
   buscadorDiferido($("#bq"), v => { B.q = v; }, pintarBandeja, () => S.view === "bandeja");
   const todo = on => { vis.slice(0, lim).forEach(r => on ? B.sel.add(r.id) : B.sel.delete(r.id)); pintarBandeja(); };
   $("#bAll")?.addEventListener("change", e => todo(e.target.checked)); $("#bAll2")?.addEventListener("change", e => todo(e.target.checked));
   $("#bBulk").addEventListener("click", e => { const b = e.target.closest("[data-bk]"); if (!b) return; const regs = regsDe([...B.sel]), q = b.dataset.bk;
     if (q === "limpiar") { B.sel.clear(); pintarBandeja(); } else if (q === "exportar") exportarSel(regs); else C.marcar(regs, q === C.kOk); });
   // Si lo cargado de lo hecho no alcanza para la página siguiente, se lee la siguiente del servidor
-  $("#bMas")?.addEventListener("click", () => { B.ver = (B.ver || 60) + 60; const sv = SEGV[k]; if (B[k === "ASP" ? "aspVer" : "levVer"] === "hechas" && sv?.hLleno && fuente.length < B.ver) masHechas(k); pintarBandeja(); });
+  $("#bMas")?.addEventListener("click", () => { B.ver = (B.ver || PAG_LISTA) + PAG_LISTA; const sv = SEGV[k]; if (B[k === "ASP" ? "aspVer" : "levVer"] === "hechas" && sv?.hLleno && fuente.length < B.ver) masHechas(k); pintarBandeja(); });
   // Mayús+clic en una casilla marca (o desmarca) todo el tramo desde la anterior, como en las demás pestañas
   $("#blist")?.addEventListener("click", e => { if (e.target.matches("[data-sel]")) B._shift = e.shiftKey; }, true);
   $("#blist")?.addEventListener("change", e => { if (!e.target.matches("[data-sel]")) return; const id = e.target.closest("[data-rid]").dataset.rid; B._ultSeg = { k, i: marcarRango(B.sel, vis.slice(0, lim), id, e.target.checked, B._shift, B._ultSeg?.k === k ? B._ultSeg.i : null) }; B._shift = false; pintarBandeja(); });
@@ -7929,7 +7905,7 @@ function pintarBandejaSeg(k) {
   });
 }
 
-/* ---------- Exportar CSV (administrador) ---------- */
+/* ---------- Exportar a CSV (Ajustes → Exportar y los botones de Registros y Bandeja) ---------- */
 // Filas del CSV de registros (mismas columnas que el Excel de protocolos)
 function csvRegistros(regs) {
   const cab = ["ITEM", "N° Registro", "Key_Topografo", "Descripcion", "Km Inicio", "Km Fin", "Fecha Campo", "Fecha Liberacion", "Fecha de entrega", "N° Entrega", "Estructura", "Sub-Estructura", "Elemento", "Tipo de Liberacion", "Capa", "Cota", "Generado", "Key_Status", "Estado", "Superficie (m2)", "Observaciones", "Actividad", "Registrado por", "Nombre de liberacion", "Equipo", "Protocolos", "Carpeta OneDrive"];
@@ -7943,11 +7919,11 @@ const crc32 = u => { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = 
 function zipGuardar(archivos, tipo) {
   const enc = new TextEncoder(), partes = [], central = []; let off = 0;
   for (const a of archivos) {
-    const nom = enc.encode(a.nombre), dat = enc.encode(a.texto), crc = crc32(dat);
-    const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(12, 0x21, true); h.setUint32(14, crc, true); h.setUint32(18, dat.length, true); h.setUint32(22, dat.length, true); h.setUint16(26, nom.length, true);
-    partes.push(new Uint8Array(h.buffer), nom, dat);
-    const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(14, 0x21, true); c.setUint32(16, crc, true); c.setUint32(20, dat.length, true); c.setUint32(24, dat.length, true); c.setUint16(28, nom.length, true); c.setUint32(42, off, true);
-    central.push(new Uint8Array(c.buffer), nom); off += 30 + nom.length + dat.length;
+    const nomBytes = enc.encode(a.nombre), dat = enc.encode(a.texto), crc = crc32(dat);
+    const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(12, 0x21, true); h.setUint32(14, crc, true); h.setUint32(18, dat.length, true); h.setUint32(22, dat.length, true); h.setUint16(26, nomBytes.length, true);
+    partes.push(new Uint8Array(h.buffer), nomBytes, dat);
+    const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(14, 0x21, true); c.setUint32(16, crc, true); c.setUint32(20, dat.length, true); c.setUint32(24, dat.length, true); c.setUint16(28, nomBytes.length, true); c.setUint32(42, off, true);
+    central.push(new Uint8Array(c.buffer), nomBytes); off += 30 + nomBytes.length + dat.length;
   }
   const tc = central.reduce((t, x) => t + x.length, 0), e = new DataView(new ArrayBuffer(22));
   e.setUint32(0, 0x06054b50, true); e.setUint16(8, archivos.length, true); e.setUint16(10, archivos.length, true); e.setUint32(12, tc, true); e.setUint32(16, off, true);
@@ -8007,7 +7983,6 @@ function xlCabecera(est, nCols, titulo, de, resumen) {
   return { filas: [[{ v: "LIBERACIONES TSF3 · " + titulo, s: s1 }, ...vacio(s1)], [{ v: de, s: s2 }, ...vacio(s2)], [{ v: `Exportado por ${quien} el ${fecha} · ${ROLES[rol()] ? ROLES[rol()] + " · " : ""}topografiatsf3.github.io/liberaciones`, s: s3 }, ...vacio(s3)], [{ v: resumen, s: s4 }, ...vacio(s4)], null],
     unir: [1, 2, 3, 4].map(r => `A${r}:${xlCol(nCols - 1)}${r}`), altos: [30, 20, 16, 20, 8] };
 }
-const xlNombre = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9+-]+/g, "_").replace(/^_|_$/g, "").slice(0, 70);
 const codigosXl = r => [...new Set([r.numero, ...(r.protocolos || []).map(x => x.numero)].filter(Boolean))];
 // Liberaciones a Excel: «de» dice qué es y desde dónde salió (Registros con sus filtros, una capa del Panel, la Bandeja…)
 function excelRegistros(regs, que, de) {
@@ -8144,7 +8119,7 @@ function ajExportar() {
   }
 }
 
-/* ---------- Ajustes (solo administrador). Cada cambio se guarda al instante. ---------- */
+/* ---------- Ajustes (administrador y jefe de área, con los mismos permisos). Cada cambio se guarda al instante. ---------- */
 const AJ_TABS = [["usuarios", "Usuarios"], ["lugares", "Lugares"], ["capas", "Capas"], ["topografos", "Topógrafos"], ["tipos", "Tipos"], ["protocolos", "Protocolos"], ["historico", "Histórico"], ["archivos", "Archivos"], ["exportar", "Exportar"]];
 const AJ_LISTA = { lugares: "estructuras", topografos: "topografos", tipos: "tipos" };
 const slug = t => String(t).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24) || "x";
@@ -8194,9 +8169,9 @@ function conAjenos(lista, items, srv, vistos) {
 function mezclarCapas(base, mio, srv) {
   const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const lista = (b = [], m = [], s = [], k) => {
-    const kb = new Map(b.map(x => [k(x), x])), ks = new Map(s.map(x => [k(x), x])), km = new Set(m.map(k)), out = [];
-    for (const x of m) { const xb = kb.get(k(x)), xs = ks.get(k(x)); if (xb && igual(x, xb)) { if (xs) out.push(clon(xs)); } else out.push(x); }
-    for (const x of s) if (!kb.has(k(x)) && !km.has(k(x))) out.push(clon(x));
+    const porBase = new Map(b.map(x => [k(x), x])), ks = new Map(s.map(x => [k(x), x])), km = new Set(m.map(k)), out = [];
+    for (const x of m) { const xb = porBase.get(k(x)), xs = ks.get(k(x)); if (xb && igual(x, xb)) { if (xs) out.push(clon(xs)); } else out.push(x); }
+    for (const x of s) if (!porBase.has(k(x)) && !km.has(k(x))) out.push(clon(x));
     return out;
   };
   const out = {};
@@ -8257,6 +8232,7 @@ function pintarAjustes() {
   $(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b && b.dataset.tab !== A.tab) { A.tab = b.dataset.tab; pintarAjustes(); } });
   ({ usuarios: pintarUsuarios, lugares: ajLugares, capas: ajCapas, topografos: ajTopografos, tipos: ajTipos, protocolos: ajProtocolos, historico: ajHistorico, archivos: ajArchivos, exportar: ajExportar })[A.tab]();
 }
+/* ---------- Ajustes → Archivos ---------- */
 // Espacio de archivos: se calcula con los registros que tienen archivos (no se leen las fotos, que pesan)
 function ajArchivos() {
   const body = cuerpoAj(), A = S.aj;
@@ -8328,6 +8304,7 @@ function ajArchivos() {
 function cuerpoAj() { const b = $("#ajBody"), n = b.cloneNode(false); b.replaceWith(n); return n; }
 const numONull = v => { const p = leerPk(v); return p == null || isNaN(p) ? null : p; };
 
+/* ---------- Ajustes → Lugares (estructuras y frentes) ---------- */
 // Cuántos registros hay por frente y por estructura (del resumen del panel, como en Tipos)
 function usosLugares() {
   if (!BUS.todos) { if (!S.aj._usosLug) { S.aj._usosLug = true; cargarTodoResumen().then(() => { if (S.view !== "ajustes" || S.aj.tab !== "lugares") return; if (document.activeElement?.closest?.("#ajBody")) S.aj._sucio = true; else ajLugares(); }); } return null; }
@@ -8382,11 +8359,11 @@ function activarLugar(eId, sId, si) {
     if (!si) toast(`«${nombre}» ${sId ? "desactivado" : "desactivada"}: ya no aparece en el formulario ni en el panel. Sus registros se quedan.`, "", { t: "Deshacer", fn: () => activarLugar(eId, sId, true) });
   });
 }
-function moverLugar(eId, sId, paso) {
+function moverLugar(eId, sId, delta) {
   const items = estFresca(), e = items.find(x => x.id === eId); if (!e) return;
-  const lst = sId ? (e.subs || []) : items, i = lst.findIndex(x => x.id === (sId || eId)), j = i < 0 ? -1 : vecino(lst, i, paso, o => S.aj.luOff || o.activo !== false); if (j < 0) return;
+  const lst = sId ? (e.subs || []) : items, i = lst.findIndex(x => x.id === (sId || eId)), j = i < 0 ? -1 : vecino(lst, i, delta, o => S.aj.luOff || o.activo !== false); if (j < 0) return;
   [lst[i], lst[j]] = [lst[j], lst[i]];
-  guardarLug(items, `«${lst[j].nombre}» movido ${paso < 0 ? "arriba" : "abajo"}`).then(ok => { if (!ok) return; repintarLug(); $(sId ? `#ajBody [data-s="${CSS.escape(sId)}"] [data-k="smas"]` : `#ajBody .est[data-e="${CSS.escape(eId)}"] [data-k="emas"]`)?.focus(); });
+  guardarLug(items, `«${lst[j].nombre}» movido ${delta < 0 ? "arriba" : "abajo"}`).then(ok => { if (!ok) return; repintarLug(); $(sId ? `#ajBody [data-s="${CSS.escape(sId)}"] [data-k="smas"]` : `#ajBody .est[data-e="${CSS.escape(eId)}"] [data-k="emas"]`)?.focus(); });
 }
 // Un frente pasa a otra estructura: sus registros cambian de estructura (para los filtros y el Excel)
 function moverFrenteA(eId, sId) {
@@ -8436,7 +8413,7 @@ function ajLugares() {
     <div class="addrow"><input id="eNew" placeholder="Ej.: Presa Auxiliar Sur" maxlength="60" aria-label="Nombre de la estructura nueva"><button type="button" class="mini ok-btn" id="eAdd">Agregar estructura</button></div>
     <p class="muted small" style="margin:8px 0 6px">Se crea con un frente del mismo nombre; puedes renombrarlo o agregar más.</p></div>`;
   const body = $("#ajBody");
-  if (!A.luQ.trim() && innerWidth >= 1200) maestroDetalle(body, ":scope > .card.est[data-e]", c => c.dataset.e, c => ({ nombre: c.querySelector(".est-h input")?.value || "", sub: c.querySelector(".est-h .lu-uso")?.textContent || "", n: c.querySelectorAll(":scope > .srow:not(.head)").length, off: c.classList.contains("off-row") }), "luSel", "Nueva estructura");
+  if (!A.luQ.trim() && innerWidth >= CORTE_AMPLIO) maestroDetalle(body, ":scope > .card.est[data-e]", c => c.dataset.e, c => ({ nombre: c.querySelector(".est-h input")?.value || "", sub: c.querySelector(".est-h .lu-uso")?.textContent || "", n: c.querySelectorAll(":scope > .srow:not(.head)").length, off: c.classList.contains("off-row") }), "luSel", "Nueva estructura");
   else body.querySelectorAll(".card.est[data-e]").forEach(c => plegarLista(c, { clave: "lu:" + c.dataset.e, cab: ".est-h", filas: ":scope > .srow:not(.head)", extra: ":scope > .srow.head, :scope > .addrow", n: 6, buscando: !!A.luQ.trim(), nombre: c.querySelector(".est-h input")?.value }));
   const lq = $("#luQ"); if (lq) buscadorDiferido(lq, v => { S.aj.luQ = v; }, () => ajLugares(), () => S.view === "ajustes" && S.aj.tab === "lugares");
   $("#luOff")?.addEventListener("change", e => { S.aj.luOff = e.target.checked; ajLugares(); });
@@ -8527,6 +8504,7 @@ async function subirEje(subId, file) {
   } catch (e) { toast("No se pudo leer el eje: " + errGuardar(e), "bad"); }
 }
 
+/* ---------- Ajustes → Capas ---------- */
 function ajCapas() {
   cuerpoAj();
   const A = S.aj, lista = subsConDatos();
@@ -8542,11 +8520,11 @@ function ajCapas() {
   const q = A.capQ.trim().toLowerCase();
   const vis = cfg.capas.map((c, i) => ({ c, i })).filter(x => !q || x.c.nombre.toLowerCase().includes(q) || String(x.c.cota || "").includes(q));
   const grupos = opcionesSubs(A.capSub);
-  const numDe = n => { const m = String(n).match(/\d+/); return m ? parseInt(m[0], 10) : NaN; };
+  const numDeCapa = n => { const m = String(n).match(/\d+/); return m ? parseInt(m[0], 10) : NaN; };
   // «Capa 02», «capa 2» y «Capa 2» son la misma capa (sin mayúsculas ni tildes)
   const igualCapa = (a, b) => sinTilde(normCapa(a, A.capSub, A.capTipo) || a) === sinTilde(normCapa(b, A.capSub, A.capTipo) || b);
-  const nums = cfg.capas.map(c => numDe(c.nombre)).filter(x => !isNaN(x));
-  const sig = nums.length ? Math.max(...nums) + 1 : 1;
+  const numsCapas = cfg.capas.map(c => numDeCapa(c.nombre)).filter(x => !isNaN(x));
+  const sig = numsCapas.length ? Math.max(...numsCapas) + 1 : 1;
   const nSel = A.capSel.size;
   const optCapa = v => `<option value="">Todas las capas</option>` + cfg.capas.map(c => `<option ${c.nombre === v ? "selected" : ""}>${esc(c.nombre)}</option>`).join("");
   $("#ajBody").innerHTML = `
@@ -8595,7 +8573,7 @@ function ajCapas() {
     <div class="flabel" style="font-weight:800;margin:14px 0 8px">Marcar tramo que no se libera</div>
     <div class="nrow" style="border-top:0"><select id="nCapa" aria-label="Capa">${optCapa("")}</select><input id="nPki" class="mono" inputmode="decimal" placeholder="PK inicio" aria-label="PK inicio"><input id="nPkf" class="mono" inputmode="decimal" placeholder="PK final" aria-label="PK final"><input id="nCota" inputmode="decimal" placeholder="Cota" aria-label="Cota"><input id="nNota" placeholder="Motivo (opcional)" aria-label="Motivo"><button type="button" class="mini ok-btn" id="nAdd">Marcar</button></div>
   </div>`;
-  const guardar = (msg = "Guardado") => {
+  const guardarCfg = (msg = "Guardado") => {
     // Sin señal no se cambian las capas (subirían horas después sobre lo que otros cambiaron): la pantalla vuelve a lo guardado
     if (!navigator.onLine) { toast("Se necesita señal para cambiar las capas.", "bad"); ajCapas(); return false; }
     const sid = A.capSub, antes = S.capasCfg[sid], puesto = clon(doc0);
@@ -8606,7 +8584,7 @@ function ajCapas() {
     return guardarCapas(sid, puesto, antes, msg);
   };
   plegarLista($("#cCapas .ctab"), { clave: "capas", filas: ":scope > .ct-row:not(.head)", n: 12, buscando: !!q });
-  const reabrir = (foco) => { ajCapas(); if (foco) { const el = $(foco); if (el) { el.focus(); try { el.select(); } catch (e) {} } } };
+  const reabrirCapas = (foco) => { ajCapas(); if (foco) { const el = $(foco); if (el) { el.focus(); try { el.select(); } catch (e) {} } } };
   $("#cSub").addEventListener("change", e => { A.capSub = e.target.value; A.capSel = new Set(); A.capQ = ""; ajCapas(); });
   $("#cTipo").addEventListener("change", e => { A.capTipo = e.target.value; A.capSel = new Set(); A.capQ = ""; ajCapas(); });
   $("#cQ").addEventListener("input", e => { A.capQ = e.target.value; conFoco("cQ", ajCapas); });
@@ -8633,9 +8611,9 @@ function ajCapas() {
         if (cfg.capas.some((x, j) => j !== i && igualCapa(x.nombre, v))) { toast(`Ya existe «${cfg.capas.find((x, j) => j !== i && igualCapa(x.nombre, v)).nombre}» (es la misma capa).`, "bad"); e.target.value = c.nombre; return; }
         const viejo = c.nombre;
         cfg.noAplica.forEach(x => { if (x.capa === viejo) x.capa = v; }); if (A.capSel.delete(viejo)) A.capSel.add(v); c.nombre = v;
-        guardar(`Capa renombrada a «${v}»`); ajCapas(); renombrarCapa(A.capSub, A.capTipo, viejo, v); return; }
+        guardarCfg(`Capa renombrada a «${v}»`); ajCapas(); renombrarCapa(A.capSub, A.capTipo, viejo, v); return; }
       if (k === "cota") c.cota = e.target.value.trim();
-      guardar(); return;
+      guardarCfg(); return;
     }
     const x = cfg.noAplica[i];
     if (k === "capa") x.capa = e.target.value;
@@ -8644,7 +8622,7 @@ function ajCapas() {
     if (k === "pki" || k === "pkf") { const v = numONull(e.target.value); if (v == null) { toast("Escribe el PK como 2+140 o 2140.", "bad"); e.target.value = fmtPk(k === "pki" ? x.pkInicio : x.pkFin); return; }
       const ni = k === "pki" ? v : x.pkInicio, nf = k === "pkf" ? v : x.pkFin; if (nf <= ni) { toast("El PK final debe ser mayor que el inicial.", "bad"); e.target.value = fmtPk(k === "pki" ? x.pkInicio : x.pkFin); return; }
       x.pkInicio = ni; x.pkFin = nf; e.target.value = fmtPk(v); }
-    guardar();
+    guardarCfg();
   });
   body.addEventListener("click", async e => {
     const btn = e.target.closest("button"); if (!btn) return;
@@ -8653,23 +8631,23 @@ function ajCapas() {
       const i = +row.dataset.i;
       if (row.closest("#cCapas")) { const c0 = cfg.capas[i], nNa = cfg.noAplica.filter(x => x.capa === c0.nombre).length; if (!await confirmar("Quitar capa", `Se quita «${esc(c0.nombre)}» de la lista${nNa ? ` y ${nNa === 1 ? "su tramo" : `sus ${nNa} tramos`} que no se liberan` : ""}. Los registros con esa capa no cambian.`, "Quitar", true)) return; }
       else { const x = cfg.noAplica[i]; if (!await confirmar("Quitar tramo", `El tramo ${esc(rangoPk(x.pkInicio, x.pkFin))}${x.capa ? " de " + esc(x.capa) : ""} vuelve a contarse como «falta liberar».`, "Quitar", true)) return; }
-      if (row.closest("#cCapas")) { const [c] = cfg.capas.splice(i, 1); A.capSel.delete(c.nombre); cfg.noAplica = cfg.noAplica.filter(x => x.capa !== c.nombre); doc0.tipos[A.capTipo] = cfg; guardar(`«${c.nombre}» quitada`); }
-      else { cfg.noAplica.splice(i, 1); guardar("Tramo quitado"); }
+      if (row.closest("#cCapas")) { const [c] = cfg.capas.splice(i, 1); A.capSel.delete(c.nombre); cfg.noAplica = cfg.noAplica.filter(x => x.capa !== c.nombre); doc0.tipos[A.capTipo] = cfg; guardarCfg(`«${c.nombre}» quitada`); }
+      else { cfg.noAplica.splice(i, 1); guardarCfg("Tramo quitado"); }
       ajCapas(); return;
     }
-    if (row && btn.dataset.k === "oc") { const c = cfg.capas[+row.dataset.i]; c.oculta = !c.oculta; if (!c.oculta) delete c.oculta; guardar(c.oculta ? `«${c.nombre}» oculta en el gráfico` : `«${c.nombre}» visible`); ajCapas(); return; }
+    if (row && btn.dataset.k === "oc") { const c = cfg.capas[+row.dataset.i]; c.oculta = !c.oculta; if (!c.oculta) delete c.oculta; guardarCfg(c.oculta ? `«${c.nombre}» oculta en el gráfico` : `«${c.nombre}» visible`); ajCapas(); return; }
     const bulk = btn.dataset.bulk;
     if (bulk) {
       const sel = cfg.capas.filter(c => A.capSel.has(c.nombre));
       if (bulk === "limpiar") { A.capSel = new Set(); ajCapas(); return; }
       if (bulk === "cotas") { $("#cSerie").hidden = !$("#cSerie").hidden; if (!$("#cSerie").hidden) $("#cS0").focus(); return; }
       if (!sel.length) return;
-      if (bulk === "ocultar" || bulk === "mostrar") { sel.forEach(c => { if (bulk === "ocultar") c.oculta = true; else delete c.oculta; }); guardar(`${sel.length} ${sel.length === 1 ? "capa" : "capas"} ${bulk === "ocultar" ? "ocultas" : "visibles"}`); ajCapas(); return; }
+      if (bulk === "ocultar" || bulk === "mostrar") { sel.forEach(c => { if (bulk === "ocultar") c.oculta = true; else delete c.oculta; }); guardarCfg(`${sel.length} ${sel.length === 1 ? "capa" : "capas"} ${bulk === "ocultar" ? "ocultas" : "visibles"}`); ajCapas(); return; }
       if (bulk === "quitar") {
         if (!await confirmar(`Quitar ${sel.length === 1 ? "1 capa" : sel.length + " capas"}`, `${sel.slice(0, 6).map(c => "«" + esc(c.nombre) + "»").join(", ")}${sel.length > 6 ? ` y ${sel.length - 6} más` : ""}. Los registros con esas capas no cambian.`, "Quitar", true)) return;
         const fuera = new Set(sel.map(c => c.nombre));
         cfg.capas = cfg.capas.filter(c => !fuera.has(c.nombre)); cfg.noAplica = cfg.noAplica.filter(x => !fuera.has(x.capa)); doc0.tipos[A.capTipo] = cfg;
-        A.capSel = new Set(); guardar(`${fuera.size} ${fuera.size === 1 ? "capa quitada" : "capas quitadas"}`); ajCapas(); return;
+        A.capSel = new Set(); guardarCfg(`${fuera.size} ${fuera.size === 1 ? "capa quitada" : "capas quitadas"}`); ajCapas(); return;
       }
     }
     if (btn.id === "cSOk") {
@@ -8678,25 +8656,25 @@ function ajCapas() {
       const obj = (A.capSel.size ? cfg.capas.filter(c => A.capSel.has(c.nombre)) : cfg.capas).slice().sort((a, b) => natural(a.nombre, b.nombre));
       const dec = Math.max((String($("#cS0").value).split(/[.,]/)[1] || "").length, (String($("#cSd").value).split(/[.,]/)[1] || "").length, 2);
       obj.forEach((c, k) => { c.cota = (c0 + dz * k).toFixed(dec); });
-      guardar(`Cotas asignadas a ${obj.length} ${obj.length === 1 ? "capa" : "capas"}`); ajCapas(); return;
+      guardarCfg(`Cotas asignadas a ${obj.length} ${obj.length === 1 ? "capa" : "capas"}`); ajCapas(); return;
     }
     if (btn.id === "cAdd") {
       const n = $("#cNom").value.trim(); if (!n) { $("#cNom").focus(); return; }
       if (cfg.capas.some(x => igualCapa(x.nombre, n))) { toast(`Ya existe «${n}».`, "bad"); return; }
-      cfg.capas.push({ nombre: n, cota: $("#cCota").value.trim() }); guardar("Capa agregada"); reabrir("#cNom"); return;
+      cfg.capas.push({ nombre: n, cota: $("#cCota").value.trim() }); guardarCfg("Capa agregada"); reabrirCapas("#cNom"); return;
     }
     if (btn.id === "cVarias" || btn.id === "cQuitarR") {
       const de = parseInt($("#cDe").value, 10), a = parseInt($("#cA").value, 10);
       if (isNaN(de) || isNaN(a) || a < de || a - de > 199) { toast("Indica un rango válido (hasta 200 capas).", "bad"); return; }
       if (btn.id === "cVarias") {
         let n = 0; for (let k = de; k <= a; k++) { const nm = "Capa " + k; if (!cfg.capas.some(x => x.nombre === nm)) { cfg.capas.push({ nombre: nm, cota: "" }); n++; } }
-        guardar(n ? `${n} capas agregadas` : "Esas capas ya existían"); ajCapas(); return;
+        guardarCfg(n ? `${n} capas agregadas` : "Esas capas ya existían"); ajCapas(); return;
       }
-      const fuera = new Set(cfg.capas.filter(c => { const k = numDe(c.nombre); return k >= de && k <= a; }).map(c => c.nombre));
+      const fuera = new Set(cfg.capas.filter(c => { const k = numDeCapa(c.nombre); return k >= de && k <= a; }).map(c => c.nombre));
       if (!fuera.size) { toast("No hay capas en ese rango."); return; }
       if (!await confirmar(`Quitar ${fuera.size === 1 ? "1 capa" : fuera.size + " capas"}`, `Las capas ${de} a ${a} que están en la lista. Los registros con esas capas no cambian.`, "Quitar", true)) return;
       cfg.capas = cfg.capas.filter(c => !fuera.has(c.nombre)); cfg.noAplica = cfg.noAplica.filter(x => !fuera.has(x.capa)); doc0.tipos[A.capTipo] = cfg;
-      fuera.forEach(n => A.capSel.delete(n)); guardar(`${fuera.size} capas quitadas`); ajCapas(); return;
+      fuera.forEach(n => A.capSel.delete(n)); guardarCfg(`${fuera.size} capas quitadas`); ajCapas(); return;
     }
     if (btn.id === "cDesdeReg") {
       btn.disabled = true; btn.textContent = "Buscando…";
@@ -8706,7 +8684,7 @@ function ajCapas() {
         const cotas = {}; snap.docs.forEach(d => { const r = d.data(); if (r.tipoId === A.capTipo && r.capa && r.cota && !cotas[r.capa.trim()]) cotas[r.capa.trim()] = r.cota; });
         const nuevas = enReg.filter(n => !cfg.capas.some(c => c.nombre === n));
         nuevas.forEach(n => cfg.capas.push({ nombre: n, cota: cotas[n] || "" }));
-        if (nuevas.length) guardar(`${nuevas.length} capas creadas desde los registros`); else toast(enReg.length ? "Todas las capas de los registros ya están en la lista" : "Los registros de este tipo no tienen capa");
+        if (nuevas.length) guardarCfg(`${nuevas.length} capas creadas desde los registros`); else toast(enReg.length ? "Todas las capas de los registros ya están en la lista" : "Los registros de este tipo no tienen capa");
         ajCapas();
       } catch (er) { toast("No se pudo leer los registros: " + errGuardar(er), "bad"); btn.disabled = false; btn.textContent = "Crear desde los registros"; }
       return;
@@ -8716,7 +8694,7 @@ function ajCapas() {
       if (a == null || b == null) { toast("Indica PK inicio y PK final (ej. 2+140).", "bad"); (a == null ? $("#nPki") : $("#nPkf")).focus(); return; }
       if (b <= a) { toast("El PK final debe ser mayor que el inicial.", "bad"); $("#nPkf").focus(); return; }
       cfg.noAplica.push({ id: rid(), capa: $("#nCapa").value, pkInicio: a, pkFin: b, cota: $("#nCota").value.trim(), nota: $("#nNota").value.trim() });
-      guardar("Tramo marcado"); ajCapas();
+      guardarCfg("Tramo marcado"); ajCapas();
     }
   });
 }
@@ -8857,6 +8835,7 @@ const IMP_CAB = { numero: ["nregistro", "noregistro", "registro", "codigo", "num
   pki: ["kminicio", "pkinicio", "kminicial"], pkf: ["kmfin", "pkfin", "kmfinal"], fCampo: ["fechacampo", "fechadecampo"], fLib: ["fechaliberacion", "fechadeliberacion"], fEnt: ["fechadeentrega", "fechaentrega"],
   cargo: ["nentrega", "noentrega"], est: ["estructura"], sub: ["subestructura", "frente"], ele: ["elemento"], tipo: ["tipodeliberacion", "tipoliberacion", "tipo"], capa: ["capa"], cota: ["cota"],
   gen: ["generado", "generadopor"], estado: ["keystatus"], area: ["superficiem2", "superficie", "area"], obs: ["observaciones", "observacion"], act: ["actividad"] };
+/* ---------- Importaciones: pasar las filas a registros, emparejar y revisar ---------- */
 // Filas de la tabla → registros «crudos» (los nombres de frente y tipo se emparejan después con las listas)
 function filasARegistros(filas) {
   const campoDe = c => { const k = claveCab(c); return Object.keys(IMP_CAB).find(x => IMP_CAB[x].includes(k)); };
@@ -8978,20 +8957,20 @@ async function revisarImp(I) {
   const todos = [...new Map([...porNum.values()].flat().map(x => [x.id, x])).values()];
   const trab = await trabajadosEnApp(todos.filter(x => x.origen === "excel"));
   I.clas = regs.map(r => {
-    const xs = porNum.get(r.numero) || [], app = xs.find(x => x.origen !== "excel"), prot = xs.find(x => x.origen === "excel" && trab.has(x.id));
-    if (app) return { r, k: "app", viejo: app, dif: difImp(r, app, true) };
+    const xs = porNum.get(r.numero) || [], enApp = xs.find(x => x.origen !== "excel"), prot = xs.find(x => x.origen === "excel" && trab.has(x.id));
+    if (enApp) return { r, k: "app", viejo: enApp, dif: difImp(r, enApp, true) };
     if (prot) return { r, k: "trabajado", viejo: prot, dif: difImp(r, prot, true) };
     const viejo = xs.find(x => x.id === r.id) || xs[0];
     if (!viejo) return { r, k: "nuevo" };
-    const r2 = viejo.id === r.id ? r : { ...r, id: viejo.id }, dif = difImp(r2, viejo, false);
-    return { r: r2, k: dif.length ? "cambia" : "igual", viejo, dif };
+    const regNuevo = viejo.id === r.id ? r : { ...r, id: viejo.id }, dif = difImp(regNuevo, viejo, false);
+    return { r: regNuevo, k: dif.length ? "cambia" : "igual", viejo, dif };
   });
   const c = await getDocFromServer(doc(db, "contadores", "skt")); I.corr = c.exists() ? c.data().ultimo || 0 : 0;
   // H: un importado cuya importación no está en la lista (carga cortada) se vuelve a escribir para que quede en una importación visible
   const ls_ = await leerLotes();
   I.loteCortado = ls_.filter(x => x.incompleta && x.archivo === I.archivo).sort((a, b) => (b.fecha || 0) - (a.fecha || 0))[0]?.id || "";
-  const lotes = new Set(ls_.filter(x => !x.incompleta || x.id === I.loteCortado || x.id === I.lote).map(x => x.id));
-  I.clas.forEach(x => { if (x.k === "igual" && x.viejo?.lote && !lotes.has(x.viejo.lote)) { x.k = "cambia"; x.dif = ["lote"]; } });
+  const lotesVivos = new Set(ls_.filter(x => !x.incompleta || x.id === I.loteCortado || x.id === I.lote).map(x => x.id));
+  I.clas.forEach(x => { if (x.k === "igual" && x.viejo?.lote && !lotesVivos.has(x.viejo.lote)) { x.k = "cambia"; x.dif = ["lote"]; } });
   I.maxNum = Math.max(I.ultimo || 0, ...regs.map(r => numDe(r.numero)));
   I.toposNuevos = [...new Set([...(I.toposExtra || []), ...regs.map(r => r.topografoId)].filter(k => k && !L.topo(k)))];
   const fs = regs.map(r => r.fechaCampo).filter(x => x != null), ns = regs.map(r => numDe(r.numero));
@@ -9043,6 +9022,7 @@ function resumenImp(I) {
   <div class="f" style="margin:4px 0 0"><label for="hNombre">Nombre de esta importación</label><input id="hNombre" maxlength="60" value="${esc(I.nombre)}"></div>`;
   return h;
 }
+/* ---------- Ajustes → Histórico: importar, respaldar y quitar lo importado ---------- */
 function ajHistorico() {
   const body = cuerpoAj(), A = S.aj, I = A.imp, listo = I && I.clas, c = listo ? cuentaImp(I) : null, nEsc = c ? c.nuevo + c.cambia : 0;
   body.innerHTML = `
@@ -9095,7 +9075,7 @@ function ajHistorico() {
   };
   leerLotes().then(pintarLotes).catch(e => { const el = $("#hLotes"); if (el) el.textContent = "No se pudo leer: " + errGuardar(e); });
   // ¿Queda algo de antes? Una sola lectura (el primero que aparezca)
-  if (A.hayViejo == null) getDocs(query(collection(db, "liberaciones"), where("origen", "==", "excel"), limit(400))).then(s => { const v = s.docs.filter(d => !d.data().lote).length; if (!v && s.docs.length < 400) A.hayViejo = false; pintarLotes(); }).catch(() => {});
+  if (A.hayViejo == null) getDocs(query(collection(db, "liberaciones"), where("origen", "==", "excel"), limit(LIM_LEER_EXCEL))).then(s => { const v = s.docs.filter(d => !d.data().lote).length; if (!v && s.docs.length < LIM_LEER_EXCEL) A.hayViejo = false; pintarLotes(); }).catch(() => {});
   $("#hLotes").addEventListener("click", async e => {
     const b = e.target.closest("[data-lk]"); if (!b) return; const id = b.closest("[data-lote]").dataset.lote, k = b.dataset.lk;
     if (k === "ver") { S.filtro.todos.lote = id; S.filtro.todos.pap = false; S.filtro.todos.st = ""; S.filtro.todos.q = ""; ir("todos"); }
@@ -9253,6 +9233,7 @@ async function respaldoCompleto() {
   b.disabled = false; b.textContent = "Descargar respaldo completo";
 }
 
+/* ---------- Ajustes → Protocolos ---------- */
 /* Protocolos del levantamiento con dron: nombre, zonas donde aplica y cómo se generan los códigos */
 function ajProtocolos() {
   cuerpoAj();
@@ -9301,6 +9282,7 @@ function ajProtocolos() {
     }
   });
 }
+/* ---------- Ajustes → Topógrafos (claves) ---------- */
 function ajTopografos() {
   cuerpoAj();
   const B = S.aj.b;
@@ -9379,6 +9361,7 @@ async function pasarRegsTopo(vieja, nueva) {
 const nRegs = n => `${n} ${n === 1 ? "registro" : "registros"}`;
 // Identifica una superficie o base del modelo para poder devolverla a su tipo si se deshace una unión
 const claveGrupo = d => JSON.stringify([d.subId || "", d.nombre || "", d.fecha || 0, d.liberacionId || "", (d.capa || "").trim()]);
+/* ---------- Ajustes → Tipos: unir, aprobar, mover y quitar tipos y elementos ---------- */
 // Pasa los registros de un tipo repetido al correcto y quita el repetido de la lista. El aviso trae «Deshacer».
 async function unirTipo(viejoId, destinoId, yaConfirmado) {
   const viejo = L.tipo(viejoId), dest = L.tipo(destinoId); if (!viejo || !dest) return;
@@ -9532,8 +9515,8 @@ function cambiarTipo(id, fn, msg, repintar) { const items = tiposFrescos(), t = 
 function moverTipo(id, pos) {
   const all = tiposFrescos(), vis = all.filter(t => t.enGrafico && t.activo !== false), i = vis.findIndex(t => t.id === id); if (i < 0) return;
   pos = Math.max(1, Math.min(vis.length, Math.round(pos) || 1)); if (pos - 1 === i) { ajTipos(); return; }
-  const t = all.splice(all.findIndex(x => x.id === id), 1)[0], resto = vis.filter(x => x.id !== id), vecino = resto[pos - 1];
-  const k = vecino ? all.findIndex(x => x.id === vecino.id) : all.findIndex(x => x.id === resto[resto.length - 1].id) + 1;
+  const t = all.splice(all.findIndex(x => x.id === id), 1)[0], resto = vis.filter(x => x.id !== id), vecinoPrevio = resto[pos - 1];
+  const k = vecinoPrevio ? all.findIndex(x => x.id === vecinoPrevio.id) : all.findIndex(x => x.id === resto[resto.length - 1].id) + 1;
   all.splice(k, 0, t);
   if (guardarTipos(all, `«${t.nombre}» quedó en la posición ${pos}`)) $(`#tyOrd [data-id="${CSS.escape(id)}"] [data-k="pos"]`)?.focus();
 }
@@ -9567,12 +9550,12 @@ async function hayRegistros(campo, valor) {
 function quitarDeLista(lista, id, nombre, tras) {
   const items = lista === "tipos" ? tiposFrescos() : clon(S.listas[lista] || []), i = items.findIndex(x => x.id === id); if (i < 0) return;
   const [x] = items.splice(i, 1);
-  const guardar = (its, msg) => lista === "tipos" ? guardarTipos(its, msg, false) : guardarLista(lista, its, msg);
-  Promise.resolve(guardar(items, `«${nombre}» quitado`)).then(ok => {
+  const guardarEn = (its, msg) => lista === "tipos" ? guardarTipos(its, msg, false) : guardarLista(lista, its, msg);
+  Promise.resolve(guardarEn(items, `«${nombre}» quitado`)).then(ok => {
     if (!ok) return; tras?.();
     toast(`«${nombre}» quitado de la lista.`, "", { t: "Deshacer", fn: () => {
       const its = lista === "tipos" ? tiposFrescos() : clon(S.listas[lista] || []); if (its.some(o => o.id === id)) return;
-      its.splice(Math.min(i, its.length), 0, x); Promise.resolve(guardar(its, `«${nombre}» restaurado`)).then(() => tras?.());
+      its.splice(Math.min(i, its.length), 0, x); Promise.resolve(guardarEn(its, `«${nombre}» restaurado`)).then(() => tras?.());
     } });
   });
 }
@@ -9603,11 +9586,11 @@ function activarElemento(e, si) {
   const p = cambiarElemento(e.id, x => { x.activo = si; }, si ? "Elemento activado" : "Elemento desactivado"); if (!p) return;
   Promise.resolve(p).then(ok => { if (!ok) return; repintarTipos(); if (!si) toast(`«${e.nombre}» desactivado: ya no aparece al registrar. Sus tipos y registros se quedan.`, "", { t: "Deshacer", fn: () => Promise.resolve(cambiarElemento(e.id, x => { x.activo = true; }, "Elemento activado")).then(repintarTipos) }); });
 }
-const vecino = (lst, i, paso, ver) => { let j = i + paso; while (j >= 0 && j < lst.length && !ver(lst[j])) j += paso; return j >= 0 && j < lst.length ? j : -1; };
-function moverElemento(id, paso) {
-  const items = clon(S.listas.elementos), i = items.findIndex(o => o.id === id), j = i < 0 ? -1 : vecino(items, i, paso, o => S.aj.tyOff || o.activo !== false); if (j < 0) return;
+const vecino = (lst, i, delta, ver) => { let j = i + delta; while (j >= 0 && j < lst.length && !ver(lst[j])) j += delta; return j >= 0 && j < lst.length ? j : -1; };
+function moverElemento(id, delta) {
+  const items = clon(S.listas.elementos), i = items.findIndex(o => o.id === id), j = i < 0 ? -1 : vecino(items, i, delta, o => S.aj.tyOff || o.activo !== false); if (j < 0) return;
   [items[i], items[j]] = [items[j], items[i]];
-  Promise.resolve(guardarLista("elementos", items, `«${items[j].nombre}» movido ${paso < 0 ? "arriba" : "abajo"}`)).then(() => { repintarTipos(); $(`#tyList .elgrp[data-e="${CSS.escape(id)}"] [data-k="emas"]`)?.focus(); });
+  Promise.resolve(guardarLista("elementos", items, `«${items[j].nombre}» movido ${delta < 0 ? "arriba" : "abajo"}`)).then(() => { repintarTipos(); $(`#tyList .elgrp[data-e="${CSS.escape(id)}"] [data-k="emas"]`)?.focus(); });
 }
 const elegirUnionEle = e => elegirDestino(e, false);
 const repintarTipos = () => { if (S.view === "ajustes" && S.aj.tab === "tipos") ajTipos(); };
@@ -9724,7 +9707,7 @@ function ajTipos() {
   }
   $("#ajBody").innerHTML = `${nuevos}${seg}${cuerpo}`;
   const buscTy = !!A.tyQ.trim();
-  if (A.tyVista !== "ord" && !buscTy && innerWidth >= 1200) maestroDetalle($("#tyList"), ":scope > .tycard", c => c.querySelector(".tygrp")?.dataset.e ?? "", c => { const g = c.querySelector(".tygrp"); return { nombre: g?.querySelector("input")?.value || "Sin elemento", sub: g?.querySelector(".muted")?.textContent || "", n: c.querySelectorAll(":scope > .tyrow").length, off: g?.classList.contains("off-row") }; }, "tySel", "Nuevo elemento", "#eqList", "Equipos");
+  if (A.tyVista !== "ord" && !buscTy && innerWidth >= CORTE_AMPLIO) maestroDetalle($("#tyList"), ":scope > .tycard", c => c.querySelector(".tygrp")?.dataset.e ?? "", c => { const g = c.querySelector(".tygrp"); return { nombre: g?.querySelector("input")?.value || "Sin elemento", sub: g?.querySelector(".muted")?.textContent || "", n: c.querySelectorAll(":scope > .tyrow").length, off: g?.classList.contains("off-row") }; }, "tySel", "Nuevo elemento", "#eqList", "Equipos");
   else document.querySelectorAll("#tyList > .tycard").forEach(c => { const g = c.querySelector(".tygrp"); plegarLista(c, { clave: "ty:" + (g?.dataset.e || ""), cab: ".tygrp", filas: ":scope > .tyrow", extra: ":scope > .ty-add2", n: 8, buscando: buscTy, nombre: g?.querySelector("input")?.value || "Sin elemento" }); });
   plegarLista($("#eqList"), { clave: "equipos", filas: ':scope > .trow[data-q]', n: 6 });
   const EQ = $("#eqList");
@@ -9837,6 +9820,7 @@ document.addEventListener("focusout", () => setTimeout(() => {
   if (!S.aj?._sucio || S.view !== "ajustes" || document.activeElement?.closest?.("#ajBody") || $(".dlg.on") || $("#ctx")) return;
   S.aj._sucio = false; render();
 }, 0));
+/* ---------- Ajustes → Usuarios ---------- */
 // Datos que llegan solos a Ajustes (solicitudes, usuarios): si se está en un campo, se repinta al salir (no se borra lo escrito)
 // (lo escrito en «Agregar por correo» se guarda en S.aj.nu y render devuelve foco y cursor; solo se espera con un desplegable abierto o un diálogo)
 function repintarAjSuave() { const a = document.activeElement; if ($(".dlg.on") || (a?.closest?.("#ajBody") && (a.tagName === "SELECT" || (a.matches?.("input,textarea") && !a.id)))) S.aj._sucio = true; else render(); }

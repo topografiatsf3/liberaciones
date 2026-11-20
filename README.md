@@ -21,6 +21,16 @@ Desde el 18/11/2026 la versión lleva tres números, **grande.mediano.mínimo** 
 
 `VERSION_APP` en `index.html` y `CACHE` en `sw.js` (`liberaciones-v1.43.1`) suben juntos; `pruebas/prueba12.js` espera el nombre de la caché.
 
+## Versión 1.45.3: fuera lo que sobra (limpieza, parte 2)
+
+Cambio mínimo: la app hace y se ve exactamente igual (603 pantallas comparadas en su HTML y en capturas, 4 roles, computadora y celular; 27 escrituras idénticas). No cambia las reglas de Firebase.
+
+- **Código muerto borrado**: `fila0`, `alternarGrupo`, `xlNombre`, constantes y parámetros sin uso, y unas 20 reglas de CSS que ya no correspondían a nada; 13 declaraciones de CSS que otra regla siempre pisaba; `.mini.eje` en una sola regla.
+- **Nombres**: 47 variables locales que se llamaban igual que una función o constante global ahora tienen nombre propio (`filaTipo`, `htmlCapa`, `guardarCfg`…).
+- **Rótulos y comentarios** al día: 24 rótulos de sección nuevos, 6 corregidos, y los comentarios que se contradecían sobre quién ve Aspas y Levantamientos.
+- **Constantes** para los límites y cortes repetidos: `CORTE_CELULAR`, `CORTE_AMPLIO`, `PAG_TODOS`, `PAG_MIS`, `PAG_LISTA`, `LOTE_ESCRITURA`, `LOTE_BORRAR`, `LIM_LEER_EXCEL`, `CACHE_HIST_MS`.
+- Queda una regla muerta (`.nuevo-tag`) porque la prueba 23 cuenta sus apariciones.
+
 ## Versión 1.45.2: una sola forma de hacer cada cosa (limpieza, parte 1)
 
 Cambio mínimo. No cambia las reglas de Firebase. La salida de la app se comparó antes y después con los mismos datos (141 pantallas y 110 escrituras, en computadora y celular): solo cambia lo que dicen los dos primeros puntos.
